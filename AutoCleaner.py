@@ -2,6 +2,7 @@ import pyabf
 import statistics as stat
 import pyabf.filter
 import scipy
+import scipy.ndimage
 
 # Gets baseline information from 1 min-long recording data taken after trial from the "left" side of the room - channels 1 and 2
 def LBaselineGet(FileName):
@@ -47,12 +48,19 @@ def RBaselineGet(FileName):
 
     return mean470, mean405
 
+# Gaussian filters a single trace with a 40 Hz cutoff frequency, based on pClamp documentation and Calquhon & Sigworth (1995)
 def gaussianFilter(FileName, filterChannel, filterSweep):
     abf = pyabf.ABF(FileName)
     abf.setSweep(sweepNumber= filterSweep, channel= filterChannel)
-    # for sweeps in abf.sweepList:
-    #     stdDev = stat.stdev(abf.sweepY)
-    #     stdDevDict[sweeps] = stdDev
-    # avgStdDev = stat.mean(stdDevDict.values())
-    sweepList = scipy.ndimage.gaussian_filter1d(abf.sweepY, sigma= 22.25)
+    sweepList = scipy.ndimage.gaussian_filter1d(abf.sweepY, sigma= 22)
     return sweepList
+
+def wholeTraceGauss(fileName, filterChannel):
+    abf = pyabf.ABF(fileName)
+    sweepDict = {}
+    abf.setSweep(sweepNumber= 0, channel= filterChannel)
+    for sweeps in abf.sweepList:
+        abf.setSweep(sweeps, channel= filterChannel)
+        filteredSweep = scipy.ndimage.gaussian_filter1d(abf.sweepY, sigma = 16)
+        sweepDict[sweeps] = filteredSweep
+    return sweepDict
