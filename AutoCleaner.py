@@ -50,7 +50,7 @@ def RBaselineGet(FileName):
     finalSubtraction = [mean470, mean405]
     return finalSubtraction
 
-#TODO Function that subtracts baseline from baseline getters from a chosen channel, returns those as full channel trace dictionaries
+#Function that subtracts baseline from baseline getters from a chosen channel, returns those as full channel trace dictionaries
 def baselineSubtractor(fileName, baselines, channelsToSubtract):
     abf = pyabf.ABF(fileName)
     sweepDict470 = {}
@@ -60,11 +60,13 @@ def baselineSubtractor(fileName, baselines, channelsToSubtract):
     #470
     abf.setSweep(sweepNumber= 0, channel= channelsToSubtract[0])
     for sweeps in abf.sweepList:
-        sweepDict470[sweeps] = abf.sweepY - baselines[0]
+        abf.setSweep(sweeps)
+        sweepDict470[sweeps] = [x - baselines[0] for x in abf.sweepY]
     #405
     abf.setSweep(sweepNumber= 0, channel= channelsToSubtract[1])
     for sweeps in abf.sweepList:
-        sweepDict405[sweeps] = abf.sweepY - baselines[1]
+        abf.setSweep(sweeps)
+        sweepDict405[sweeps] = [x - baselines[1] for x in abf.sweepY]
     subtractedSweeps = [sweepDict470, sweepDict405]
     return subtractedSweeps
 
@@ -76,16 +78,15 @@ def gaussianFilter(FileName, filterChannel, filterSweep):
     return sweepList
 
 # Gaussian filters an entire channel with a 40 Hz cutoff freq., as above.
-def wholeTraceGauss(fileName, filterChannel):
-    abf = pyabf.ABF(fileName)
+def wholeTraceGauss(signalToFilter):
     sweepDict = {}
-    abf.setSweep(sweepNumber= 0, channel= filterChannel)
-    for sweeps in abf.sweepList:
-        abf.setSweep(sweeps, channel= filterChannel)
-        filteredSweep = scipy.ndimage.gaussian_filter1d(abf.sweepY, sigma = 16)
-        sweepDict[sweeps] = filteredSweep
+    for sweeps in signalToFilter:
+            filteredSweep = scipy.ndimage.gaussian_filter1d(signalToFilter[sweeps], sigma = 16)
+            sweepDict[sweeps] = filteredSweep
     return sweepDict
 
-#TODO Divides two channels in one file and returns a complete channel dictionary.
-def ratio470405(fileName, channel470, channel405):
-    return
+#Divides two channels (470nm/405nm) in one file and returns a complete channel dictionary.
+def ratio470405(signal470, signal405):
+    ratioSignal = {}
+    
+    return ratioSignal
