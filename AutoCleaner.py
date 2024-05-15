@@ -24,7 +24,8 @@ def LBaselineGet(FileName):
         sweepDict405[sweep405] = fluor405
     mean405 = stat.mean(sweepDict405.values())
 
-    return mean470, mean405
+    finalSubtraction = [mean470, mean405]
+    return finalSubtraction
 
 # Gets baseline information from 1 min-long recording data taken after trial from the "right" side of the room - channels 5 and 6
 def RBaselineGet(FileName):
@@ -46,24 +47,25 @@ def RBaselineGet(FileName):
         sweepDict405[sweep405] = fluor405
     mean405 = stat.mean(sweepDict405.values())
 
-    return mean470, mean405
+    finalSubtraction = [mean470, mean405]
+    return finalSubtraction
 
 #TODO Function that subtracts baseline from baseline getters from a chosen channel, returns those as full channel trace dictionaries
-def baselineSubtractor(fileName, baselines, channelToSubtract1, channelToSubtract2):
+def baselineSubtractor(fileName, baselines, channelsToSubtract):
     abf = pyabf.ABF(fileName)
     sweepDict470 = {}
     sweepDict405 = {}
     if type(baselines) is not list:
         raise TypeError("Values for baseline not a list.")
     #470
-    abf.setSweep(sweepNumber= 0, channel= channelToSubtract1)
+    abf.setSweep(sweepNumber= 0, channel= channelsToSubtract[0])
     for sweeps in abf.sweepList:
         sweepDict470[sweeps] = abf.sweepY - baselines[0]
     #405
-    abf.setSweep(sweepNumber= 0, channel= channelToSubtract2)
+    abf.setSweep(sweepNumber= 0, channel= channelsToSubtract[1])
     for sweeps in abf.sweepList:
         sweepDict405[sweeps] = abf.sweepY - baselines[1]
-    subtractedSweeps = [sweepDict470, sweepDict470]
+    subtractedSweeps = [sweepDict470, sweepDict405]
     return subtractedSweeps
 
 # Gaussian filters a single trace with a 40 Hz cutoff frequency, based on pClamp documentation and Calquhon & Sigworth (1995)
