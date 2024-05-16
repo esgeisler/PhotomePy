@@ -88,5 +88,11 @@ def wholeTraceGauss(signalToFilter):
 #Divides two channels (470nm/405nm) in one file and returns a complete channel dictionary.
 def ratio470405(signal470, signal405):
     ratioSignal = {}
-    
+    for x in signal470:
+        valueList = []
+        z = 0
+        for y in signal470[x]:
+            valueList.append(y/signal405[x][z])
+            z += 1
+        ratioSignal[x] = valueList
     return ratioSignal
