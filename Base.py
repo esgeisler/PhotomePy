@@ -2,7 +2,6 @@ import FileSelector as fls
 import Exceptions as exn
 import AutoCleaner as acl
 import pyabf
-import os
 import matplotlib.pyplot as plt
 
 #TODO Fully automate the process of correcting data files produced by pClamp, according to the corrections laid out by Dr. Jose Eltit:
@@ -24,8 +23,6 @@ import matplotlib.pyplot as plt
 #Chooses the file to be modified, and the file that baselines come from
 dataType = input("Is the data file raw or processed?")
 userFile = fls.FileSelect(dataType, input("What is the name of the file?"))
-userTrace = int(input("Which trace would you like to see?"))
-userChannel = int(input("Which channel?"))
 abf = pyabf.ABF(userFile)
 if dataType == "raw":
     baselineFile = fls.FileSelect("raw", input("What is the name of the file to be used for baseline?"))
@@ -37,6 +34,9 @@ if decision == "baseline":
     outputString = ("Left - 470: %.2f 405: %.2f\nRight - 470: %.2f 405: %.2f"%(baselineSubL[0], baselineSubL[1], baselineSubR[0], baselineSubR[1]))
     print(outputString)
 elif decision == "process":
+    userTrace = int(input("Which trace would you like to see?"))
+    userChannel = int(input("Which channel?"))
+
     # Finds baselines and subtracts them from channels 1, 2, 5, and 6 based on the chosen file
     baselineSubL = acl.LBaselineGet(baselineFile)
     baselineSubR = acl.RBaselineGet(baselineFile)
@@ -57,12 +57,12 @@ elif decision == "process":
     finalSignalLeft = acl.wholeTraceGauss(ratioSignalLeft)
     finalSignalRight = acl.wholeTraceGauss(ratioSignalRight)
 
+    # Plots the original, subtracted, ratio-ed, and processed trace of choice
     abf.setSweep(sweepNumber= userTrace, channel= userChannel)
-    # plt.plot(abf.sweepX[1000:-2000], abf.sweepY[1000:-2000], color="b", label="original")
-    # plt.plot(abf.sweepX[1000:-2000], subtractRight[0][userTrace][1000:-2000], color="r", label= "Subtracted")
-    # plt.plot(abf.sweepX[1000:-2000], ratioSignalRight[userTrace][1000:-2000], color="y", label= "Ratio-ed")
-    # plt.plot(abf.sweepX[1000:-2000], finalSignalRight[userTrace][1000:-2000], color="g", label= "Processed")
-    # plt.plot(abf.sweepX[1000:-2000], filteredPlot[userTrace][1000:-2000], color="r", label= "Filtered")
-    # plt.axis([0,15,0,6])
-    # plt.legend()
-    # plt.show()
+    plt.plot(abf.sweepX[1000:-2000], abf.sweepY[1000:-2000], color="b", label="Original")
+    plt.plot(abf.sweepX[1000:-2000], subtractRight[0][userTrace][1000:-2000], color="r", label= "Subtracted")
+    plt.plot(abf.sweepX[1000:-2000], ratioSignalRight[userTrace][1000:-2000], color="y", label= "Ratio-ed")
+    plt.plot(abf.sweepX[1000:-2000], finalSignalRight[userTrace][1000:-2000], color="g", label= "Processed")
+    plt.axis([0,15,-1,6])
+    plt.legend()
+    plt.show()
