@@ -58,14 +58,12 @@ def baselineSubtractor(fileName, baselines, channelsToSubtract):
     if type(baselines) is not list:
         raise TypeError("Values for baseline not a list.")
     #470
-    abf.setSweep(sweepNumber= 0, channel= channelsToSubtract[0])
     for sweeps in abf.sweepList:
-        abf.setSweep(sweeps)
+        abf.setSweep(sweeps, channel= channelsToSubtract[0])
         sweepDict470[sweeps] = [x - baselines[0] for x in abf.sweepY]
     #405
-    abf.setSweep(sweepNumber= 0, channel= channelsToSubtract[1])
     for sweeps in abf.sweepList:
-        abf.setSweep(sweeps)
+        abf.setSweep(sweeps, channel= channelsToSubtract[1])
         sweepDict405[sweeps] = [x - baselines[1] for x in abf.sweepY]
     subtractedSweeps = [sweepDict470, sweepDict405]
     return subtractedSweeps
@@ -74,7 +72,7 @@ def baselineSubtractor(fileName, baselines, channelsToSubtract):
 def gaussianFilter(FileName, filterChannel, filterSweep):
     abf = pyabf.ABF(FileName)
     abf.setSweep(sweepNumber= filterSweep, channel= filterChannel)
-    sweepList = scipy.ndimage.gaussian_filter1d(abf.sweepY, sigma= 22)
+    sweepList = scipy.ndimage.gaussian_filter1d(abf.sweepY, sigma= 16)
     return sweepList
 
 # Gaussian filters an entire channel with a 40 Hz cutoff freq., as above.
@@ -87,12 +85,8 @@ def wholeTraceGauss(signalToFilter):
 
 #Divides two channels (470nm/405nm) in one file and returns a complete channel dictionary.
 def ratio470405(signal470, signal405):
+    indexRange = len(signal470)
     ratioSignal = {}
-    for x in signal470:
-        valueList = []
-        z = 0
-        for y in signal470[x]:
-            valueList.append(y/signal405[x][z])
-            z += 1
-        ratioSignal[x] = valueList
+    for i in range(indexRange):
+        ratioSignal[i] = signal470[i]/signal405[i]
     return ratioSignal
