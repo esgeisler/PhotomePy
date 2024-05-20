@@ -5,15 +5,16 @@ def traceAverage(processedSignal):
     meanSignal = {}
     x = 0
     for sweep in processedSignal:
-        meanSignal[x] = stat.mean(sweep)
+        meanSignal[x] = stat.mean(processedSignal[sweep])
         x += 1
     return meanSignal
 
 # Averages the sweeps before a certain time point to create a "Pre-Injection Average" of fluorescence
 def preInjectionAverage(averagedSignal, injectionTrace):
     preInjList = []
-    for sweep in averagedSignal[:injectionTrace]:
-        preInjList.append(sweep)
+    x = 0
+    for x in range(0, injectionTrace):
+        preInjList.append(stat.mean(averagedSignal[x]))
     preInjAvg = stat.mean(preInjList)
     return preInjAvg
 
