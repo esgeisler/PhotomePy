@@ -5,7 +5,7 @@ def traceAverage(processedSignal):
     meanSignal = {}
     x = 0
     for sweep in processedSignal:
-        meanSignal[x] = stat.mean(processedSignal[sweep])
+        meanSignal[x] = stat.mean(processedSignal[x][500:-1500])
         x += 1
     return meanSignal
 
@@ -14,7 +14,7 @@ def preInjectionAverage(averagedSignal, injectionTrace):
     preInjList = []
     x = 0
     for x in range(0, injectionTrace):
-        preInjList.append(stat.mean(averagedSignal[x]))
+        preInjList.append(stat.mean(averagedSignal[x][500:-1500]))
     preInjAvg = stat.mean(preInjList)
     return preInjAvg
 
