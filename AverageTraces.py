@@ -1,4 +1,5 @@
 import statistics as stat
+import pandas as pd
 
 # Averages every sweep's voltage (fluorescence) in a trace, producing a dictionary of 70 averages
 def traceAverage(processedSignal):
@@ -34,3 +35,13 @@ def bleachingSub(signalDrug, signalVehicle):
         finalSignal[x] = signalDrug[x] - signalVehicle[x]
         x += 1
     return finalSignal
+
+# Creates a pandas dataframe that can be exported into excel
+def excelExporter(signalAverage, preInjectionAverage, deltaF):
+    traceNumber = {}
+    x = 0
+    for sweep in signalAverage:
+        traceNumber[x] = sweep + 1
+        x += 1
+    exportableData = pd.DataFrame({"Trace Number:":traceNumber, "Average Fluorescence": signalAverage, "ΔF/F": deltaF, "Bleaching Correction":{}, "Pre-Injection Average":{0: preInjectionAverage} })
+    return exportableData

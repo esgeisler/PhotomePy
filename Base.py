@@ -67,6 +67,12 @@ injectionTraceNum = 10 #int(input("During which trace was the animal injected?")
 preInjectionAverage = avg.preInjectionAverage(finalSignalLeft, injectionTraceNum)
 fluorescence = avg.deltaF(averageSignal, preInjectionAverage)
 
-plt.plot(fluorescence.keys(), fluorescence.values())
-plt.axis([0, 70, -0.2, 0.3])
-plt.show()
+# Saves the averaged data to an excel file with the rat's "name"
+ratName = 9 # input("What is the rat's name?")
+ratData = avg.excelExporter(averageSignal, preInjectionAverage, fluorescence)
+filename = "Rat %i Temp File.xlsx"%(ratName)
+ratData.to_excel(filename)
+
+# plt.plot(fluorescence.keys(), fluorescence.values())
+# plt.axis([0, 70, -0.2, 0.3])
+# plt.show()
