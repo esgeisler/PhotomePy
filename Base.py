@@ -66,12 +66,12 @@ elif decision == "process":
 
 # Averages the entire signal
     averageSignalLeft = avg.traceAverage(finalSignalLeft)
-    injectionTraceNumLeft = int(input("During which trace was the animal injected?"))
+    injectionTraceNumLeft = int(input("During which trace was the left animal injected?"))
     preInjectionAverageLeft = avg.preInjectionAverage(finalSignalLeft, injectionTraceNumLeft)
     fluorescenceLeft = avg.deltaF(averageSignalLeft, preInjectionAverageLeft)
 
     averageSignalRight = avg.traceAverage(finalSignalRight)
-    injectionTraceNumRight = int(input("During which trace was the animal injected?"))
+    injectionTraceNumRight = int(input("During which trace was the right animal injected?"))
     preInjectionAverageRight = avg.preInjectionAverage(finalSignalRight, injectionTraceNumRight)
     fluorescenceRight = avg.deltaF(averageSignalRight, preInjectionAverageRight)
 
