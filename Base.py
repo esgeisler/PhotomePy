@@ -16,11 +16,11 @@ import AverageTraces as avg
 
 #Chooses the file to be modified, and the file that baselines come from
 dataType = "raw" #input("Is the data file raw or processed?")
-userFile = fls.FileSelect(dataType, "24508005.abf") #input("What is the name of the file?"))
+userFile = fls.FileSelect(dataType, input("What is the name of the file?"))
 abf = pyabf.ABF(userFile)
 if dataType == "raw":
-    baselineFile = fls.FileSelect("raw", "24508006.abf") #input("What is the name of the file to be used for baseline?"))
-decision =  "process" #input("What shall we do today?")
+    baselineFile = fls.FileSelect("raw", input("What is the name of the file to be used for baseline?"))
+decision =  input("What shall we do today?")
 
 if decision == "baseline":
     baselineSubL = acl.LBaselineGet(baselineFile)
@@ -51,6 +51,9 @@ elif decision == "process":
     finalSignalLeft = acl.wholeTraceGauss(ratioSignalLeft)
     finalSignalRight = acl.wholeTraceGauss(ratioSignalRight)
 
+#TODO Saves edited sweeps to new file
+#abf.saveABF1("")
+
 # Plots the original, subtracted, ratio-ed, and processed trace of choice
     # abf.setSweep(sweepNumber= userTrace, channel= userChannel)
     # plt.plot(abf.sweepX[1000:-2000], abf.sweepY[1000:-2000], color="b", label="Original")
@@ -62,16 +65,25 @@ elif decision == "process":
     # plt.show()
 
 # Averages the entire signal
-averageSignal = avg.traceAverage(finalSignalLeft)
-injectionTraceNum = 10 #int(input("During which trace was the animal injected?"))
-preInjectionAverage = avg.preInjectionAverage(finalSignalLeft, injectionTraceNum)
-fluorescence = avg.deltaF(averageSignal, preInjectionAverage)
+    averageSignalLeft = avg.traceAverage(finalSignalLeft)
+    injectionTraceNumLeft = int(input("During which trace was the animal injected?"))
+    preInjectionAverageLeft = avg.preInjectionAverage(finalSignalLeft, injectionTraceNumLeft)
+    fluorescenceLeft = avg.deltaF(averageSignalLeft, preInjectionAverageLeft)
+
+    averageSignalRight = avg.traceAverage(finalSignalRight)
+    injectionTraceNumRight = int(input("During which trace was the animal injected?"))
+    preInjectionAverageRight = avg.preInjectionAverage(finalSignalRight, injectionTraceNumRight)
+    fluorescenceRight = avg.deltaF(averageSignalRight, preInjectionAverageRight)
 
 # Saves the averaged data to an excel file with the rat's "name"
-ratName = 9 # input("What is the rat's name?")
-ratData = avg.excelExporter(averageSignal, preInjectionAverage, fluorescence)
-filename = "Rat %i Temp File.xlsx"%(ratName)
-ratData.to_excel(filename)
+    ratNameLeft = int(input("What is the left rat's number?"))
+    ratNameRight = int(input("What is the right rat's number?"))
+    ratDataLeft = avg.excelExporter(averageSignalLeft, preInjectionAverageLeft, fluorescenceLeft)
+    ratDataRight = avg.excelExporter(averageSignalRight, preInjectionAverageRight, fluorescenceRight)
+    filenameLeft = "Rat %i Temp File.xlsx"%(ratNameLeft)
+    filenameRight = "Rat %i Temp File.xlsx"%(ratNameRight)
+    ratDataLeft.to_excel(filenameLeft)
+    ratDataRight.to_excel(filenameRight)
 
 # plt.plot(fluorescence.keys(), fluorescence.values())
 # plt.axis([0, 70, -0.2, 0.3])
