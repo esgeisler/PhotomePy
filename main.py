@@ -42,24 +42,62 @@ class Main(tk.Frame):
         baselineFileDisplay = tk.Text(self, height= 1, width= 52)
         baselineFileDisplay.pack()
         baselineExplorerButton.pack()
-        runFileButton = tk.Button(self, text="Run Program")
-        runFileButton.pack()
+        
 
         chosenFileDisplay.insert(tk.END, self.experimentFileName)
         baselineFileDisplay.insert(tk.END, self.baselinefileName)
 
-# abf = pyabf.ABF(userFile)
-# baselineFile = fls.FileSelect("raw", input("What is the name of the file to be used for baseline?"))
-# decision =  input("What shall we do today?")
+        def dataProcessor():
+            abf = pyabf.ABF(self.experimentFileName)
+            baselineSubL = acl.LBaselineGet(self.baselinefileName)
+            baselineSubR = acl.RBaselineGet(self.baselinefileName)
+            channelsLeft = [0,1]
+            channelsRight = [4,5]
+            subtractLeft = acl.baselineSubtractor(self.experimentFileName, baselineSubL, channelsLeft)
+            subtractRight = acl.baselineSubtractor(self.experimentFileName, baselineSubR, channelsRight)
+        # Gaussian filters the 405 channels
+            filteredLeft = acl.wholeTraceGauss(subtractLeft[1])
+            filteredRight = acl.wholeTraceGauss(subtractRight[1])
+        #Find ratio of 470/405 channels
+            ratioSignalLeft = acl.ratio470405(subtractLeft[0], filteredLeft)
+            ratioSignalRight = acl.ratio470405(subtractRight[0], filteredRight)
+        # Gaussian filters the ratio signal
+            finalSignalLeft = acl.wholeTraceGauss(ratioSignalLeft)
+            finalSignalRight = acl.wholeTraceGauss(ratioSignalRight)
+        # Averages the left and right signals
+            averageSignalLeft = avg.traceAverage(finalSignalLeft)
+            injectionTraceNumLeft = int(input("During which trace was the left animal injected?"))
+            preInjectionAverageLeft = avg.preInjectionAverage(finalSignalLeft, injectionTraceNumLeft)
+            fluorescenceLeft = avg.deltaF(averageSignalLeft, preInjectionAverageLeft)
 
-# if decision == "baseline":
-#     baselineSubL = acl.LBaselineGet(baselineFile)
-#     baselineSubR = acl.RBaselineGet(baselineFile)
-#     outputString = ("Left - 470: %.2f 405: %.2f\nRight - 470: %.2f 405: %.2f"%(baselineSubL[0], baselineSubL[1], baselineSubR[0], baselineSubR[1]))
-#     print(outputString)
-# elif decision == "process":
-    #userTrace = int(input("Which trace would you like to see?"))
-    #userChannel = int(input("Which channel?"))
+            averageSignalRight = avg.traceAverage(finalSignalRight)
+            injectionTraceNumRight = int(input("During which trace was the right animal injected?"))
+            preInjectionAverageRight = avg.preInjectionAverage(finalSignalRight, injectionTraceNumRight)
+            fluorescenceRight = avg.deltaF(averageSignalRight, preInjectionAverageRight)
+        # Saves the averaged data to an excel file with the rat's "name"
+            ratNameLeft = int(input("What is the left rat's number?"))
+            ratNameRight = int(input("What is the right rat's number?"))
+            ratDataLeft = avg.excelExporter(averageSignalLeft, preInjectionAverageLeft, fluorescenceLeft)
+            ratDataRight = avg.excelExporter(averageSignalRight, preInjectionAverageRight, fluorescenceRight)
+            filenameLeft = "Rat %i Temp File.xlsx"%(ratNameLeft)
+            filenameRight = "Rat %i Temp File.xlsx"%(ratNameRight)
+            ratDataLeft.to_excel(filenameLeft)
+            ratDataRight.to_excel(filenameRight)
+        
+        def baselineFinder():
+            pyabf.ABF(self.baselinefileName)
+            # Opens a pop-up window containing the 4 baselines for doing calculations with
+            bpu = tk.Toplevel()
+            bpu.wm_title("Baselines")
+            baselineSubL = acl.LBaselineGet(self.baselinefileName)
+            baselineSubR = acl.RBaselineGet(self.baselinefileName)
+            baselineTextBox = tk.Text(bpu, "Left - 470: %.2f 405: %.2f\nRight - 470: %.2f 405: %.2f"%(baselineSubL[0], baselineSubL[1], baselineSubR[0], baselineSubR[1]))
+            baselineTextBox.pack()
+
+        runFileButton = tk.Button(self, text="Process a File", command= dataProcessor)
+        runFileButton.pack()
+        baselineGetterButton = tk.Button(self, text="Get the Baselines", command= baselineFinder)
+        baselineGetterButton.pack()
 
 def main():
     fp = tk.Tk()
