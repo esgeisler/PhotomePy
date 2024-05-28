@@ -15,6 +15,14 @@ class Main(tk.Frame):
 
         self.experimentFileName = ""
         self.baselinefileName = ""
+        self.leftRatName = tk.StringVar()
+        self.rightRatName = tk.StringVar()
+        self.leftRatInjection = tk.StringVar()
+        self.rightRatInjection = tk.StringVar()
+        self.ratNameLeft = 0
+        self.ratNameRight = 0
+        self.ratInjectionLeft = 0
+        self.ratInjectionRight = 0
 
         def fileBrowserExperiment():
             self.experimentFileName = filedialog.askopenfilename(initialdir= "/", title= "Select a Main File", filetypes=(("Axon Binary Fles", "*.abf*"), ("All Files," "*.*")))
@@ -29,25 +37,41 @@ class Main(tk.Frame):
             return self.baselinefileName
         
         decisionLabel = tk.Label(self, text="File Process")
-        userChosenProcess = ttk.Combobox(self, state= "readonly", values=["Get Baseline", "Get Averages"])
-        userChosenProcess.set("Get Baseline")
-        decisionLabel.pack()
-        userChosenProcess.pack()     
+        decisionLabel.pack()  
 
         explorerButton = tk.Button(self, text="Choose a Main File", command= fileBrowserExperiment)
-        chosenFileDisplay = tk.Text(self, height= 1, width= 52)
+        chosenFileDisplay = tk.Text(self, height= 1, width= 75)
         chosenFileDisplay.pack()
         baselineExplorerButton = tk.Button(self, text="Choose a Baseline File", command= fileBrowserBaseline)
         explorerButton.pack()
-        baselineFileDisplay = tk.Text(self, height= 1, width= 52)
+        baselineFileDisplay = tk.Text(self, height= 1, width= 75)
         baselineFileDisplay.pack()
         baselineExplorerButton.pack()
-        
 
         chosenFileDisplay.insert(tk.END, self.experimentFileName)
         baselineFileDisplay.insert(tk.END, self.baselinefileName)
 
-        def dataProcessor():
+        def onPopSubmit():
+            self.ratNameLeft = int(self.leftRatName.get())
+            self.ratNameRight = int(self.rightRatName.get())
+            self.ratInjectionLeft = int(self.leftRatInjection.get())
+            self.ratInjectionRight = int(self.rightRatInjection.get())
+
+        def dataProcessorPop():
+            infoPop = tk.Toplevel()
+            infoPop.title("Notice")
+            leftRatNameFill = tk.Entry(infoPop, textvariable= self.leftRatName)
+            rightRatNameFill = tk.Entry(infoPop, textvariable= self.rightRatName)
+            leftRatNameFill.pack()
+            rightRatNameFill.pack()
+            leftRatInjTimeFill = tk.Entry(infoPop, textvariable= self.leftRatInjection)
+            rightRatInjTimeFill = tk.Entry(infoPop, textvariable= self.rightRatInjection)
+            leftRatInjTimeFill.pack()
+            rightRatInjTimeFill.pack()
+            submitButton = tk.Button(infoPop, text="Submit", command=lambda:[onPopSubmit(), infoPop.destroy(), dataProcessorReal()])
+            submitButton.pack()
+
+        def dataProcessorReal():
             abf = pyabf.ABF(self.experimentFileName)
             baselineSubL = acl.LBaselineGet(self.baselinefileName)
             baselineSubR = acl.RBaselineGet(self.baselinefileName)
@@ -66,24 +90,26 @@ class Main(tk.Frame):
             finalSignalRight = acl.wholeTraceGauss(ratioSignalRight)
         # Averages the left and right signals
             averageSignalLeft = avg.traceAverage(finalSignalLeft)
-            injectionTraceNumLeft = int(input("During which trace was the left animal injected?"))
-            preInjectionAverageLeft = avg.preInjectionAverage(finalSignalLeft, injectionTraceNumLeft)
+            preInjectionAverageLeft = avg.preInjectionAverage(finalSignalLeft, self.ratInjectionLeft)
             fluorescenceLeft = avg.deltaF(averageSignalLeft, preInjectionAverageLeft)
 
             averageSignalRight = avg.traceAverage(finalSignalRight)
-            injectionTraceNumRight = int(input("During which trace was the right animal injected?"))
-            preInjectionAverageRight = avg.preInjectionAverage(finalSignalRight, injectionTraceNumRight)
+            preInjectionAverageRight = avg.preInjectionAverage(finalSignalRight, self.ratInjectionRight)
             fluorescenceRight = avg.deltaF(averageSignalRight, preInjectionAverageRight)
         # Saves the averaged data to an excel file with the rat's "name"
-            ratNameLeft = int(input("What is the left rat's number?"))
-            ratNameRight = int(input("What is the right rat's number?"))
             ratDataLeft = avg.excelExporter(averageSignalLeft, preInjectionAverageLeft, fluorescenceLeft)
             ratDataRight = avg.excelExporter(averageSignalRight, preInjectionAverageRight, fluorescenceRight)
-            filenameLeft = "Rat %i Temp File.xlsx"%(ratNameLeft)
-            filenameRight = "Rat %i Temp File.xlsx"%(ratNameRight)
+            filenameLeft = "Rat %i Temp File.xlsx"%(self.ratNameLeft)
+            filenameRight = "Rat %i Temp File.xlsx"%(self.ratNameRight)
             ratDataLeft.to_excel(filenameLeft)
             ratDataRight.to_excel(filenameRight)
-        
+
+            puEnd = tk.Toplevel()
+            puEnd.wm_title("Results")
+            textyBox = tk.Text(puEnd, width= 25, height=1)
+            textyBox.pack()
+            textyBox.insert(tk.END, "Results Exported to Excel!")
+    
         def baselineFinder():
             pyabf.ABF(self.baselinefileName)
             # Opens a pop-up window containing the 4 baselines for doing calculations with
@@ -94,7 +120,7 @@ class Main(tk.Frame):
             baselineTextBox = tk.Text(bpu, "Left - 470: %.2f 405: %.2f\nRight - 470: %.2f 405: %.2f"%(baselineSubL[0], baselineSubL[1], baselineSubR[0], baselineSubR[1]))
             baselineTextBox.pack()
 
-        runFileButton = tk.Button(self, text="Process a File", command= dataProcessor)
+        runFileButton = tk.Button(self, text="Process a File", command= dataProcessorPop)
         runFileButton.pack()
         baselineGetterButton = tk.Button(self, text="Get the Baselines", command= baselineFinder)
         baselineGetterButton.pack()
