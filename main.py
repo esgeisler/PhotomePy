@@ -7,8 +7,6 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 
-
-
 class Main(tk.Frame):
     def __init__(self, master= None, **kwargs):
         super().__init__(master, **kwargs)
@@ -117,8 +115,9 @@ class Main(tk.Frame):
             bpu.wm_title("Baselines")
             baselineSubL = acl.LBaselineGet(self.baselinefileName)
             baselineSubR = acl.RBaselineGet(self.baselinefileName)
-            baselineTextBox = tk.Text(bpu, "Left - 470: %.2f 405: %.2f\nRight - 470: %.2f 405: %.2f"%(baselineSubL[0], baselineSubL[1], baselineSubR[0], baselineSubR[1]))
+            baselineTextBox = tk.Text(bpu, height= 2, width= 50)
             baselineTextBox.pack()
+            baselineTextBox.insert(tk.END, "Left - 470: %.2f 405: %.2f\nRight - 470: %.2f 405: %.2f"%(baselineSubL[0], baselineSubL[1], baselineSubR[0], baselineSubR[1]))
 
         runFileButton = tk.Button(self, text="Process a File", command= dataProcessorPop)
         runFileButton.pack()
