@@ -1,11 +1,13 @@
 import AutoCleaner as acl
 import pyabf
+import os
 import matplotlib.pyplot as plt
 import AverageTraces as avg
-
+import peakAnalysis as pas
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
+import numpy as np
 
 class Main(tk.Frame):
     def __init__(self, master= None, **kwargs):
@@ -23,13 +25,13 @@ class Main(tk.Frame):
         self.ratInjectionRight = 0
 
         def fileBrowserExperiment():
-            self.experimentFileName = filedialog.askopenfilename(initialdir= "/", title= "Select a Main File", filetypes=(("Axon Binary Fles", "*.abf*"), ("All Files," "*.*")))
+            self.experimentFileName = filedialog.askopenfilename(initialdir= os.getcwd(), title= "Select a Main File", filetypes=(("Axon Binary Fles", "*.abf*"), ("All Files," "*.*")))
             print(self.experimentFileName)
             chosenFileDisplay.insert(tk.END, self.experimentFileName)
             return self.experimentFileName
         
         def fileBrowserBaseline():
-            self.baselinefileName = filedialog.askopenfilename(initialdir= "/", title= "Select a Main File", filetypes=(("Axon Binary Fles", "*.abf*"), ("All Files," "*.*")))
+            self.baselinefileName = filedialog.askopenfilename(initialdir= os.getcwd(), title= "Select a Main File", filetypes=(("Axon Binary Fles", "*.abf*"), ("All Files," "*.*")))
             print(self.baselinefileName)
             baselineFileDisplay.insert(tk.END, self.baselinefileName)
             return self.baselinefileName  
@@ -126,10 +128,35 @@ class Main(tk.Frame):
             baselineTextBox.pack()
             baselineTextBox.insert(tk.END, "Left - 470: %.2f 405: %.2f\nRight - 470: %.2f 405: %.2f"%(baselineSubL[0], baselineSubL[1], baselineSubR[0], baselineSubR[1]))
 
+        def dataProcessorPartial():
+            abf = pyabf.ABF(self.experimentFileName)
+            baselineSubL = acl.LBaselineGet(self.baselinefileName)
+            baselineSubR = acl.RBaselineGet(self.baselinefileName)
+            channelsLeft = [0,1]
+            channelsRight = [4,5]
+            subtractLeft = acl.baselineSubtractor(self.experimentFileName, baselineSubL, channelsLeft)
+            subtractRight = acl.baselineSubtractor(self.experimentFileName, baselineSubR, channelsRight)
+        # Gaussian filters the 405 channels
+            filteredLeft = acl.wholeTraceGauss(subtractLeft[1])
+            filteredRight = acl.wholeTraceGauss(subtractRight[1])
+        #Find ratio of 470/405 channels
+            ratioSignalLeft = acl.ratio470405(subtractLeft[0], filteredLeft)
+            ratioSignalRight = acl.ratio470405(subtractRight[0], filteredRight)
+        # Gaussian filters the ratio signal
+            finalSignalLeft = acl.wholeTraceGauss(ratioSignalLeft)
+            finalSignalRight = acl.wholeTraceGauss(ratioSignalRight)
+
+            signalValues = np.array(list(finalSignalLeft.values()))
+            print(signalValues)
+            pas.peakGetter(signalValues[1][850:-1250])
+
         runFileButton = tk.Button(self, text="Process a File", command= dataProcessorPop)
         runFileButton.grid(row= 3, column= 1)
         baselineGetterButton = tk.Button(self, text="Get the Baselines", command= baselineFinder)
         baselineGetterButton.grid(row= 3, column= 2)
+
+        testerButton = tk.Button(self, text="Show a graph of a chosen trace [WIP]", command= dataProcessorPartial)
+        testerButton.grid(row=4, column=1)
 
 def main():
     fp = tk.Tk()

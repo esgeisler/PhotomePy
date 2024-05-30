@@ -1,16 +1,24 @@
 import AutoCleaner as acl
 import AverageTraces as avg
-import scipy as sci
+import scipy.signal as sci
 import pyabf
 import matplotlib.pyplot as plt
+import matplotlib.pyplot
 
 #TODO: Write a function that retrieves the number of peaks
-def peakGetter():
-    return
+def peakGetter(processedSignal):
+    peaks, dictOfPeaks = sci.find_peaks(processedSignal, prominence= 0.05)
+    fig = plt.figure()
+    lad = fig.add_subplot()
+    lad.plot(processedSignal)
+    lad.plot(peaks, processedSignal[peaks], "r.")
+    plt.axis([0,50000, -2, 2])
+    plt.show()
+    
 
 #TODO: Write a house-keeping function that displays those peaks on a graph
-
-
+def peakDisplay():
+    return
 
 
 # Plots the original, subtracted, ratio-ed, and processed trace of choice
