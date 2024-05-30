@@ -1,8 +1,10 @@
 import pyabf
 import statistics as stat
+import pyabf.abfWriter
 import pyabf.filter
 import scipy
 import scipy.ndimage
+import numpy as np
 
 # Gets baseline information from 1 min-long recording data taken after trial from the "left" side of the room - channels 1 and 2
 def LBaselineGet(FileName):
@@ -83,10 +85,17 @@ def wholeTraceGauss(signalToFilter):
             sweepDict[sweeps] = filteredSweep
     return sweepDict
 
-#Divides two channels (470nm/405nm) in one file and returns a complete channel dictionary.
+# Divides two channels (470nm/405nm) in one file and returns a complete channel dictionary.
 def ratio470405(signal470, signal405):
     indexRange = len(signal470)
     ratioSignal = {}
     for i in range(indexRange):
         ratioSignal[i] = signal470[i]/signal405[i]
     return ratioSignal
+
+# Saves cleaned trace file as an ABF file for later viewing in ClampFit 10
+def tExport(processedTrace):
+    trace = processedTrace.values()
+    arrayList = list(trace)
+    array = np.array(arrayList)
+    pyabf.abfWriter.writeABF1(sweepData= array, filename= "TestABF.abf", units="V", sampleRateHz= 3333.33)
