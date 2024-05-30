@@ -32,19 +32,16 @@ class Main(tk.Frame):
             self.baselinefileName = filedialog.askopenfilename(initialdir= "/", title= "Select a Main File", filetypes=(("Axon Binary Fles", "*.abf*"), ("All Files," "*.*")))
             print(self.baselinefileName)
             baselineFileDisplay.insert(tk.END, self.baselinefileName)
-            return self.baselinefileName
-        
-        decisionLabel = tk.Label(self, text="File Process")
-        decisionLabel.pack()  
+            return self.baselinefileName  
 
         explorerButton = tk.Button(self, text="Choose a Main File", command= fileBrowserExperiment)
-        chosenFileDisplay = tk.Text(self, height= 1, width= 75)
-        chosenFileDisplay.pack()
+        chosenFileDisplay = tk.Text(self, height= 1, width= 50)
+        chosenFileDisplay.grid(row= 1, column= 1)
         baselineExplorerButton = tk.Button(self, text="Choose a Baseline File", command= fileBrowserBaseline)
-        explorerButton.pack()
-        baselineFileDisplay = tk.Text(self, height= 1, width= 75)
-        baselineFileDisplay.pack()
-        baselineExplorerButton.pack()
+        explorerButton.grid(row= 1, column= 2)
+        baselineFileDisplay = tk.Text(self, height= 1, width= 50)
+        baselineFileDisplay.grid(row= 2, column= 1)
+        baselineExplorerButton.grid(row= 2, column= 2)
 
         chosenFileDisplay.insert(tk.END, self.experimentFileName)
         baselineFileDisplay.insert(tk.END, self.baselinefileName)
@@ -130,9 +127,9 @@ class Main(tk.Frame):
             baselineTextBox.insert(tk.END, "Left - 470: %.2f 405: %.2f\nRight - 470: %.2f 405: %.2f"%(baselineSubL[0], baselineSubL[1], baselineSubR[0], baselineSubR[1]))
 
         runFileButton = tk.Button(self, text="Process a File", command= dataProcessorPop)
-        runFileButton.pack()
+        runFileButton.grid(row= 3, column= 1)
         baselineGetterButton = tk.Button(self, text="Get the Baselines", command= baselineFinder)
-        baselineGetterButton.pack()
+        baselineGetterButton.grid(row= 3, column= 2)
 
 def main():
     fp = tk.Tk()
