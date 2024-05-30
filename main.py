@@ -57,17 +57,27 @@ class Main(tk.Frame):
 
         def dataProcessorPop():
             infoPop = tk.Toplevel()
-            infoPop.title("Notice")
+            infoPop.title("Rat Metadata Entry")
             leftRatNameFill = tk.Entry(infoPop, textvariable= self.leftRatName)
+            leftRatNameLabel = tk.Label(infoPop, text="Enter Left Rat Number:")
             rightRatNameFill = tk.Entry(infoPop, textvariable= self.rightRatName)
-            leftRatNameFill.pack()
-            rightRatNameFill.pack()
+            rightRatNameLabel = tk.Label(infoPop, text= "Enter Right Rat Number:")
+            leftRatNameLabel.grid(row= 1, column= 1)
+            leftRatNameFill.grid(row= 1, column= 2)
+            rightRatNameLabel.grid(row= 1, column= 4)
+            rightRatNameFill.grid(row= 1, column= 5)
             leftRatInjTimeFill = tk.Entry(infoPop, textvariable= self.leftRatInjection)
+            leftRatInjTimeLabel = tk.Label(infoPop, text="Enter Left Rat Injection Trace Number:")
             rightRatInjTimeFill = tk.Entry(infoPop, textvariable= self.rightRatInjection)
-            leftRatInjTimeFill.pack()
-            rightRatInjTimeFill.pack()
+            rightRatInjTimeLabel = tk.Label(infoPop, text= "Enter Right Rat Injection Trace Number:")
+            leftRatInjTimeLabel.grid(row= 2, column= 1)
+            leftRatInjTimeFill.grid(row= 2, column= 2)
+            rightRatInjTimeLabel.grid(row= 2, column= 4)
+            rightRatInjTimeFill.grid(row= 2, column= 5)
+
+
             submitButton = tk.Button(infoPop, text="Submit", command=lambda:[onPopSubmit(), infoPop.destroy(), dataProcessorReal()])
-            submitButton.pack()
+            submitButton.grid(row= 3, column=3)
 
         def dataProcessorReal():
             abf = pyabf.ABF(self.experimentFileName)
