@@ -5,21 +5,43 @@ import pyabf
 import matplotlib.pyplot as plt
 import matplotlib.pyplot
 
-#TODO: Write a function that retrieves the number of peaks
-def peakGetter(processedSignal):
-    peaks, dictOfPeaks = sci.find_peaks(processedSignal, prominence= 0.05)
-    fig = plt.figure()
-    lad = fig.add_subplot()
-    lad.plot(processedSignal)
-    lad.plot(peaks, processedSignal[peaks], "r.")
-    plt.axis([0,50000, -2, 2])
-    plt.show()
+#Retrieves the peaks of a signal and returns a list containing the peaks in a ndarray and their properties in a dictionary
+def peakGetter(processedSignalArray):
+    peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, height=0)
+    print([peaks, peaksDict])
     
 
-#TODO: Write a house-keeping function that displays those peaks on a graph
-def peakDisplay():
-    return
+#Retrieves the peaks of a signal and plots them on a graph of the chosen trace
+def peakDisplay(processedSignalArray):
+    peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05)
+    fig = plt.figure()
+    lad = fig.add_subplot()
+    lad.plot(processedSignalArray)
+    lad.plot(peaks, processedSignalArray[peaks], "r.")
+    plt.axis([0,50000, -2, 2])
+    plt.show()
 
+def peakDecay(processedSignalArray):
+    peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, width=0)
+    peakdecayList = []
+    x = 0
+    for peak in peaks:
+        peakdecayList.append(peak - peaksDict[3][x])
+        x += 1
+    return peakdecayList
+
+def peakAmplitude(processedSignalArray):
+    peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, height=0)
+    return peaksDict[0]
+
+def peakFreq(processedSignalArray):
+    peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, height=0)
+    return len(peaks)
+
+def peakWidth(processedSignalArray):
+    peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05)
+    width, widthHeight, leftRight = sci.peak_widths(processedSignalArray, peaks)
+    return width
 
 # Plots the original, subtracted, ratio-ed, and processed trace of choice
     # abf.setSweep(sweepNumber= userTrace, channel= userChannel)
