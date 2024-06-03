@@ -1,15 +1,24 @@
 import AutoCleaner as acl
 import AverageTraces as avg
 import scipy.signal as sci
-import pyabf
 import matplotlib.pyplot as plt
 import matplotlib.pyplot
+import numpy as np
 
-#Retrieves the peaks of a signal and returns a list containing the peaks in a ndarray and their properties in a dictionary
+#Retrieves the peaks of a single trace and returns a list containing the peaks in a ndarray and their properties in a dictionary
 def peakGetter(processedSignalArray):
     peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, height=0)
-    print([peaks, peaksDict])
+    return [peaks, peaksDict]
     
+def wholeTracePeaks(processedSignalArray):
+    peaksList = []
+    peaksDict = {}
+    x = 0
+    for traces in processedSignalArray:
+        peaks, peaksDict[x] = sci.find_peaks(processedSignalArray[x][850:-1250], prominence= 0.05, height=0)
+        x += 1
+        peaksList.append(peaks)
+    return [peaksList, peaksDict]
 
 #Retrieves the peaks of a signal and plots them on a graph of the chosen trace
 def peakDisplay(processedSignalArray):
