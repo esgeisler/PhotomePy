@@ -23,6 +23,8 @@ class Main(tk.Frame):
         self.ratNameRight = 0
         self.ratInjectionLeft = 0
         self.ratInjectionRight = 0
+        self.peaksLeft = []
+        self.peaksRight = []
 
         def fileBrowserExperiment():
             self.experimentFileName = filedialog.askopenfilename(initialdir= os.getcwd(), title= "Select a Main File", filetypes=(("Axon Binary Fles", "*.abf*"), ("All Files," "*.*")))
@@ -128,7 +130,8 @@ class Main(tk.Frame):
             baselineTextBox.pack()
             baselineTextBox.insert(tk.END, "Left - 470: %.2f 405: %.2f\nRight - 470: %.2f 405: %.2f"%(baselineSubL[0], baselineSubL[1], baselineSubR[0], baselineSubR[1]))
 
-        def dataProcessorPartial():
+    #TODO: Make trace selection dynamic
+        def singleTracePeaks():
             abf = pyabf.ABF(self.experimentFileName)
             baselineSubL = acl.LBaselineGet(self.baselinefileName)
             baselineSubR = acl.RBaselineGet(self.baselinefileName)
@@ -146,17 +149,53 @@ class Main(tk.Frame):
             finalSignalLeft = acl.wholeTraceGauss(ratioSignalLeft)
             finalSignalRight = acl.wholeTraceGauss(ratioSignalRight)
 
-            signalValues = np.array(list(finalSignalLeft.values()))
-            print(signalValues)
-            pas.peakGetter(signalValues[1][850:-1250])
+            signalValuesLeft = np.array(list(finalSignalLeft.values()))
+            self.peaksLeft = pas.peakGetter(signalValuesLeft[35][850:-1250])
+        
+        # Right Rat Peak Analysis
+            signalValuesRight = np.array(list(finalSignalRight.values()))
+            self.peaksRight = pas.peakGetter(signalValuesRight[35][850:-1250])
+            peakDecayData = pas.peakDecay(signalValuesRight[35][850:-1250])
+            peakFreqData = pas.peakFreq(signalValuesRight[35][850:-1250])
+            peakAmpData = pas.peakAmplitude(signalValuesRight[35][850:-1250])
+            print(signalValuesRight)
+            pas.peakDisplay(signalValuesRight[35][850:-1250])
+
+        def peakAnalyzer():
+            abf = pyabf.ABF(self.experimentFileName)
+            baselineSubL = acl.LBaselineGet(self.baselinefileName)
+            baselineSubR = acl.RBaselineGet(self.baselinefileName)
+            channelsLeft = [0,1]
+            channelsRight = [4,5]
+            subtractLeft = acl.baselineSubtractor(self.experimentFileName, baselineSubL, channelsLeft)
+            subtractRight = acl.baselineSubtractor(self.experimentFileName, baselineSubR, channelsRight)
+        # Gaussian filters the 405 channels
+            filteredLeft = acl.wholeTraceGauss(subtractLeft[1])
+            filteredRight = acl.wholeTraceGauss(subtractRight[1])
+        #Find ratio of 470/405 channels
+            ratioSignalLeft = acl.ratio470405(subtractLeft[0], filteredLeft)
+            ratioSignalRight = acl.ratio470405(subtractRight[0], filteredRight)
+        # Gaussian filters the ratio signal
+            finalSignalLeft = acl.wholeTraceGauss(ratioSignalLeft)
+            finalSignalRight = acl.wholeTraceGauss(ratioSignalRight)
+
+            signalValuesLeft = np.array(list(finalSignalLeft.values()))
+            self.peaksLeft = pas.wholeTracePeaks(signalValuesLeft)
+
+            signalValuesRight = np.array(list(finalSignalRight.values()))
+            self.peaksRight = pas.wholeTracePeaks(signalValuesRight)
+            
 
         runFileButton = tk.Button(self, text="Process a File", command= dataProcessorPop)
         runFileButton.grid(row= 3, column= 1)
         baselineGetterButton = tk.Button(self, text="Get the Baselines", command= baselineFinder)
         baselineGetterButton.grid(row= 3, column= 2)
 
-        testerButton = tk.Button(self, text="Show a graph of a chosen trace [WIP]", command= dataProcessorPartial)
+        testerButton = tk.Button(self, text="Event analysis on a single trace [WIP]", command= singleTracePeaks)
         testerButton.grid(row=4, column=1)
+
+        peakButton = tk.Button(self, text= "Perform event analysis on an entire signal [WIP]", command= peakAnalyzer)
+        peakButton.grid(row=5, column=1)
 
 def main():
     fp = tk.Tk()

@@ -35,13 +35,13 @@ def peakDecay(processedSignalArray):
     peakdecayList = []
     x = 0
     for peak in peaks:
-        peakdecayList.append(peak - peaksDict[3][x])
+        peakdecayList.append(peak - peaksDict["right_ips"][x])
         x += 1
     return peakdecayList
 
 def peakAmplitude(processedSignalArray):
     peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, height=0)
-    return peaksDict[0]
+    return peaksDict["peak_heights"]
 
 def peakFreq(processedSignalArray):
     peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, height=0)
