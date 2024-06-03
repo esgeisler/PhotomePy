@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 import numpy as np
+import pandas as pd
 
 class Main(tk.Frame):
     def __init__(self, master= None, **kwargs):
@@ -158,8 +159,7 @@ class Main(tk.Frame):
             peakDecayData = pas.peakDecay(signalValuesRight[35][850:-1250])
             peakFreqData = pas.peakFreq(signalValuesRight[35][850:-1250])
             peakAmpData = pas.peakAmplitude(signalValuesRight[35][850:-1250])
-            print(signalValuesRight)
-            pas.peakDisplay(signalValuesRight[35][850:-1250])
+            pas.peakDisplay(signalValuesRight[35][850:-1250], self.experimentFileName)
 
         def peakAnalyzer():
             abf = pyabf.ABF(self.experimentFileName)

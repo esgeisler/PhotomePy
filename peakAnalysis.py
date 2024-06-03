@@ -2,12 +2,13 @@ import AutoCleaner as acl
 import AverageTraces as avg
 import scipy.signal as sci
 import matplotlib.pyplot as plt
-import matplotlib.pyplot
 import numpy as np
+import pandas as pd
+import pyabf
 
 #Retrieves the peaks of a single trace and returns a list containing the peaks in a ndarray and their properties in a dictionary
 def peakGetter(processedSignalArray):
-    peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, height=0)
+    peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, height=0, width=0)
     return [peaks, peaksDict]
     
 def wholeTracePeaks(processedSignalArray):
@@ -21,14 +22,36 @@ def wholeTracePeaks(processedSignalArray):
     return [peaksList, peaksDict]
 
 #Retrieves the peaks of a signal and plots them on a graph of the chosen trace
-def peakDisplay(processedSignalArray):
-    peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05)
+#TODO pre and post-trigger window to remove big goofy start and end
+def peakDisplay(processedSignalArray, mainFile):
+    abf = pyabf.ABF(mainFile)
+    samplingFreq = int(abf.dataPointsPerMs * 1000)
+    peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, height=0, width=0)
+    peakTable = pd.DataFrame(columns= ['event', 'Peak_Index', 
+                                       'PeakTimeSec', 'Event_Window_Start', 
+                                       'Event_Window_End', 'Amplitude', 
+                                       'WidthMS','Frequency'])
+    peakTable.event = [x for x in range(len(peaks))]
+    peakTable.Peak_Index = peaks
+    peakTable.PeakTimeSec = peaks/samplingFreq
+    peakTable.Event_Window_Start = peaksDict['left_ips']
+    peakTable.Event_Window_End = peaksDict['right_ips']
+    peakTable.Amplitude = peaksDict['peak_heights']
+    peakTable.WidthMS = peaksDict['widths']/(samplingFreq/1000)
+    peakTable.Frequency = len(peaks)/15 #Peaks/second (15 second trace)
+    
     fig = plt.figure()
     lad = fig.add_subplot()
     lad.plot(processedSignalArray)
     lad.plot(peaks, processedSignalArray[peaks], "r.")
+    finalTable = plt.table(cellText= peakTable.values, colLabels= peakTable.keys())
+    peakTable.round(3)
+    finalTable.set_fontsize(40)
+    finalTable.scale(1.5, 1.5)
+    lad.add_table(finalTable)
     plt.axis([0,50000, -2, 2])
     plt.show()
+    
 
 def peakDecay(processedSignalArray):
     peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, width=0)
