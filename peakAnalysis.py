@@ -26,7 +26,7 @@ def wholeTracePeaks(processedSignalArray):
 def peakDisplay(processedSignalArray, mainFile):
     abf = pyabf.ABF(mainFile)
     samplingFreq = int(abf.dataPointsPerMs * 1000)
-    peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, height=0, width=0)
+    peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, height=0, width=0, wlen= 10000, rel_height= 0.5)
     peakTable = pd.DataFrame(columns= ['event', 'Peak_Index', 
                                        'PeakTimeSec', 'Event_Window_Start', 
                                        'Event_Window_End', 'Amplitude', 
@@ -44,12 +44,13 @@ def peakDisplay(processedSignalArray, mainFile):
     lad = fig.add_subplot()
     lad.plot(processedSignalArray)
     lad.plot(peaks, processedSignalArray[peaks], "r.")
+    lad.vlines(peaksDict['right_bases'], ymax=1.5, ymin = 0.8, linestyles='dashed', colors="#800020")
     finalTable = plt.table(cellText= peakTable.values, colLabels= peakTable.keys())
     peakTable.round(3)
     finalTable.set_fontsize(40)
     finalTable.scale(1.5, 1.5)
     lad.add_table(finalTable)
-    plt.axis([0,50000, -2, 2])
+    # plt.axis([0,50000, -2, 2])
     plt.show()
     
 

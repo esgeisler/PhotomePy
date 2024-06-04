@@ -151,15 +151,12 @@ class Main(tk.Frame):
             finalSignalRight = acl.wholeTraceGauss(ratioSignalRight)
 
             signalValuesLeft = np.array(list(finalSignalLeft.values()))
-            self.peaksLeft = pas.peakGetter(signalValuesLeft[35][850:-1250])
+            self.peaksLeft = pas.peakGetter(signalValuesLeft[35][1000:-1250])
         
         # Right Rat Peak Analysis
             signalValuesRight = np.array(list(finalSignalRight.values()))
-            self.peaksRight = pas.peakGetter(signalValuesRight[35][850:-1250])
-            peakDecayData = pas.peakDecay(signalValuesRight[35][850:-1250])
-            peakFreqData = pas.peakFreq(signalValuesRight[35][850:-1250])
-            peakAmpData = pas.peakAmplitude(signalValuesRight[35][850:-1250])
-            pas.peakDisplay(signalValuesRight[35][850:-1250], self.experimentFileName)
+            self.peaksRight = pas.peakGetter(signalValuesRight[35][1000:-1250])
+            pas.peakDisplay(signalValuesRight[69][1000:-1250], self.experimentFileName)
 
         def peakAnalyzer():
             abf = pyabf.ABF(self.experimentFileName)
