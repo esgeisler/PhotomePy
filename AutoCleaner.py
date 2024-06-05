@@ -1,10 +1,9 @@
 import pyabf
+from pyabf import abfWriter
 import statistics as stat
-import pyabf.abfWriter
-import pyabf.filter
-import scipy
 import scipy.ndimage
 import numpy as np
+from datetime import datetime
 
 # Gets baseline information from 1 min-long recording data taken after trial from the "left" side of the room - channels 1 and 2
 def LBaselineGet(FileName):
@@ -94,8 +93,8 @@ def ratio470405(signal470, signal405):
     return ratioSignal
 
 # Saves cleaned trace file as an ABF file for later viewing in ClampFit 10
-def tExport(processedTrace):
+def tExport(processedTrace, ratName):
     trace = processedTrace.values()
     arrayList = list(trace)
     array = np.array(arrayList)
-    pyabf.abfWriter.writeABF1(sweepData= array, filename= "TestABF.abf", units="V", sampleRateHz= 3333.33)
+    abfWriter.writeABF1(sweepData= array, filename= "Rat %s Processed Data %s.abf"%(ratName, datetime.today().strftime('%Y-%m-%m')), units="V", sampleRateHz= 3333.33)
