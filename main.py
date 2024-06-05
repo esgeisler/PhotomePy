@@ -15,6 +15,7 @@ class Main(tk.Frame):
     def __init__(self, master= None, **kwargs):
         super().__init__(master, **kwargs)
 
+    # Initialize all of the necessary variables for the GUI
         self.experimentFileName = ""
         self.baselinefileName = ""
         self.leftRatName = tk.StringVar()
@@ -31,20 +32,19 @@ class Main(tk.Frame):
         self.options = []
         self.trace = 0
 
-        traceDrop = ttk.Combobox(self, 
-                                     state= 'readonly', width= 9, 
-                                     textvariable= self.dropValue)
+    # Dropdown menu for selecting the trace used in SingleTracePeaks
+        traceDrop = ttk.Combobox(self,  state= 'readonly', width= 9, textvariable= self.dropValue)
         traceDrop['values'] = []
         traceDrop.grid(row= 4, column=2)
 
+    # Sets the values inside the dropdown menu, and sets it to update when a main file is selected
         def traceSelector(event):
             self.trace = (int(traceDrop.get()))
-        
         traceDrop.bind("<<ComboboxSelected>>", traceSelector)
-
         def dropdownUpdater():
             traceDrop['values'] = self.options
 
+    # Opens the main file, containing data from the session with 2 rats
         def fileBrowserExperiment():
             self.experimentFileName = filedialog.askopenfilename(initialdir= os.getcwd(), title= "Select a Main File", 
                                                                  filetypes=(("Axon Binary Fles", "*.abf*"), ("All Files," "*.*")))
@@ -52,12 +52,14 @@ class Main(tk.Frame):
             abf = pyabf.ABF(self.experimentFileName)
             self.options = [str(x + 1) for x in abf.sweepList]
             return self.experimentFileName
-        
+    
+    # Opens the baseline file containing the baseline autofluorescence
         def fileBrowserBaseline():
             self.baselinefileName = filedialog.askopenfilename(initialdir= os.getcwd(), title= "Select a Main File", filetypes=(("Axon Binary Fles", "*.abf*"), ("All Files," "*.*")))
             baselineFileDisplay.insert(tk.END, self.baselinefileName)
             return self.baselinefileName  
 
+    # Initialize all of the remaining buttons for the main GUI window
         explorerButton = tk.Button(self, text="Choose a Main File", command= lambda:[fileBrowserExperiment(), dropdownUpdater()])
         chosenFileDisplay = tk.Text(self, height= 1, width= 50)
         chosenFileDisplay.grid(row= 1, column= 1)
@@ -66,30 +68,32 @@ class Main(tk.Frame):
         baselineFileDisplay = tk.Text(self, height= 1, width= 50)
         baselineFileDisplay.grid(row= 2, column= 1)
         baselineExplorerButton.grid(row= 2, column= 2)
-
+    # Fills text boxes with filepath of the main and baseline file chosen by the user
         chosenFileDisplay.insert(tk.END, self.experimentFileName)
         baselineFileDisplay.insert(tk.END, self.baselinefileName)
 
+    # Closes the average processing popup window, saving the values entered.
         def onPopSubmit():
             self.ratNameLeft = int(self.leftRatName.get())
             self.ratNameRight = int(self.rightRatName.get())
             self.ratInjectionLeft = int(self.leftRatInjection.get())
             self.ratInjectionRight = int(self.rightRatInjection.get())
 
+    # Creates a popup window for the user to input the rat's name/number and what trace they were injected during.
         def dataProcessorPop():
             infoPop = tk.Toplevel()
             infoPop.title("Rat Metadata Entry")
-            leftRatNameFill = tk.Entry(infoPop, textvariable= self.leftRatName)
+            leftRatNameFill = tk.Entry(infoPop, textvariable= self.leftRatName, width= 10)
             leftRatNameLabel = tk.Label(infoPop, text="Enter Left Rat Number:")
-            rightRatNameFill = tk.Entry(infoPop, textvariable= self.rightRatName)
+            rightRatNameFill = tk.Entry(infoPop, textvariable= self.rightRatName, width= 10)
             rightRatNameLabel = tk.Label(infoPop, text= "Enter Right Rat Number:")
             leftRatNameLabel.grid(row= 1, column= 1)
             leftRatNameFill.grid(row= 1, column= 2)
             rightRatNameLabel.grid(row= 1, column= 4)
             rightRatNameFill.grid(row= 1, column= 5)
-            leftRatInjTimeFill = tk.Entry(infoPop, textvariable= self.leftRatInjection)
+            leftRatInjTimeFill = tk.Entry(infoPop, textvariable= self.leftRatInjection, width = 10)
             leftRatInjTimeLabel = tk.Label(infoPop, text="Enter Left Rat Injection Trace Number:")
-            rightRatInjTimeFill = tk.Entry(infoPop, textvariable= self.rightRatInjection)
+            rightRatInjTimeFill = tk.Entry(infoPop, textvariable= self.rightRatInjection, width= 10)
             rightRatInjTimeLabel = tk.Label(infoPop, text= "Enter Right Rat Injection Trace Number:")
             leftRatInjTimeLabel.grid(row= 2, column= 1)
             leftRatInjTimeFill.grid(row= 2, column= 2)
@@ -100,7 +104,7 @@ class Main(tk.Frame):
             submitButton = tk.Button(infoPop, text="Submit", command=lambda:[onPopSubmit(), infoPop.destroy(), dataProcessorReal()])
             submitButton.grid(row= 3, column=3)
 
-
+    # Averages the fluorescence of all of the traces, compiles them into an excel sheet with their trace numbers, and calculates the ΔF/F
         def dataProcessorReal():
             abf = pyabf.ABF(self.experimentFileName)
             baselineSubL = acl.LBaselineGet(self.baselinefileName)
@@ -136,15 +140,14 @@ class Main(tk.Frame):
 
             messagebox.showinfo(title= "Data Exporter", message= "Data Exported to Excel!")
 
-    
-    # Retrieves the baseline autofluorescence for the 4 channels analyzed.
+    # Retrieves the baseline autofluorescence for the 4 channels analyzed and prints to a message box.
         def baselineFinder():
             pyabf.ABF(self.baselinefileName)
             baselineSubL = acl.LBaselineGet(self.baselinefileName)
             baselineSubR = acl.RBaselineGet(self.baselinefileName)
             messagebox.showinfo(title= "Baselines", message= "Left - 470: %.2f 405: %.2f\nRight - 470: %.2f 405: %.2f"%(baselineSubL[0], baselineSubL[1], baselineSubR[0], baselineSubR[1]))
 
-    # Analyzes the peak decay, amplitude, and frequency of a single trace, which is currently hard-coded
+    # Analyzes the peak decay, amplitude, and frequency of a single trace chosen by the user.
         def singleTracePeaks():
             abf = pyabf.ABF(self.experimentFileName)
             baselineSubL = acl.LBaselineGet(self.baselinefileName)
@@ -162,13 +165,11 @@ class Main(tk.Frame):
         # Gaussian filters the ratio signal
             finalSignalLeft = acl.wholeTraceGauss(ratioSignalLeft)
             finalSignalRight = acl.wholeTraceGauss(ratioSignalRight)
-
         # Left Rat Peak Analysis
             signalValuesLeft = np.array(list(finalSignalLeft.values()))
             self.peaksLeft = pas.peakGetter(signalValuesLeft[self.trace][1000:-1250])
             pas.peakDisplay(signalValuesLeft[self.trace][1000:-1250], self.experimentFileName, "Left Rat")
             plt.close()
-        
         # Right Rat Peak Analysis
             signalValuesRight = np.array(list(finalSignalRight.values()))
             self.peaksRight = pas.peakGetter(signalValuesRight[self.trace][1000:-1250])
@@ -199,7 +200,6 @@ class Main(tk.Frame):
             signalValuesRight = np.array(list(finalSignalRight.values()))
             self.peaksRight = pas.wholeTracePeaks(signalValuesRight)
             
-
         runFileButton = tk.Button(self, text="Process a File", command= dataProcessorPop)
         runFileButton.grid(row= 3, column= 1)
         baselineGetterButton = tk.Button(self, text="Get the Baselines", command= baselineFinder)
