@@ -137,7 +137,6 @@ class Main(tk.Frame):
             filenameRight = "%s Rat %i Temp File.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameRight)
             ratDataLeft.to_excel(filenameLeft)
             ratDataRight.to_excel(filenameRight)
-
             messagebox.showinfo(title= "Data Exporter", message= "Data Exported to Excel!")
 
     # Retrieves the baseline autofluorescence for the 4 channels analyzed and prints to a message box.
@@ -199,13 +198,30 @@ class Main(tk.Frame):
 
             signalValuesRight = np.array(list(finalSignalRight.values()))
             self.peaksRight = pas.wholeTracePeaks(signalValuesRight)
+
+            preInjectionLeft, postInjectionLeft = pas.traceProcessor(self.peaksLeft)
+            preInjectionRight, postInjectionRight = pas.traceProcessor(self.peaksRight)
+
+            preLeft = "%s Rat %i Pre-Injection Peaks.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameLeft)
+            postLeft = "%s Rat %i Post-Injection Peaks.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameLeft)
+
+            preRight = "%s Rat %i Pre-Injection Peaks.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameRight)
+            postRight = "%s Rat %i Post-Injection Peaks.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameRight)
+            
+            preInjectionLeft.to_excel(preLeft)
+            postInjectionLeft.to_excel(postLeft)
+            preInjectionRight.to_excel(preRight)
+            postInjectionRight.to_excel(postRight)
+
+            messagebox.showinfo(title= "Trace Exporter", message= "Data Exported to Excel!")
+
             
         runFileButton = tk.Button(self, text="Process a File", command= dataProcessorPop)
         runFileButton.grid(row= 3, column= 1)
         baselineGetterButton = tk.Button(self, text="Get the Baselines", command= baselineFinder)
         baselineGetterButton.grid(row= 3, column= 2)
 
-        testerButton = tk.Button(self, text="Event analysis on a single trace [WIP]", command= singleTracePeaks)
+        testerButton = tk.Button(self, text="Event analysis on a single trace", command= singleTracePeaks)
         testerButton.grid(row=4, column=1)
 
         peakButton = tk.Button(self, text= "Perform event analysis on an entire signal [WIP]", command= peakAnalyzer)

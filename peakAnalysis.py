@@ -20,7 +20,6 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         peaks, peaksDict[x] = sci.find_peaks(processedSignalArray[x][850:-1250], prominence= 0.05, height=0, width=0, wlen=10000, rel_height= 0.5)
         peaksList.append(peaks)
         x += 1
-
     peakArray = np.array(peaksList)
     peakTable = pd.DataFrame(columns= ['event', 'Peak_Index', 
                                        'PeakTimeSec', 'Event_Window_Start', 
@@ -37,6 +36,11 @@ def wholeTracePeaks(processedSignalArray, mainFile):
     peakTable.peakDecay = [peakArray - peaksDict['right_bases']]
     
     return peakTable
+
+def traceProcessor(dataFrame, injectionTrace):
+    preInjectionDF = dataFrame[:injectionTrace-1]
+    postInjectionDF = dataFrame[injectionTrace-1:]
+    return preInjectionDF, postInjectionDF
 
 #Retrieves the peaks of a signal and their properties, then plots them on a graph of the chosen trace
 #TODO pre and post-trigger window to remove big goofy start and end
@@ -67,7 +71,7 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
                      xytext = (peaksDict['right_bases'][x], processedSignalArray[peaks][x] - 0.3), 
                      xy = (peaksDict['right_bases'][x], processedSignalArray[peaksDict['right_bases'][x]] - 0.01),
                      arrowprops=dict(facecolor= 'black', width= 1, headwidth= 5, headlength= 5)) #, horizontalalignment= 'center', verticalalignment= 'bottom')
-    finalTable = plt.table(cellText= peakTable.values, colLabels= peakTable.keys())
+    # finalTable = plt.table(cellText= peakTable.values, colLabels= peakTable.keys())
     peakTable.round(3)
     # finalTable.set_fontsize(40)
     # finalTable.scale(1.5, 1.5)
