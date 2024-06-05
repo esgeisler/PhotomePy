@@ -34,7 +34,7 @@ def wholeTracePeaks(processedSignalArray, mainFile):
     peakTable.Amplitude = peaksDict['peak_heights']
     peakTable.WidthMS = peaksDict['widths']/(samplingFreq/1000)
     peakTable.Frequency = len(peakArray)/15 #Peaks/second (15 second trace)
-    peakTable.peakDecay = 1 #TODO Define peak decay from peak to right trough
+    peakTable.peakDecay = [peakArray - peaksDict['right_bases']]
     
     return peakTable
 
@@ -69,10 +69,10 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
                      arrowprops=dict(facecolor= 'black', width= 1, headwidth= 5, headlength= 5)) #, horizontalalignment= 'center', verticalalignment= 'bottom')
     finalTable = plt.table(cellText= peakTable.values, colLabels= peakTable.keys())
     peakTable.round(3)
-    finalTable.set_fontsize(40)
-    finalTable.scale(1.5, 1.5)
+    # finalTable.set_fontsize(40)
+    # finalTable.scale(1.5, 1.5)
     lad.set_title(ratSide)
-    lad.add_table(finalTable)
+    # lad.add_table(finalTable)
     plt.axis([0,50000, 0, 2])
     plt.show()
 

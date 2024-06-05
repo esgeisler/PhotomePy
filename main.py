@@ -5,8 +5,7 @@ import matplotlib.pyplot as plt
 import AverageTraces as avg
 import peakAnalysis as pas
 import tkinter as tk
-from tkinter import ttk
-from tkinter import filedialog
+from tkinter import ttk, filedialog, messagebox
 import numpy as np
 
 
@@ -20,26 +19,44 @@ class Main(tk.Frame):
         self.rightRatName = tk.StringVar()
         self.leftRatInjection = tk.StringVar()
         self.rightRatInjection = tk.StringVar()
+        self.dropValue = tk.StringVar(self, 'Select Trace')
         self.ratNameLeft = 0
         self.ratNameRight = 0
         self.ratInjectionLeft = 0
         self.ratInjectionRight = 0
         self.peaksLeft = []
         self.peaksRight = []
+        self.options = []
+        self.trace = 0
+
+        traceDrop = ttk.Combobox(self, 
+                                     state= 'readonly', width= 9, 
+                                     textvariable= self.dropValue)
+        traceDrop['values'] = []
+        traceDrop.grid(row= 4, column=2)
+
+        def traceSelector(event):
+            self.trace = (int(traceDrop.get()))
+        
+        traceDrop.bind("<<ComboboxSelected>>", traceSelector)
+
+        def dropdownUpdater():
+            traceDrop['values'] = self.options
 
         def fileBrowserExperiment():
-            self.experimentFileName = filedialog.askopenfilename(initialdir= os.getcwd(), title= "Select a Main File", filetypes=(("Axon Binary Fles", "*.abf*"), ("All Files," "*.*")))
-            print(self.experimentFileName)
+            self.experimentFileName = filedialog.askopenfilename(initialdir= os.getcwd(), title= "Select a Main File", 
+                                                                 filetypes=(("Axon Binary Fles", "*.abf*"), ("All Files," "*.*")))
             chosenFileDisplay.insert(tk.END, self.experimentFileName)
+            abf = pyabf.ABF(self.experimentFileName)
+            self.options = [str(x + 1) for x in abf.sweepList]
             return self.experimentFileName
         
         def fileBrowserBaseline():
             self.baselinefileName = filedialog.askopenfilename(initialdir= os.getcwd(), title= "Select a Main File", filetypes=(("Axon Binary Fles", "*.abf*"), ("All Files," "*.*")))
-            print(self.baselinefileName)
             baselineFileDisplay.insert(tk.END, self.baselinefileName)
             return self.baselinefileName  
 
-        explorerButton = tk.Button(self, text="Choose a Main File", command= fileBrowserExperiment)
+        explorerButton = tk.Button(self, text="Choose a Main File", command= lambda:[fileBrowserExperiment(), dropdownUpdater()])
         chosenFileDisplay = tk.Text(self, height= 1, width= 50)
         chosenFileDisplay.grid(row= 1, column= 1)
         baselineExplorerButton = tk.Button(self, text="Choose a Baseline File", command= fileBrowserBaseline)
@@ -122,14 +139,9 @@ class Main(tk.Frame):
     
         def baselineFinder():
             pyabf.ABF(self.baselinefileName)
-            # Opens a pop-up window containing the 4 baselines for doing calculations with
-            bpu = tk.Toplevel()
-            bpu.wm_title("Baselines")
             baselineSubL = acl.LBaselineGet(self.baselinefileName)
             baselineSubR = acl.RBaselineGet(self.baselinefileName)
-            baselineTextBox = tk.Text(bpu, height= 2, width= 50)
-            baselineTextBox.pack()
-            baselineTextBox.insert(tk.END, "Left - 470: %.2f 405: %.2f\nRight - 470: %.2f 405: %.2f"%(baselineSubL[0], baselineSubL[1], baselineSubR[0], baselineSubR[1]))
+            messagebox.showinfo(title= "Baselines", message= "Left - 470: %.2f 405: %.2f\nRight - 470: %.2f 405: %.2f"%(baselineSubL[0], baselineSubL[1], baselineSubR[0], baselineSubR[1]))
 
     #TODO: Make trace selection dynamic
     # Analyzes the peak decay, amplitude, and frequency of a single trace, which is currently hard-coded
@@ -153,14 +165,14 @@ class Main(tk.Frame):
 
         # Left Rat Peak Analysis
             signalValuesLeft = np.array(list(finalSignalLeft.values()))
-            self.peaksLeft = pas.peakGetter(signalValuesLeft[35][1000:-1250])
-            pas.peakDisplay(signalValuesLeft[35][1000:-1250], self.experimentFileName, "Left Rat")
+            self.peaksLeft = pas.peakGetter(signalValuesLeft[self.trace][1000:-1250])
+            pas.peakDisplay(signalValuesLeft[self.trace][1000:-1250], self.experimentFileName, "Left Rat")
             plt.close()
         
         # Right Rat Peak Analysis
             signalValuesRight = np.array(list(finalSignalRight.values()))
-            self.peaksRight = pas.peakGetter(signalValuesRight[35][1000:-1250])
-            pas.peakDisplay(signalValuesRight[35][1000:-1250], self.experimentFileName, "Right Rat")
+            self.peaksRight = pas.peakGetter(signalValuesRight[self.trace][1000:-1250])
+            pas.peakDisplay(signalValuesRight[self.trace][1000:-1250], self.experimentFileName, "Right Rat")
 
     # Analyzes peak decay, amplitude, and frequency across an entire signal containing X traces
         def peakAnalyzer():
@@ -197,7 +209,7 @@ class Main(tk.Frame):
         testerButton.grid(row=4, column=1)
 
         peakButton = tk.Button(self, text= "Perform event analysis on an entire signal [WIP]", command= peakAnalyzer)
-        peakButton.grid(row=5, column=1)
+        peakButton.grid(row=5, column=1)     
 
 def main():
     fp = tk.Tk()
