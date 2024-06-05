@@ -8,7 +8,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 import numpy as np
-import pandas as pd
+
 
 class Main(tk.Frame):
     def __init__(self, master= None, **kwargs):
@@ -132,6 +132,7 @@ class Main(tk.Frame):
             baselineTextBox.insert(tk.END, "Left - 470: %.2f 405: %.2f\nRight - 470: %.2f 405: %.2f"%(baselineSubL[0], baselineSubL[1], baselineSubR[0], baselineSubR[1]))
 
     #TODO: Make trace selection dynamic
+    # Analyzes the peak decay, amplitude, and frequency of a single trace, which is currently hard-coded
         def singleTracePeaks():
             abf = pyabf.ABF(self.experimentFileName)
             baselineSubL = acl.LBaselineGet(self.baselinefileName)
@@ -150,14 +151,18 @@ class Main(tk.Frame):
             finalSignalLeft = acl.wholeTraceGauss(ratioSignalLeft)
             finalSignalRight = acl.wholeTraceGauss(ratioSignalRight)
 
+        # Left Rat Peak Analysis
             signalValuesLeft = np.array(list(finalSignalLeft.values()))
             self.peaksLeft = pas.peakGetter(signalValuesLeft[35][1000:-1250])
+            pas.peakDisplay(signalValuesLeft[35][1000:-1250], self.experimentFileName, "Left Rat")
+            plt.close()
         
         # Right Rat Peak Analysis
             signalValuesRight = np.array(list(finalSignalRight.values()))
             self.peaksRight = pas.peakGetter(signalValuesRight[35][1000:-1250])
-            pas.peakDisplay(signalValuesRight[69][1000:-1250], self.experimentFileName)
+            pas.peakDisplay(signalValuesRight[35][1000:-1250], self.experimentFileName, "Right Rat")
 
+    # Analyzes peak decay, amplitude, and frequency across an entire signal containing X traces
         def peakAnalyzer():
             abf = pyabf.ABF(self.experimentFileName)
             baselineSubL = acl.LBaselineGet(self.baselinefileName)
