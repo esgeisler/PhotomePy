@@ -7,6 +7,8 @@ import peakAnalysis as pas
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import numpy as np
+import datetime as dt
+from datetime import datetime
 
 
 class Main(tk.Frame):
@@ -98,6 +100,7 @@ class Main(tk.Frame):
             submitButton = tk.Button(infoPop, text="Submit", command=lambda:[onPopSubmit(), infoPop.destroy(), dataProcessorReal()])
             submitButton.grid(row= 3, column=3)
 
+
         def dataProcessorReal():
             abf = pyabf.ABF(self.experimentFileName)
             baselineSubL = acl.LBaselineGet(self.baselinefileName)
@@ -126,24 +129,21 @@ class Main(tk.Frame):
         # Saves the averaged data to an excel file with the rat's "name"
             ratDataLeft = avg.excelExporter(averageSignalLeft, preInjectionAverageLeft, fluorescenceLeft)
             ratDataRight = avg.excelExporter(averageSignalRight, preInjectionAverageRight, fluorescenceRight)
-            filenameLeft = "Rat %i Temp File.xlsx"%(self.ratNameLeft)
-            filenameRight = "Rat %i Temp File.xlsx"%(self.ratNameRight)
+            filenameLeft = "%s Rat %i Temp File.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameLeft)
+            filenameRight = "%s Rat %i Temp File.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameRight)
             ratDataLeft.to_excel(filenameLeft)
             ratDataRight.to_excel(filenameRight)
 
-            puEnd = tk.Toplevel()
-            puEnd.wm_title("Results")
-            textyBox = tk.Text(puEnd, width= 25, height=1)
-            textyBox.pack()
-            textyBox.insert(tk.END, "Results Exported to Excel!")
+            messagebox.showinfo(title= "Data Exporter", message= "Data Exported to Excel!")
+
     
+    # Retrieves the baseline autofluorescence for the 4 channels analyzed.
         def baselineFinder():
             pyabf.ABF(self.baselinefileName)
             baselineSubL = acl.LBaselineGet(self.baselinefileName)
             baselineSubR = acl.RBaselineGet(self.baselinefileName)
             messagebox.showinfo(title= "Baselines", message= "Left - 470: %.2f 405: %.2f\nRight - 470: %.2f 405: %.2f"%(baselineSubL[0], baselineSubL[1], baselineSubR[0], baselineSubR[1]))
 
-    #TODO: Make trace selection dynamic
     # Analyzes the peak decay, amplitude, and frequency of a single trace, which is currently hard-coded
         def singleTracePeaks():
             abf = pyabf.ABF(self.experimentFileName)
