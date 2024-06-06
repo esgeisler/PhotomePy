@@ -98,3 +98,21 @@ def tExport(processedTrace, ratName):
     arrayList = list(trace)
     array = np.array(arrayList)
     abfWriter.writeABF1(sweepData= array, filename= "Rat %s Processed Data %s.abf"%(ratName, datetime.today().strftime('%Y-%m-%m')), units="V", sampleRateHz= 3333.33)
+
+# Compilation of the other functions in this file
+# Gets a baseline, subtracts it from a main signal, gaussian filters the 405 channel, then takes the ratio of the 470/405 channels. Finally, filters the ratio signal
+def completeProcessor(experimentFileName, baselineFileName):
+    abf = pyabf.ABF(experimentFileName)
+    baselineSubL = LBaselineGet(baselineFileName)
+    baselineSubR = RBaselineGet(baselineFileName)
+    channelsLeft = [0,1]
+    channelsRight = [4,5]
+    subtractLeft = baselineSubtractor(experimentFileName, baselineSubL, channelsLeft)
+    subtractRight = baselineSubtractor(experimentFileName, baselineSubR, channelsRight)
+    filteredLeft = wholeTraceGauss(subtractLeft[1])
+    filteredRight = wholeTraceGauss(subtractRight[1])
+    ratioSignalLeft = ratio470405(subtractLeft[0], filteredLeft)
+    ratioSignalRight = ratio470405(subtractRight[0], filteredRight)
+    finalSignalLeft = wholeTraceGauss(ratioSignalLeft)
+    finalSignalRight = wholeTraceGauss(ratioSignalRight)
+    return finalSignalLeft, finalSignalRight

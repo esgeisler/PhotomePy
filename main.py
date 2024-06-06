@@ -7,10 +7,9 @@ import peakAnalysis as pas
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import numpy as np
-import datetime as dt
 from datetime import datetime
 
-
+#TODO Change "Process File" button to do averages and traces, export both to excel, and save the modified file as a .abf
 class Main(tk.Frame):
     def __init__(self, master= None, **kwargs):
         super().__init__(master, **kwargs)
@@ -84,17 +83,17 @@ class Main(tk.Frame):
             infoPop = tk.Toplevel()
             infoPop.title("Rat Metadata Entry")
             leftRatNameFill = tk.Entry(infoPop, textvariable= self.leftRatName, width= 10)
-            leftRatNameLabel = tk.Label(infoPop, text="Enter Left Rat Number:")
+            leftRatNameLabel = tk.Label(infoPop, text="Enter Left Rat #:")
             rightRatNameFill = tk.Entry(infoPop, textvariable= self.rightRatName, width= 10)
-            rightRatNameLabel = tk.Label(infoPop, text= "Enter Right Rat Number:")
+            rightRatNameLabel = tk.Label(infoPop, text= "Enter Right Rat #:")
             leftRatNameLabel.grid(row= 1, column= 1)
             leftRatNameFill.grid(row= 1, column= 2)
             rightRatNameLabel.grid(row= 1, column= 4)
             rightRatNameFill.grid(row= 1, column= 5)
             leftRatInjTimeFill = tk.Entry(infoPop, textvariable= self.leftRatInjection, width = 10)
-            leftRatInjTimeLabel = tk.Label(infoPop, text="Enter Left Rat Injection Trace Number:")
+            leftRatInjTimeLabel = tk.Label(infoPop, text="Enter Left Rat Injection Trace #:")
             rightRatInjTimeFill = tk.Entry(infoPop, textvariable= self.rightRatInjection, width= 10)
-            rightRatInjTimeLabel = tk.Label(infoPop, text= "Enter Right Rat Injection Trace Number:")
+            rightRatInjTimeLabel = tk.Label(infoPop, text= "Enter Right Rat Injection Trace #:")
             leftRatInjTimeLabel.grid(row= 2, column= 1)
             leftRatInjTimeFill.grid(row= 2, column= 2)
             rightRatInjTimeLabel.grid(row= 2, column= 4)
@@ -106,22 +105,22 @@ class Main(tk.Frame):
 
     # Averages the fluorescence of all of the traces, compiles them into an excel sheet with their trace numbers, and calculates the ΔF/F
         def dataProcessorReal():
-            abf = pyabf.ABF(self.experimentFileName)
-            baselineSubL = acl.LBaselineGet(self.baselinefileName)
-            baselineSubR = acl.RBaselineGet(self.baselinefileName)
-            channelsLeft = [0,1]
-            channelsRight = [4,5]
-            subtractLeft = acl.baselineSubtractor(self.experimentFileName, baselineSubL, channelsLeft)
-            subtractRight = acl.baselineSubtractor(self.experimentFileName, baselineSubR, channelsRight)
-        # Gaussian filters the 405 channels
-            filteredLeft = acl.wholeTraceGauss(subtractLeft[1])
-            filteredRight = acl.wholeTraceGauss(subtractRight[1])
-        #Find ratio of 470/405 channels
-            ratioSignalLeft = acl.ratio470405(subtractLeft[0], filteredLeft)
-            ratioSignalRight = acl.ratio470405(subtractRight[0], filteredRight)
-        # Gaussian filters the ratio signal
-            finalSignalLeft = acl.wholeTraceGauss(ratioSignalLeft)
-            finalSignalRight = acl.wholeTraceGauss(ratioSignalRight)
+            finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
+        #     baselineSubL = acl.LBaselineGet(self.baselinefileName)
+        #     baselineSubR = acl.RBaselineGet(self.baselinefileName)
+        #     channelsLeft = [0,1]
+        #     channelsRight = [4,5]
+        #     subtractLeft = acl.baselineSubtractor(self.experimentFileName, baselineSubL, channelsLeft)
+        #     subtractRight = acl.baselineSubtractor(self.experimentFileName, baselineSubR, channelsRight)
+        # # Gaussian filters the 405 channels
+        #     filteredLeft = acl.wholeTraceGauss(subtractLeft[1])
+        #     filteredRight = acl.wholeTraceGauss(subtractRight[1])
+        # #Find ratio of 470/405 channels
+        #     ratioSignalLeft = acl.ratio470405(subtractLeft[0], filteredLeft)
+        #     ratioSignalRight = acl.ratio470405(subtractRight[0], filteredRight)
+        # # Gaussian filters the ratio signal
+        #     finalSignalLeft = acl.wholeTraceGauss(ratioSignalLeft)
+        #     finalSignalRight = acl.wholeTraceGauss(ratioSignalRight)
         # Averages the left and right signals
             averageSignalLeft = avg.traceAverage(finalSignalLeft)
             preInjectionAverageLeft = avg.preInjectionAverage(finalSignalLeft, self.ratInjectionLeft)
