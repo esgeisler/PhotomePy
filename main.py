@@ -59,10 +59,10 @@ class Main(tk.Frame):
             return self.baselinefileName  
 
     # Initialize all of the remaining buttons for the main GUI window
-        explorerButton = tk.Button(self, text="Choose a Main File", command= lambda:[fileBrowserExperiment(), dropdownUpdater()])
+        explorerButton = ttk.Button(self, text="Choose a Main File", command= lambda:[fileBrowserExperiment(), dropdownUpdater()])
         chosenFileDisplay = tk.Text(self, height= 1, width= 50)
         chosenFileDisplay.grid(row= 1, column= 1)
-        baselineExplorerButton = tk.Button(self, text="Choose a Baseline File", command= fileBrowserBaseline)
+        baselineExplorerButton = ttk.Button(self, text="Choose a Baseline File", command= fileBrowserBaseline)
         explorerButton.grid(row= 1, column= 2)
         baselineFileDisplay = tk.Text(self, height= 1, width= 50)
         baselineFileDisplay.grid(row= 2, column= 1)
@@ -82,45 +82,30 @@ class Main(tk.Frame):
         def dataProcessorPop():
             infoPop = tk.Toplevel()
             infoPop.title("Rat Metadata Entry")
-            leftRatNameFill = tk.Entry(infoPop, textvariable= self.leftRatName, width= 10)
-            leftRatNameLabel = tk.Label(infoPop, text="Enter Left Rat #:")
-            rightRatNameFill = tk.Entry(infoPop, textvariable= self.rightRatName, width= 10)
-            rightRatNameLabel = tk.Label(infoPop, text= "Enter Right Rat #:")
+            leftRatNameFill = ttk.Entry(infoPop, textvariable= self.leftRatName, width= 10)
+            leftRatNameLabel = ttk.Label(infoPop, text="Enter Left Rat #:")
+            rightRatNameFill = ttk.Entry(infoPop, textvariable= self.rightRatName, width= 10)
+            rightRatNameLabel = ttk.Label(infoPop, text= "Enter Right Rat #:")
             leftRatNameLabel.grid(row= 1, column= 1)
             leftRatNameFill.grid(row= 1, column= 2)
             rightRatNameLabel.grid(row= 1, column= 4)
             rightRatNameFill.grid(row= 1, column= 5)
-            leftRatInjTimeFill = tk.Entry(infoPop, textvariable= self.leftRatInjection, width = 10)
-            leftRatInjTimeLabel = tk.Label(infoPop, text="Enter Left Rat Injection Trace #:")
-            rightRatInjTimeFill = tk.Entry(infoPop, textvariable= self.rightRatInjection, width= 10)
-            rightRatInjTimeLabel = tk.Label(infoPop, text= "Enter Right Rat Injection Trace #:")
+            leftRatInjTimeFill = ttk.Entry(infoPop, textvariable= self.leftRatInjection, width = 10)
+            leftRatInjTimeLabel = ttk.Label(infoPop, text="Enter Left Rat Injection Trace #:")
+            rightRatInjTimeFill = ttk.Entry(infoPop, textvariable= self.rightRatInjection, width= 10)
+            rightRatInjTimeLabel = ttk.Label(infoPop, text= "Enter Right Rat Injection Trace #:")
             leftRatInjTimeLabel.grid(row= 2, column= 1)
             leftRatInjTimeFill.grid(row= 2, column= 2)
             rightRatInjTimeLabel.grid(row= 2, column= 4)
             rightRatInjTimeFill.grid(row= 2, column= 5)
 
 
-            submitButton = tk.Button(infoPop, text="Submit", command=lambda:[onPopSubmit(), infoPop.destroy(), dataProcessorReal()])
+            submitButton = ttk.Button(infoPop, text="Submit", command=lambda:[onPopSubmit(), infoPop.destroy(), dataProcessorReal()])
             submitButton.grid(row= 3, column=3)
 
     # Averages the fluorescence of all of the traces, compiles them into an excel sheet with their trace numbers, and calculates the ΔF/F
         def dataProcessorReal():
             finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
-        #     baselineSubL = acl.LBaselineGet(self.baselinefileName)
-        #     baselineSubR = acl.RBaselineGet(self.baselinefileName)
-        #     channelsLeft = [0,1]
-        #     channelsRight = [4,5]
-        #     subtractLeft = acl.baselineSubtractor(self.experimentFileName, baselineSubL, channelsLeft)
-        #     subtractRight = acl.baselineSubtractor(self.experimentFileName, baselineSubR, channelsRight)
-        # # Gaussian filters the 405 channels
-        #     filteredLeft = acl.wholeTraceGauss(subtractLeft[1])
-        #     filteredRight = acl.wholeTraceGauss(subtractRight[1])
-        # #Find ratio of 470/405 channels
-        #     ratioSignalLeft = acl.ratio470405(subtractLeft[0], filteredLeft)
-        #     ratioSignalRight = acl.ratio470405(subtractRight[0], filteredRight)
-        # # Gaussian filters the ratio signal
-        #     finalSignalLeft = acl.wholeTraceGauss(ratioSignalLeft)
-        #     finalSignalRight = acl.wholeTraceGauss(ratioSignalRight)
         # Averages the left and right signals
             averageSignalLeft = avg.traceAverage(finalSignalLeft)
             preInjectionAverageLeft = avg.preInjectionAverage(finalSignalLeft, self.ratInjectionLeft)
@@ -147,22 +132,7 @@ class Main(tk.Frame):
 
     # Analyzes the peak decay, amplitude, and frequency of a single trace chosen by the user.
         def singleTracePeaks():
-            abf = pyabf.ABF(self.experimentFileName)
-            baselineSubL = acl.LBaselineGet(self.baselinefileName)
-            baselineSubR = acl.RBaselineGet(self.baselinefileName)
-            channelsLeft = [0,1]
-            channelsRight = [4,5]
-            subtractLeft = acl.baselineSubtractor(self.experimentFileName, baselineSubL, channelsLeft)
-            subtractRight = acl.baselineSubtractor(self.experimentFileName, baselineSubR, channelsRight)
-        # Gaussian filters the 405 channels
-            filteredLeft = acl.wholeTraceGauss(subtractLeft[1])
-            filteredRight = acl.wholeTraceGauss(subtractRight[1])
-        #Find ratio of 470/405 channels
-            ratioSignalLeft = acl.ratio470405(subtractLeft[0], filteredLeft)
-            ratioSignalRight = acl.ratio470405(subtractRight[0], filteredRight)
-        # Gaussian filters the ratio signal
-            finalSignalLeft = acl.wholeTraceGauss(ratioSignalLeft)
-            finalSignalRight = acl.wholeTraceGauss(ratioSignalRight)
+            finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
         # Left Rat Peak Analysis
             signalValuesLeft = np.array(list(finalSignalLeft.values()))
             self.peaksLeft = pas.peakGetter(signalValuesLeft[self.trace][1000:-1250])
@@ -175,22 +145,7 @@ class Main(tk.Frame):
 
     # Analyzes peak decay, amplitude, and frequency across an entire signal containing X traces
         def peakAnalyzer():
-            abf = pyabf.ABF(self.experimentFileName)
-            baselineSubL = acl.LBaselineGet(self.baselinefileName)
-            baselineSubR = acl.RBaselineGet(self.baselinefileName)
-            channelsLeft = [0,1]
-            channelsRight = [4,5]
-            subtractLeft = acl.baselineSubtractor(self.experimentFileName, baselineSubL, channelsLeft)
-            subtractRight = acl.baselineSubtractor(self.experimentFileName, baselineSubR, channelsRight)
-        # Gaussian filters the 405 channels
-            filteredLeft = acl.wholeTraceGauss(subtractLeft[1])
-            filteredRight = acl.wholeTraceGauss(subtractRight[1])
-        #Find ratio of 470/405 channels
-            ratioSignalLeft = acl.ratio470405(subtractLeft[0], filteredLeft)
-            ratioSignalRight = acl.ratio470405(subtractRight[0], filteredRight)
-        # Gaussian filters the ratio signal
-            finalSignalLeft = acl.wholeTraceGauss(ratioSignalLeft)
-            finalSignalRight = acl.wholeTraceGauss(ratioSignalRight)
+            finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
 
             signalValuesLeft = np.array(list(finalSignalLeft.values()))
             self.peaksLeft = pas.wholeTracePeaks(signalValuesLeft)
@@ -215,15 +170,15 @@ class Main(tk.Frame):
             messagebox.showinfo(title= "Trace Exporter", message= "Data Exported to Excel!")
 
             
-        runFileButton = tk.Button(self, text="Process a File", command= dataProcessorPop)
+        runFileButton = ttk.Button(self, text="Process a File", command= dataProcessorPop)
         runFileButton.grid(row= 3, column= 1)
-        baselineGetterButton = tk.Button(self, text="Get the Baselines", command= baselineFinder)
+        baselineGetterButton = ttk.Button(self, text="Get the Baselines", command= baselineFinder)
         baselineGetterButton.grid(row= 3, column= 2)
 
-        testerButton = tk.Button(self, text="Event analysis on a single trace", command= singleTracePeaks)
+        testerButton = ttk.Button(self, text="Event analysis on a single trace", command= singleTracePeaks)
         testerButton.grid(row=4, column=1)
 
-        peakButton = tk.Button(self, text= "Perform event analysis on an entire signal [WIP]", command= peakAnalyzer)
+        peakButton = ttk.Button(self, text= "Perform event analysis on an entire signal [WIP]", command= peakAnalyzer)
         peakButton.grid(row=5, column=1)     
 
 def main():
