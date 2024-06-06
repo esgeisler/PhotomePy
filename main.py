@@ -144,30 +144,33 @@ class Main(tk.Frame):
             pas.peakDisplay(signalValuesRight[self.trace][1000:-1250], self.experimentFileName, "Right Rat")
 
     # Analyzes peak decay, amplitude, and frequency across an entire signal containing X traces
+    #TODO Injection Traces should be dynamic
         def peakAnalyzer():
             finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
 
             signalValuesLeft = np.array(list(finalSignalLeft.values()))
-            self.peaksLeft = pas.wholeTracePeaks(signalValuesLeft)
+            self.peaksLeft = pas.wholeTracePeaks(signalValuesLeft, self.experimentFileName)
 
-            signalValuesRight = np.array(list(finalSignalRight.values()))
-            self.peaksRight = pas.wholeTracePeaks(signalValuesRight)
+            # signalValuesRight = np.array(list(finalSignalRight.values()))
+            # self.peaksRight = pas.wholeTracePeaks(signalValuesRight, self.experimentFileName)
 
-            preInjectionLeft, postInjectionLeft = pas.traceProcessor(self.peaksLeft)
-            preInjectionRight, postInjectionRight = pas.traceProcessor(self.peaksRight)
+            # plt.table(cellText=self.peaksLeft.values, colLabels=self.peaksLeft.columns, loc='center')
 
-            preLeft = "%s Rat %i Pre-Injection Peaks.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameLeft)
-            postLeft = "%s Rat %i Post-Injection Peaks.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameLeft)
+            # preInjectionLeft, postInjectionLeft = pas.traceProcessor(self.peaksLeft, 5)
+            # preInjectionRight, postInjectionRight = pas.traceProcessor(self.peaksRight, 10)
 
-            preRight = "%s Rat %i Pre-Injection Peaks.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameRight)
-            postRight = "%s Rat %i Post-Injection Peaks.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameRight)
+            # preLeft = "%s Rat %i Pre-Injection Peaks.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameLeft)
+            # postLeft = "%s Rat %i Post-Injection Peaks.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameLeft)
+
+            # preRight = "%s Rat %i Pre-Injection Peaks.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameRight)
+            # postRight = "%s Rat %i Post-Injection Peaks.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameRight)
             
-            preInjectionLeft.to_excel(preLeft)
-            postInjectionLeft.to_excel(postLeft)
-            preInjectionRight.to_excel(preRight)
-            postInjectionRight.to_excel(postRight)
+            # preInjectionLeft.to_excel(preLeft)
+            # postInjectionLeft.to_excel(postLeft)
+            # preInjectionRight.to_excel(preRight)
+            # postInjectionRight.to_excel(postRight)
 
-            messagebox.showinfo(title= "Trace Exporter", message= "Data Exported to Excel!")
+            # messagebox.showinfo(title= "Trace Exporter", message= "Data Exported to Excel!")
 
             
         runFileButton = ttk.Button(self, text="Process a File", command= dataProcessorPop)
