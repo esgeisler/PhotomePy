@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from numpy import ndarray
 import pandas as pd
+import sys
 import pyabf
 
 #Retrieves the peaks of a single trace and returns a list containing the peaks in a ndarray and their properties in a dictionary
@@ -23,39 +24,36 @@ def wholeTracePeaks(processedSignalArray, mainFile):
     longPeak = peakMaxxer(processedSignalArray)
     abf = pyabf.ABF(mainFile)
     samplingFreq = int(abf.dataPointsPerMs * 1000)
-    peaksArray = np.empty((70, longPeak))
+    peaksArray = np.zeros((70, longPeak))
+    np.set_printoptions(threshold=sys.maxsize)
     peaksDict = {}
     dictOfFrames = {}
     for traces in range(len(processedSignalArray)):
         peaks, peaksDict[traces] = sci.find_peaks(processedSignalArray[traces][850:-1250], prominence= 0.05, height=0, width=0, wlen=10000, rel_height= 0.5)
-        peaks = np.pad(peaks, pad_width= (0, longPeak - len(peaks)), mode= 'empty')
+        peaks = np.pad(peaks, pad_width= (0, longPeak - len(peaks)), mode= 'constant', constant_values= 0)
         peaksArray[traces] = peaks
-    print(peaksArray)
-    
+        for i in peaksDict[traces]:
+           paddedEntry = np.pad(peaksDict[traces][i], pad_width= (0, longPeak - len(peaksDict[traces][i])), mode= 'constant', constant_values= 0)
+           peaksDict[traces][i] = paddedEntry
     z = 0
     for x in peaksArray:
+        np.set_printoptions(threshold=sys.maxsize)
         peakTable = pd.DataFrame(columns= ['event', 'Peak_Index', 
                                         'PeakTimeSec', 'Event_Window_Start', 
-                                        'Event_Window_End', 'Amplitude', 
+                                        'Event_Window_End', 'Amplitude', 'peakDecaySec',
                                         'WidthMS','Frequency'])
         peakTable.event = [x + 1 for x in range(len(x))]
         peakTable.Peak_Index = x
-        peakTable.PeakTimeSec = x/samplingFreq
-        peakTable.Frequency = (x/15)/samplingFreq #Peaks/second (15 second trace)
-        peakTable.Event_Window_Start = 1
-        peakTable.Event_Window_End = 1
-        peakTable.Amplitude = 1
-        peakTable.peakDecay = 1
-        peakTable.WidthMS = 1
-        # peakTable.Event_Window_Start = peaksDict['left_ips']
-        # peakTable.Event_Window_End = peaksDict['right_ips']
-        # peakTable.Amplitude = peaksDict['peak_heights']
-        # peakTable.peakDecay = [y - peaksDict['right_bases'] for y in peaksArray[x]]
-        # peakTable.WidthMS = peaksDict['widths']/(samplingFreq/1000)
-        # print(peakTable)
+        peakTable.PeakTimeSec = (x/samplingFreq).round(2)
+        peakTable.Frequency = round(np.count_nonzero(x)/15, 2) #Peaks/second (15 second trace)
+        peakTable.Event_Window_Start = peaksDict[z]['left_ips'].round(2)
+        peakTable.Event_Window_End = peaksDict[z]['right_ips'].round(2)
+        peakTable.Amplitude = peaksDict[z]['peak_heights'].round(2)
+        peakTable.peakDecaySec = ((peaksDict[z]['right_bases'] - x)/(samplingFreq/1000)).round(2)
+        peakTable.WidthMS = (peaksDict[z]['widths']/(samplingFreq/1000)).round(2)
         dictOfFrames[z] = peakTable
         z += 1
-    return peakTable
+    return dictOfFrames
 
 def traceProcessor(dataFrame, injectionTrace):
     preInjectionDF = dataFrame[:injectionTrace-1]
