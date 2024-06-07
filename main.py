@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import numpy as np
 from datetime import datetime
+import pandas as pd
 
 #TODO Change "Process File" button to do averages and traces, export both to excel, and save the modified file as a .abf
 class Main(tk.Frame):
@@ -144,33 +145,54 @@ class Main(tk.Frame):
             pas.peakDisplay(signalValuesRight[self.trace][1000:-1250], self.experimentFileName, "Right Rat")
 
     # Analyzes peak decay, amplitude, and frequency across an entire signal containing X traces
-    #TODO Injection Traces should be dynamic
+    #TODO Injection Traces should be dynamic, nrows and ncols in figure should also be dynamic
         def peakAnalyzer():
             finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
-
+            
             signalValuesLeft = np.array(list(finalSignalLeft.values()))
             self.peaksLeft = pas.wholeTracePeaks(signalValuesLeft, self.experimentFileName)
 
-            # signalValuesRight = np.array(list(finalSignalRight.values()))
-            # self.peaksRight = pas.wholeTracePeaks(signalValuesRight, self.experimentFileName)
+            signalValuesRight = np.array(list(finalSignalRight.values()))
+            self.peaksRight = pas.wholeTracePeaks(signalValuesRight, self.experimentFileName)
 
-            # plt.table(cellText=self.peaksLeft.values, colLabels=self.peaksLeft.columns, loc='center')
 
-            # preInjectionLeft, postInjectionLeft = pas.traceProcessor(self.peaksLeft, 5)
-            # preInjectionRight, postInjectionRight = pas.traceProcessor(self.peaksRight, 10)
+            preInjectionLeft, postInjectionLeft = pas.traceProcessor(self.peaksLeft, 10)
+            preInjectionRight, postInjectionRight = pas.traceProcessor(self.peaksRight, 20)
 
-            # preLeft = "%s Rat %i Pre-Injection Peaks.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameLeft)
-            # postLeft = "%s Rat %i Post-Injection Peaks.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameLeft)
+            preLeft = "%s Rat %i Pre-Injection Peaks.xlsx"%(datetime.today().strftime('%Y-%m-%m'), int(self.ratNameLeft))
+            postLeft = "%s Rat %i Post-Injection Peaks.xlsx"%(datetime.today().strftime('%Y-%m-%m'), int(self.ratNameLeft))
 
-            # preRight = "%s Rat %i Pre-Injection Peaks.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameRight)
-            # postRight = "%s Rat %i Post-Injection Peaks.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameRight)
+            preRight = "%s Rat %i Pre-Injection Peaks.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameRight)
+            postRight = "%s Rat %i Post-Injection Peaks.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameRight)
             
-            # preInjectionLeft.to_excel(preLeft)
-            # postInjectionLeft.to_excel(postLeft)
-            # preInjectionRight.to_excel(preRight)
-            # postInjectionRight.to_excel(postRight)
-
-            # messagebox.showinfo(title= "Trace Exporter", message= "Data Exported to Excel!")
+            #TODO Change to go to processed data, OS-agnostic
+            #TODO Names aren't saved because popup function is separately called. Needs updating
+            preLeftWriter = pd.ExcelWriter(preLeft)
+            postLeftWriter = pd.ExcelWriter(postLeft)
+            preRightWriter = pd.ExcelWriter(preLeft)
+            postRightWriter = pd.ExcelWriter(postLeft)
+            x = 0
+            with preLeftWriter as writer:
+                for frames in preInjectionLeft:
+                    preInjectionLeft[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
+                    x += 1
+                x = 0
+            with postLeftWriter as writer:
+                for frames in postInjectionLeft:
+                    postInjectionLeft[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
+                    x += 1
+            x = 0
+            with preRightWriter as writer:
+                for frames in preInjectionLeft:
+                    preInjectionLeft[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
+                    x += 1
+                x = 0
+            with postRightWriter as writer:
+                for frames in postInjectionLeft:
+                    postInjectionLeft[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
+                    x += 1
+            
+            messagebox.showinfo(title= "Trace Exporter", message= "Data Exported to Excel!")
 
             
         runFileButton = ttk.Button(self, text="Process a File", command= dataProcessorPop)
@@ -181,7 +203,7 @@ class Main(tk.Frame):
         testerButton = ttk.Button(self, text="Event analysis on a single trace", command= singleTracePeaks)
         testerButton.grid(row=4, column=1)
 
-        peakButton = ttk.Button(self, text= "Perform event analysis on an entire signal [WIP]", command= peakAnalyzer)
+        peakButton = ttk.Button(self, text= "Perform event analysis on an entire signal [WIP]", command= lambda:[dataProcessorPop(), peakAnalyzer()])
         peakButton.grid(row=5, column=1)     
 
 def main():
