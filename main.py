@@ -46,7 +46,7 @@ class Main(tk.Frame):
 
     # Opens the main file, containing data from the session with 2 rats
         def fileBrowserExperiment():
-            self.experimentFileName = filedialog.askopenfilename(initialdir= os.getcwd(), title= "Select a Main File", 
+            self.experimentFileName = filedialog.askopenfilename(initialdir= os.path.join(os.getcwd(), "Raw Data"), title= "Select a Main File", 
                                                                  filetypes=(("Axon Binary Fles", "*.abf*"), ("All Files," "*.*")))
             chosenFileDisplay.insert(tk.END, self.experimentFileName)
             abf = pyabf.ABF(self.experimentFileName)
@@ -55,7 +55,7 @@ class Main(tk.Frame):
     
     # Opens the baseline file containing the baseline autofluorescence
         def fileBrowserBaseline():
-            self.baselinefileName = filedialog.askopenfilename(initialdir= os.getcwd(), title= "Select a Main File", filetypes=(("Axon Binary Fles", "*.abf*"), ("All Files," "*.*")))
+            self.baselinefileName = filedialog.askopenfilename(initialdir= os.path.join(os.getcwd(), "Raw Data"), title= "Select a Main File", filetypes=(("Axon Binary Fles", "*.abf*"), ("All Files," "*.*")))
             baselineFileDisplay.insert(tk.END, self.baselinefileName)
             return self.baselinefileName  
 
@@ -120,8 +120,8 @@ class Main(tk.Frame):
         # Saves the averaged data to an excel file with the rat's "name"
             ratDataLeft = avg.excelExporter(averageSignalLeft, preInjectionAverageLeft, fluorescenceLeft)
             ratDataRight = avg.excelExporter(averageSignalRight, preInjectionAverageRight, fluorescenceRight)
-            filenameLeft = "%s Rat %i Temp File.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameLeft)
-            filenameRight = "%s Rat %i Temp File.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameRight)
+            filenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Temp File.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameLeft))
+            filenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Temp File.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameRight))
             ratDataLeft.to_excel(filenameLeft)
             ratDataRight.to_excel(filenameRight)
             messagebox.showinfo(title= "Data Exporter", message= "Data Exported to Excel!")
@@ -147,7 +147,6 @@ class Main(tk.Frame):
             pas.peakDisplay(signalValuesRight[self.trace][1000:-1250], self.experimentFileName, "Right Rat")
 
     # Analyzes peak decay, amplitude, and frequency across an entire signal containing X traces
-    #TODO Injection Traces should be dynamic, nrows and ncols in figure should also be dynamic
         def peakAnalyzer():
             finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
             
@@ -161,14 +160,14 @@ class Main(tk.Frame):
             preInjectionLeft, postInjectionLeft = pas.traceProcessor(self.peaksLeft, self.ratInjectionLeft)
             preInjectionRight, postInjectionRight = pas.traceProcessor(self.peaksRight, self.ratInjectionLeft)
 
-            preLeft = "%s Rat %i Pre-Injection Peaks.xlsx"%(datetime.now().strftime('%Y-%m-%m'), int(self.ratNameLeft))
-            postLeft = "%s Rat %i Post-Injection Peaks.xlsx"%(datetime.now().strftime('%Y-%m-%m'), int(self.ratNameLeft))
+            preLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Pre-Injection Peaks.xlsx"%(datetime.now().strftime('%Y-%m-%m'), int(self.ratNameLeft)))
+            postLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Post-Injection Peaks.xlsx"%(datetime.now().strftime('%Y-%m-%m'), int(self.ratNameLeft)))
 
-            preRight = "%s Rat %i Pre-Injection Peaks.xlsx"%(datetime.now().strftime('%Y-%m-%m'), int(self.ratNameRight))
-            postRight = "%s Rat %i Post-Injection Peaks.xlsx"%(datetime.now().strftime('%Y-%m-%m'), int(self.ratNameRight))
+            preRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Pre-Injection Peaks.xlsx"%(datetime.now().strftime('%Y-%m-%m'), int(self.ratNameRight)))
+            postRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Post-Injection Peaks.xlsx"%(datetime.now().strftime('%Y-%m-%m'), int(self.ratNameRight)))
             
+            # Writes trace data to 2 excel files: Pre-injection and post-injection
             #TODO Change to go to processed data, OS-agnostic
-            #TODO Names aren't saved because popup function is separately called. Needs updating
             preLeftWriter = pd.ExcelWriter(preLeft)
             postLeftWriter = pd.ExcelWriter(postLeft)
             preRightWriter = pd.ExcelWriter(preRight)
