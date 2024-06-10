@@ -120,8 +120,8 @@ class Main(tk.Frame):
         # Saves the averaged data to an excel file with the rat's "name"
             ratDataLeft = avg.excelExporter(averageSignalLeft, preInjectionAverageLeft, fluorescenceLeft)
             ratDataRight = avg.excelExporter(averageSignalRight, preInjectionAverageRight, fluorescenceRight)
-            filenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Temp File.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameLeft))
-            filenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Temp File.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameRight))
+            filenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Temp File.xlsx"%(datetime.today().strftime('%Y-%m-%d'), self.ratNameLeft))
+            filenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Temp File.xlsx"%(datetime.today().strftime('%Y-%m-%d'), self.ratNameRight))
             ratDataLeft.to_excel(filenameLeft)
             ratDataRight.to_excel(filenameRight)
             messagebox.showinfo(title= "Data Exporter", message= "Data Exported to Excel!")
@@ -160,11 +160,11 @@ class Main(tk.Frame):
             preInjectionLeft, postInjectionLeft = pas.traceProcessor(self.peaksLeft, self.ratInjectionLeft)
             preInjectionRight, postInjectionRight = pas.traceProcessor(self.peaksRight, self.ratInjectionLeft)
 
-            preLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Pre-Injection Peaks.xlsx"%(datetime.now().strftime('%Y-%m-%m'), int(self.ratNameLeft)))
-            postLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Post-Injection Peaks.xlsx"%(datetime.now().strftime('%Y-%m-%m'), int(self.ratNameLeft)))
+            preLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Pre-Injection Peaks.xlsx"%(datetime.now().strftime('%Y-%m-%d'), int(self.ratNameLeft)))
+            postLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Post-Injection Peaks.xlsx"%(datetime.now().strftime('%Y-%m-%d'), int(self.ratNameLeft)))
 
-            preRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Pre-Injection Peaks.xlsx"%(datetime.now().strftime('%Y-%m-%m'), int(self.ratNameRight)))
-            postRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Post-Injection Peaks.xlsx"%(datetime.now().strftime('%Y-%m-%m'), int(self.ratNameRight)))
+            preRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Pre-Injection Peaks.xlsx"%(datetime.now().strftime('%Y-%m-%d'), int(self.ratNameRight)))
+            postRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Post-Injection Peaks.xlsx"%(datetime.now().strftime('%Y-%m-%d'), int(self.ratNameRight)))
             
             # Writes trace data to 2 excel files: Pre-injection and post-injection
             #TODO Change to go to processed data, OS-agnostic
@@ -172,22 +172,20 @@ class Main(tk.Frame):
             postLeftWriter = pd.ExcelWriter(postLeft)
             preRightWriter = pd.ExcelWriter(preRight)
             postRightWriter = pd.ExcelWriter(postRight)
-            x = 0
+            x = 1
             with preLeftWriter as writer:
                 for frames in preInjectionLeft:
                     preInjectionLeft[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
                     x += 1
-                x = 0
             with postLeftWriter as writer:
                 for frames in postInjectionLeft:
                     postInjectionLeft[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
                     x += 1
-            x = 0
+            x = 1
             with preRightWriter as writer:
                 for frames in preInjectionRight:
                     preInjectionRight[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
                     x += 1
-                x = 0
             with postRightWriter as writer:
                 for frames in postInjectionRight:
                     postInjectionLeft[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
