@@ -58,15 +58,25 @@ def wholeTracePeaks(processedSignalArray, mainFile):
 
 def traceProcessor(processedSignal, injectionTrace):
     preInjectionDF = {}
+    preOverview = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
+                                        'Peak_Time_Sec', 'Event_Window_Start', 
+                                        'Event_Window_End', 'Amplitude', 'Peak_Decay_Sec',
+                                        'Width_at50_ms','Frequency'])
     postInjectionDF = {}
+    postOverview = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
+                                        'Peak_Time_Sec', 'Event_Window_Start', 
+                                        'Event_Window_End', 'Amplitude', 'Peak_Decay_Sec',
+                                        'Width_at50_ms','Frequency'])
     x = 0
     for traces in processedSignal.values():
         if x <= injectionTrace:
             preInjectionDF[x] = traces
+            preOverview = pd.concat([preOverview, traces], ignore_index= True)
         elif x > injectionTrace:
             postInjectionDF[x] = traces
+            postOverview = pd.concat([postOverview, traces], ignore_index= True)
         x += 1
-    return preInjectionDF, postInjectionDF
+    return preInjectionDF, postInjectionDF, preOverview, postOverview
 
 #Retrieves the peaks of a signal and their properties, then plots them on a graph of the chosen trace
 #TODO pre and post-trigger window to remove big goofy start and end

@@ -157,8 +157,8 @@ class Main(tk.Frame):
             self.peaksRight = pas.wholeTracePeaks(signalValuesRight, self.experimentFileName)
 
 
-            preInjectionLeft, postInjectionLeft = pas.traceProcessor(self.peaksLeft, self.ratInjectionLeft)
-            preInjectionRight, postInjectionRight = pas.traceProcessor(self.peaksRight, self.ratInjectionLeft)
+            preInjectionLeft, postInjectionLeft, preOverviewLeft, postOverviewLeft = pas.traceProcessor(self.peaksLeft, self.ratInjectionLeft)
+            preInjectionRight, postInjectionRight, preOverviewRight, postOverviewRight = pas.traceProcessor(self.peaksRight, self.ratInjectionRight)
 
             preLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Pre-Injection Peaks.xlsx"%(datetime.now().strftime('%Y-%m-%d'), int(self.ratNameLeft)))
             postLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Post-Injection Peaks.xlsx"%(datetime.now().strftime('%Y-%m-%d'), int(self.ratNameLeft)))
@@ -167,26 +167,38 @@ class Main(tk.Frame):
             postRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Post-Injection Peaks.xlsx"%(datetime.now().strftime('%Y-%m-%d'), int(self.ratNameRight)))
             
             # Writes trace data to 2 excel files: Pre-injection and post-injection
-            #TODO Change to go to processed data, OS-agnostic
+            #TODO One big "overview" sheet at the beginning, then separated by individual sheets afterwards.
             preLeftWriter = pd.ExcelWriter(preLeft)
             postLeftWriter = pd.ExcelWriter(postLeft)
             preRightWriter = pd.ExcelWriter(preRight)
             postRightWriter = pd.ExcelWriter(postRight)
             x = 1
             with preLeftWriter as writer:
+                # Overview Sheet
+                preOverviewLeft.to_excel(writer, sheet_name= "All Traces")
+                # Individual Traces
                 for frames in preInjectionLeft:
                     preInjectionLeft[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
                     x += 1
             with postLeftWriter as writer:
+                # Overview Sheet
+                postOverviewLeft.to_excel(writer, sheet_name= "All Traces")
+                # Individual Traces
                 for frames in postInjectionLeft:
                     postInjectionLeft[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
                     x += 1
             x = 1
             with preRightWriter as writer:
+                # Overview Sheet
+                preOverviewRight.to_excel(writer, sheet_name= "All Traces")
+                # Individual Traces
                 for frames in preInjectionRight:
                     preInjectionRight[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
                     x += 1
             with postRightWriter as writer:
+                # Overview Sheet
+                postOverviewRight.to_excel(writer, sheet_name= "All Traces")
+                # Individual Traces
                 for frames in postInjectionRight:
                     postInjectionLeft[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
                     x += 1
