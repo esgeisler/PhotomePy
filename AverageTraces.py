@@ -12,7 +12,6 @@ def traceAverage(processedSignal):
 # Averages the sweeps before a certain time point to create a "Pre-Injection Average" of fluorescence
 def preInjectionAverage(averagedSignal, injectionTrace):
     preInjList = []
-    x = 0
     for x in range(0, injectionTrace):
         preInjList.append(stat.mean(averagedSignal[x][500:-1500]))
     preInjAvg = stat.mean(preInjList)
@@ -37,6 +36,6 @@ def bleachingSub(signalDrug, signalVehicle):
 
 # Creates a pandas dataframe that can be exported into excel
 def excelExporter(signalAverage, preInjectionAverage, deltaF):
-    exportableData = pd.DataFrame({"Trace Number:": range(len(signalAverage)), "Average Fluorescence": signalAverage, 
+    exportableData = pd.DataFrame({"Trace Number:": range(1, len(signalAverage)+1), "Average Fluorescence": signalAverage, 
                                    "Pre-Injection Average":preInjectionAverage, "ΔF/F": deltaF, "Bleaching Correction": None, })
     return exportableData

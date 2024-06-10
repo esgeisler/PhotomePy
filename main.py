@@ -122,8 +122,8 @@ class Main(tk.Frame):
             ratDataRight = avg.excelExporter(averageSignalRight, preInjectionAverageRight, fluorescenceRight)
             filenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Temp File.xlsx"%(datetime.today().strftime('%Y-%m-%d'), self.ratNameLeft))
             filenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Temp File.xlsx"%(datetime.today().strftime('%Y-%m-%d'), self.ratNameRight))
-            ratDataLeft.to_excel(filenameLeft)
-            ratDataRight.to_excel(filenameRight)
+            ratDataLeft.to_excel(filenameLeft, index= False)
+            ratDataRight.to_excel(filenameRight, index= False)
             messagebox.showinfo(title= "Data Exporter", message= "Data Exported to Excel!")
 
     # Retrieves the baseline autofluorescence for the 4 channels analyzed and prints to a message box.
