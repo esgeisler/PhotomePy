@@ -115,12 +115,3 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
     # lad.add_table(finalTable)
     plt.axis([0,50000, 0, 2])
     plt.show()
-
-def peakDecay(processedSignalArray):
-    peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, width=0)
-    peakdecayList = []
-    x = 0
-    for peak in peaks:
-        peakdecayList.append(peak - peaksDict["right_ips"][x])
-        x += 1
-    return peakdecayList
