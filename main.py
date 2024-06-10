@@ -102,7 +102,9 @@ class Main(tk.Frame):
 
 
             submitButton = ttk.Button(infoPop, text="Submit", command=lambda:[onPopSubmit(), infoPop.destroy(), dataProcessorReal()])
-            submitButton.grid(row= 3, column=3)
+            submitButton.grid(row= 3, column= 3)
+            submitTraceButton = ttk.Button(infoPop, text="Submit (Trace Analysis)", command= lambda:[onPopSubmit(), infoPop.destroy(), peakAnalyzer()])
+            submitTraceButton.grid(row= 4, column= 3)
 
     # Averages the fluorescence of all of the traces, compiles them into an excel sheet with their trace numbers, and calculates the ΔF/F
         def dataProcessorReal():
@@ -156,21 +158,21 @@ class Main(tk.Frame):
             self.peaksRight = pas.wholeTracePeaks(signalValuesRight, self.experimentFileName)
 
 
-            preInjectionLeft, postInjectionLeft = pas.traceProcessor(self.peaksLeft, 10)
-            preInjectionRight, postInjectionRight = pas.traceProcessor(self.peaksRight, 20)
+            preInjectionLeft, postInjectionLeft = pas.traceProcessor(self.peaksLeft, self.ratInjectionLeft)
+            preInjectionRight, postInjectionRight = pas.traceProcessor(self.peaksRight, self.ratInjectionLeft)
 
-            preLeft = "%s Rat %i Pre-Injection Peaks.xlsx"%(datetime.today().strftime('%Y-%m-%m'), int(self.ratNameLeft))
-            postLeft = "%s Rat %i Post-Injection Peaks.xlsx"%(datetime.today().strftime('%Y-%m-%m'), int(self.ratNameLeft))
+            preLeft = "%s Rat %i Pre-Injection Peaks.xlsx"%(datetime.now().strftime('%Y-%m-%m'), int(self.ratNameLeft))
+            postLeft = "%s Rat %i Post-Injection Peaks.xlsx"%(datetime.now().strftime('%Y-%m-%m'), int(self.ratNameLeft))
 
-            preRight = "%s Rat %i Pre-Injection Peaks.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameRight)
-            postRight = "%s Rat %i Post-Injection Peaks.xlsx"%(datetime.today().strftime('%Y-%m-%m'), self.ratNameRight)
+            preRight = "%s Rat %i Pre-Injection Peaks.xlsx"%(datetime.now().strftime('%Y-%m-%m'), int(self.ratNameRight))
+            postRight = "%s Rat %i Post-Injection Peaks.xlsx"%(datetime.now().strftime('%Y-%m-%m'), int(self.ratNameRight))
             
             #TODO Change to go to processed data, OS-agnostic
             #TODO Names aren't saved because popup function is separately called. Needs updating
             preLeftWriter = pd.ExcelWriter(preLeft)
             postLeftWriter = pd.ExcelWriter(postLeft)
-            preRightWriter = pd.ExcelWriter(preLeft)
-            postRightWriter = pd.ExcelWriter(postLeft)
+            preRightWriter = pd.ExcelWriter(preRight)
+            postRightWriter = pd.ExcelWriter(postRight)
             x = 0
             with preLeftWriter as writer:
                 for frames in preInjectionLeft:
@@ -183,12 +185,12 @@ class Main(tk.Frame):
                     x += 1
             x = 0
             with preRightWriter as writer:
-                for frames in preInjectionLeft:
-                    preInjectionLeft[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
+                for frames in preInjectionRight:
+                    preInjectionRight[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
                     x += 1
                 x = 0
             with postRightWriter as writer:
-                for frames in postInjectionLeft:
+                for frames in postInjectionRight:
                     postInjectionLeft[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
                     x += 1
             
@@ -203,7 +205,7 @@ class Main(tk.Frame):
         testerButton = ttk.Button(self, text="Event analysis on a single trace", command= singleTracePeaks)
         testerButton.grid(row=4, column=1)
 
-        peakButton = ttk.Button(self, text= "Perform event analysis on an entire signal [WIP]", command= lambda:[dataProcessorPop(), peakAnalyzer()])
+        peakButton = ttk.Button(self, text= "Perform event analysis on an entire signal [WIP]", command= dataProcessorPop)
         peakButton.grid(row=5, column=1)     
 
 def main():

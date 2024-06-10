@@ -25,7 +25,7 @@ def wholeTracePeaks(processedSignalArray, mainFile):
     abf = pyabf.ABF(mainFile)
     samplingFreq = int(abf.dataPointsPerMs * 1000)
     finalDict = {}
-    peaksArray = np.zeros((71, longPeak))
+    peaksArray = np.zeros((70, longPeak))
     np.set_printoptions(threshold=sys.maxsize)
     peaksDict = {}
     for traces in range(len(processedSignalArray)):
@@ -50,6 +50,8 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         peakTable.Peak_Decay_Sec = ((peaksDict[z]['right_bases'] - x)/(samplingFreq/1000)).round(2)
         peakTable.Width_at50_ms = (peaksDict[z]['widths']/(samplingFreq/1000)).round(2)
         peakTable.Frequency = round(np.count_nonzero(x)/15, 2) #Peaks/second (15 second trace)
+
+        peakTable.drop(peakTable[peakTable.Peak_Index == 0].index, inplace= True)
         finalDict[z] = peakTable
         z += 1
     return finalDict
