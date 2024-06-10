@@ -1,13 +1,12 @@
 import statistics as stat
 import pandas as pd
+import numpy as np
 
 # Averages every sweep's voltage (fluorescence) in a trace, producing a dictionary of 70 averages
 def traceAverage(processedSignal):
-    meanSignal = {}
-    x = 0
-    for sweep in processedSignal:
+    meanSignal = np.zeros(len(processedSignal))
+    for x in range(len(processedSignal)):
         meanSignal[x] = stat.mean(processedSignal[x][500:-1500])
-        x += 1
     return meanSignal
 
 # Averages the sweeps before a certain time point to create a "Pre-Injection Average" of fluorescence
@@ -21,8 +20,8 @@ def preInjectionAverage(averagedSignal, injectionTrace):
 
 # Calculates ΔF/F ((trace avg - pre inj avg)/pre inj avg)
 def deltaF(averagedSignal, preInjAvg):
-    deltaFDivided = {}
-    for sweep in averagedSignal:
+    deltaFDivided = np.zeros(len(averagedSignal))
+    for sweep in range(len(averagedSignal)):
         deltaFDivided[sweep] = (averagedSignal[sweep] - preInjAvg)/preInjAvg
     return deltaFDivided
 
@@ -38,10 +37,6 @@ def bleachingSub(signalDrug, signalVehicle):
 
 # Creates a pandas dataframe that can be exported into excel
 def excelExporter(signalAverage, preInjectionAverage, deltaF):
-    traceNumber = {}
-    x = 0
-    for sweep in signalAverage:
-        traceNumber[x] = sweep + 1
-        x += 1
-    exportableData = pd.DataFrame({"Trace Number:":traceNumber, "Average Fluorescence": signalAverage, "ΔF/F": deltaF, "Bleaching Correction":{}, "Pre-Injection Average":{0: preInjectionAverage} })
+    exportableData = pd.DataFrame({"Trace Number:": range(len(signalAverage)), "Average Fluorescence": signalAverage, 
+                                   "Pre-Injection Average":preInjectionAverage, "ΔF/F": deltaF, "Bleaching Correction": None, })
     return exportableData
