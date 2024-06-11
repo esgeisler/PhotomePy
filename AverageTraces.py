@@ -1,5 +1,4 @@
 import statistics as stat
-import pandas as pd
 import numpy as np
 
 # Averages every sweep's voltage (fluorescence) in a trace, producing a dictionary of 70 averages

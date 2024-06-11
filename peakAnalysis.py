@@ -23,7 +23,7 @@ def wholeTracePeaks(processedSignalArray, mainFile):
     abf = pyabf.ABF(mainFile)
     samplingFreq = int(abf.dataPointsPerMs * 1000)
     finalDict = {}
-    peaksArray = np.zeros((70, longPeak))
+    peaksArray = np.zeros((len(abf.sweepList), longPeak))
     peaksDict = {}
     for traces in range(len(processedSignalArray)):
         peaks, peaksDict[traces] = sci.find_peaks(processedSignalArray[traces][850:-1250], prominence= 0.05, height=0, width=0, wlen=10000, rel_height= 0.5)
@@ -104,11 +104,6 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
                      xytext = (peaksDict['right_bases'][x], processedSignalArray[peaks][x] - 0.3), 
                      xy = (peaksDict['right_bases'][x], processedSignalArray[peaksDict['right_bases'][x]] - 0.01),
                      arrowprops=dict(facecolor= 'black', width= 1, headwidth= 5, headlength= 5)) #, horizontalalignment= 'center', verticalalignment= 'bottom')
-    # finalTable = plt.table(cellText= peakTable.values, colLabels= peakTable.keys())
-    peakTable.round(3)
-    # finalTable.set_fontsize(40)
-    # finalTable.scale(1.5, 1.5)
     lad.set_title(ratSide)
-    # lad.add_table(finalTable)
     plt.axis([0,50000, 0, 2])
     plt.show()
