@@ -23,9 +23,3 @@ def deltaF(averagedSignal, preInjAvg):
     for sweep in range(len(averagedSignal)):
         deltaFDivided[sweep] = (averagedSignal[sweep] - preInjAvg)/preInjAvg
     return deltaFDivided
-
-# # Creates a pandas dataframe that can be exported into excel
-# def excelExporter(signalAverage, preInjectionAverage, deltaF):
-#     exportableData = pd.DataFrame({"Trace Number:": range(1, len(signalAverage)+1), "Average Fluorescence": signalAverage, 
-#                                    "Pre-Injection Average":preInjectionAverage, "ΔF/F": deltaF, "Bleaching Correction": None, })
-#     return exportableData
