@@ -24,18 +24,8 @@ def deltaF(averagedSignal, preInjAvg):
         deltaFDivided[sweep] = (averagedSignal[sweep] - preInjAvg)/preInjAvg
     return deltaFDivided
 
-# Bleaching correction that returns difference between ΔF/F (drug) and ΔF/F (vehicle)
-def bleachingSub(signalDrug, signalVehicle):
-    finalSignal = {}
-    x = 0
-    dictLen = len(signalDrug)
-    for x in dictLen:
-        finalSignal[x] = signalDrug[x] - signalVehicle[x]
-        x += 1
-    return finalSignal
-
-# Creates a pandas dataframe that can be exported into excel
-def excelExporter(signalAverage, preInjectionAverage, deltaF):
-    exportableData = pd.DataFrame({"Trace Number:": range(1, len(signalAverage)+1), "Average Fluorescence": signalAverage, 
-                                   "Pre-Injection Average":preInjectionAverage, "ΔF/F": deltaF, "Bleaching Correction": None, })
-    return exportableData
+# # Creates a pandas dataframe that can be exported into excel
+# def excelExporter(signalAverage, preInjectionAverage, deltaF):
+#     exportableData = pd.DataFrame({"Trace Number:": range(1, len(signalAverage)+1), "Average Fluorescence": signalAverage, 
+#                                    "Pre-Injection Average":preInjectionAverage, "ΔF/F": deltaF, "Bleaching Correction": None, })
+#     return exportableData
