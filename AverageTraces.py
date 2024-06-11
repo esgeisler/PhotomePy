@@ -10,11 +10,11 @@ def traceAverage(processedSignal):
     return meanSignal
 
 # Averages the sweeps before a certain time point to create a "Pre-Injection Average" of fluorescence
-def preInjectionAverage(averagedSignal, injectionTrace):
-    preInjList = []
+def preInjectionAverage(processedSignal, injectionTrace):
+    preInjArray = np.zeros(injectionTrace)
     for x in range(0, injectionTrace):
-        preInjList.append(stat.mean(averagedSignal[x][500:-1500]))
-    preInjAvg = stat.mean(preInjList)
+        preInjArray[x] = stat.mean(processedSignal[x][500:-1500])
+    preInjAvg = stat.mean(preInjArray)
     return preInjAvg
 
 # Calculates ΔF/F ((trace avg - pre inj avg)/pre inj avg)
