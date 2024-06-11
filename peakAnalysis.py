@@ -1,9 +1,7 @@
 import scipy.signal as sci
 import matplotlib.pyplot as plt
 import numpy as np
-from numpy import ndarray
 import pandas as pd
-import sys
 import pyabf
 
 #Retrieves the peaks of a single trace and returns a list containing the peaks in a ndarray and their properties in a dictionary
@@ -26,7 +24,6 @@ def wholeTracePeaks(processedSignalArray, mainFile):
     samplingFreq = int(abf.dataPointsPerMs * 1000)
     finalDict = {}
     peaksArray = np.zeros((70, longPeak))
-    np.set_printoptions(threshold=sys.maxsize)
     peaksDict = {}
     for traces in range(len(processedSignalArray)):
         peaks, peaksDict[traces] = sci.find_peaks(processedSignalArray[traces][850:-1250], prominence= 0.05, height=0, width=0, wlen=10000, rel_height= 0.5)
