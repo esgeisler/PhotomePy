@@ -118,8 +118,10 @@ class Main(tk.Frame):
             preInjectionAverageRight = avg.preInjectionAverage(finalSignalRight, self.ratInjectionRight)
             fluorescenceRight = avg.deltaF(averageSignalRight, preInjectionAverageRight)
         # Saves the averaged data to an excel file with the rat's "name"
-            ratDataLeft = avg.excelExporter(averageSignalLeft, preInjectionAverageLeft, fluorescenceLeft)
-            ratDataRight = avg.excelExporter(averageSignalRight, preInjectionAverageRight, fluorescenceRight)
+            ratDataLeft = pd.DataFrame({"Trace Number:": range(1, len(averageSignalLeft)+1), "Average Fluorescence": averageSignalLeft, 
+                                        "Pre-Injection Average":preInjectionAverageLeft, "ΔF/F": fluorescenceLeft, "Bleaching Correction": None, })
+            ratDataRight = pd.DataFrame({"Trace Number:": range(1, len(averageSignalRight)+1), "Average Fluorescence": averageSignalRight, 
+                                        "Pre-Injection Average":preInjectionAverageRight, "ΔF/F": fluorescenceRight, "Bleaching Correction": None, })
             filenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Temp File.xlsx"%(datetime.today().strftime('%Y-%m-%d'), self.ratNameLeft))
             filenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Temp File.xlsx"%(datetime.today().strftime('%Y-%m-%d'), self.ratNameRight))
             ratDataLeft.to_excel(filenameLeft, index= False)
@@ -129,9 +131,8 @@ class Main(tk.Frame):
     # Retrieves the baseline autofluorescence for the 4 channels analyzed and prints to a message box.
         def baselineFinder():
             pyabf.ABF(self.baselinefileName)
-            baselineSubL = acl.LBaselineGet(self.baselinefileName)
-            baselineSubR = acl.RBaselineGet(self.baselinefileName)
-            messagebox.showinfo(title= "Baselines", message= "Left - 470: %.2f 405: %.2f\nRight - 470: %.2f 405: %.2f"%(baselineSubL[0], baselineSubL[1], baselineSubR[0], baselineSubR[1]))
+            subtracted470Left, subtracted405Left, subtracted470Right, subtracted405Right = acl.BaselineGet(self.baselinefileName)
+            messagebox.showinfo(title= "Baselines", message= "Left - 470: %.2f 405: %.2f\nRight - 470: %.2f 405: %.2f"%(subtracted470Left, subtracted405Left, subtracted470Right, subtracted405Right))
 
     # Analyzes the peak decay, amplitude, and frequency of a single trace chosen by the user.
         def singleTracePeaks():
@@ -167,7 +168,6 @@ class Main(tk.Frame):
             postRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Post-Injection Peaks.xlsx"%(datetime.now().strftime('%Y-%m-%d'), int(self.ratNameRight)))
             
             # Writes trace data to 2 excel files: Pre-injection and post-injection
-            #TODO One big "overview" sheet at the beginning, then separated by individual sheets afterwards.
             preLeftWriter = pd.ExcelWriter(preLeft)
             postLeftWriter = pd.ExcelWriter(postLeft)
             preRightWriter = pd.ExcelWriter(preRight)
