@@ -19,3 +19,5 @@ Current Analyses Include:
 5. Event width at 50% peak (ms)
 
 Events are defined as any peak in a trace with a prominence of 0.05, with a maximum window length of 10,000 points.
+
+This project would not be possible without the pyABF library created by Dr. Scott Harden, which can be found [here](https://github.com/swharden/pyABF). If anyone else is struggling with reading Axon Binary Files for electrophysiology or fiber photometry, his libraries, standalone applications, and instructional guides are extraordinarily helpful and can be found on his [website.](https://swharden.com/pyabf/)
