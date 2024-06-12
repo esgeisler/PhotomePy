@@ -11,6 +11,7 @@ from datetime import datetime
 import pandas as pd
 
 #TODO Change "Process File" button to do averages and traces, export both to excel, and save the modified file as a .abf
+#TODO Peak indices should be summarized over time (peak 2 should be time in trace + 30 sec, peak 3 should be time in trace + 1 minute, etc)
 class Main(tk.Frame):
     def __init__(self, master= None, **kwargs):
         super().__init__(master, **kwargs)
@@ -142,10 +143,9 @@ class Main(tk.Frame):
         # Left Rat Peak Analysis
             self.peaksLeft = pas.peakGetter(finalSignalLeft[self.trace][1000:-1250])
             pas.peakDisplay(finalSignalLeft[self.trace][1000:-1250], self.experimentFileName, "Left Rat")
-            plt.close()
         # Right Rat Peak Analysis
             self.peaksRight = pas.peakGetter(finalSignalRight[self.trace][1000:-1250])
-            pas.peakDisplay(finalSignalLeft[self.trace][1000:-1250], self.experimentFileName, "Right Rat")
+            pas.peakDisplay(finalSignalRight[self.trace][1000:-1250], self.experimentFileName, "Right Rat")
 
     # Analyzes peak decay, amplitude, and frequency across an entire signal containing X traces
         def peakAnalyzer():

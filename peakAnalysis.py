@@ -26,7 +26,7 @@ def wholeTracePeaks(processedSignalArray, mainFile):
     peaksArray = np.zeros((len(abf.sweepList), longPeak))
     peaksDict = {}
     for traces in range(len(processedSignalArray)):
-        peaks, peaksDict[traces] = sci.find_peaks(processedSignalArray[traces][850:-1250], prominence= 0.05, height=0, width=0, wlen=10000, rel_height= 0.5)
+        peaks, peaksDict[traces] = sci.find_peaks(processedSignalArray[traces][850:-1250], prominence= 0.05, height=0, width=0, wlen=20000, rel_height= 0.5)
         peaks = np.pad(peaks, pad_width= (0, longPeak - len(peaks)), mode= 'constant', constant_values= 0)
         peaksArray[traces] = peaks
         for i in peaksDict[traces]:
@@ -40,7 +40,7 @@ def wholeTracePeaks(processedSignalArray, mainFile):
                                         'Width_at50_ms','Frequency'])
         peakTable.Event_Num = [x + 1 for x in range(len(x))]
         peakTable.Peak_Index = x
-        peakTable.Peak_Time_Sec = (x/samplingFreq).round(2)
+        peakTable.Peak_Time_Sec = ((x/samplingFreq) + (z * 30)).round(2)
         peakTable.Event_Window_Start = peaksDict[z]['left_ips'].round(2)
         peakTable.Event_Window_End = peaksDict[z]['right_ips'].round(2)
         peakTable.Amplitude = peaksDict[z]['peak_heights'].round(2)
@@ -53,6 +53,7 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         z += 1
     return finalDict
 
+#TODO bin every 3 traces for time-course analysis
 def traceProcessor(processedSignal, injectionTrace):
     preInjectionDF = {}
     preOverview = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
@@ -80,7 +81,7 @@ def traceProcessor(processedSignal, injectionTrace):
 def peakDisplay(processedSignalArray, mainFile, ratSide):
     abf = pyabf.ABF(mainFile)
     samplingFreq = int(abf.dataPointsPerMs * 1000)
-    peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, height=0, width=0, wlen= 15000, rel_height= 0.5)
+    peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, height=0, width=0, wlen= 20000, rel_height= 0.5)
     peakTable = pd.DataFrame(columns= ['event', 'Peak_Index', 
                                        'PeakTimeSec', 'Event_Window_Start', 
                                        'Event_Window_End', 'Amplitude', 
@@ -105,5 +106,5 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
                      xy = (peaksDict['right_bases'][x], processedSignalArray[peaksDict['right_bases'][x]] - 0.01),
                      arrowprops=dict(facecolor= 'black', width= 1, headwidth= 5, headlength= 5)) #, horizontalalignment= 'center', verticalalignment= 'bottom')
     lad.set_title(ratSide)
-    plt.axis([0,50000, 0, 2])
+    plt.axis([0,50000,0.5, 1.5])
     plt.show()
