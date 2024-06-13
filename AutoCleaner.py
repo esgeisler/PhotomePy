@@ -90,6 +90,13 @@ def completeProcessor(experimentFileName, baselineFileName):
     filteredRight = wholeTraceGauss(subtract405Right)
     ratioSignalLeft = ratio470405(subtract470Left, filteredLeft)
     ratioSignalRight = ratio470405(subtract470Right, filteredRight)
-    finalSignalLeft = wholeTraceGauss(ratioSignalLeft)
-    finalSignalRight = wholeTraceGauss(ratioSignalRight)
-    return finalSignalLeft, finalSignalRight
+    signalLeft = wholeTraceGauss(ratioSignalLeft)
+    signalRight = wholeTraceGauss(ratioSignalRight)
+
+    finalLeft = np.zeros((len(signalLeft), len(signalLeft[0]) - 2100))
+    finalRight = np.zeros((len(signalRight), len(signalRight[0]) - 2100))
+    for x in range(len(signalLeft)):
+        finalLeft[x] = signalLeft[x][850:-1250]
+    for x in range(len(signalLeft)):
+        finalRight[x] = signalRight[x][850:-1250]
+    return finalLeft, finalRight
