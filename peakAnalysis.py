@@ -6,13 +6,14 @@ import pyabf
 
 #Retrieves the peaks of a single trace and returns a list containing the peaks in a ndarray and their properties in a dictionary
 def peakGetter(processedSignalArray):
-    peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, height=0, width=0)
+    peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, height=0, width=0, wlen= 20000, rel_height= 0.5)
     return [peaks, peaksDict]
 
+# Returns the number of peaks in the trace with the most peaks
 def peakMaxxer(processedSignalArray):
     peakList = []
     for traces in range(len(processedSignalArray)):
-        peaks, peaksDict = sci.find_peaks(processedSignalArray[traces][850:-1250], prominence= 0.05, height=0, width=0, wlen=10000, rel_height= 0.5)
+        peaks, peaksDict = sci.find_peaks(processedSignalArray[traces], prominence= 0.05, height=0, width=0, wlen=20000, rel_height= 0.5)
         peakList.append(peaks)
     longestPeak = max((len(x)) for x in peakList)
     return longestPeak
@@ -26,7 +27,7 @@ def wholeTracePeaks(processedSignalArray, mainFile):
     peaksArray = np.zeros((len(abf.sweepList), longPeak))
     peaksDict = {}
     for traces in range(len(processedSignalArray)):
-        peaks, peaksDict[traces] = sci.find_peaks(processedSignalArray[traces][850:-1250], prominence= 0.05, height=0, width=0, wlen=20000, rel_height= 0.5)
+        peaks, peaksDict[traces] = sci.find_peaks(processedSignalArray[traces], prominence= 0.05, height=0, width=0, wlen=20000, rel_height= 0.5)
         peaks = np.pad(peaks, pad_width= (0, longPeak - len(peaks)), mode= 'constant', constant_values= 0)
         peaksArray[traces] = peaks
         for i in peaksDict[traces]:
@@ -43,7 +44,7 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         peakTable.Peak_Time_Sec = ((x/samplingFreq) + (z * 30)).round(2)
         peakTable.Event_Window_Start = peaksDict[z]['left_ips'].round(2)
         peakTable.Event_Window_End = peaksDict[z]['right_ips'].round(2)
-        peakTable.Amplitude = peaksDict[z]['peak_heights'].round(2)
+        peakTable.Amplitude = (peaksDict[z]['peak_heights'] - processedSignalArray[z][peaksDict[z]['right_bases']]).round(2)
         peakTable.Peak_Decay_ms = ((peaksDict[z]['right_bases'] - x)/(samplingFreq/1000)).round(2)
         peakTable.Width_at50_ms = (peaksDict[z]['widths']/(samplingFreq/1000)).round(2)
         peakTable.Frequency = round(np.count_nonzero(x)/15, 2) #Peaks/second (15 second trace)
@@ -79,23 +80,20 @@ def traceProcessor(processedSignal, injectionTrace):
     return preInjectionDF, postInjectionDF, preOverview, postOverview
 
 #Retrieves the peaks of a signal and their properties, then plots them on a graph of the chosen trace
-#TODO pre and post-trigger window to remove big goofy start and end
 def peakDisplay(processedSignalArray, mainFile, ratSide):
     abf = pyabf.ABF(mainFile)
     samplingFreq = int(abf.dataPointsPerMs * 1000)
     peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, height=0, width=0, wlen= 20000, rel_height= 0.5)
     peakTable = pd.DataFrame(columns= ['event', 'Peak_Index', 
                                        'PeakTimeSec', 'Event_Window_Start', 
-                                       'Event_Window_End', 'Amplitude', 
-                                       'WidthMS','Frequency'])
+                                       'Event_Window_End', 
+                                       'WidthMS'])
     peakTable.event = [x for x in range(len(peaks))]
     peakTable.Peak_Index = peaks
     peakTable.PeakTimeSec = peaks/samplingFreq
     peakTable.Event_Window_Start = peaksDict['left_ips']
     peakTable.Event_Window_End = peaksDict['right_ips']
-    peakTable.Amplitude = peaksDict['peak_heights']
     peakTable.WidthMS = peaksDict['widths']/(samplingFreq/1000)
-    peakTable.Frequency = len(peaks)/15 #Peaks/second (15 second trace)
     
     fig = plt.figure()
     lad = fig.add_subplot()
@@ -109,4 +107,5 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
                      arrowprops=dict(facecolor= 'black', width= 1, headwidth= 5, headlength= 5)) #, horizontalalignment= 'center', verticalalignment= 'bottom')
     lad.set_title(ratSide)
     plt.axis([0,50000,0.5, 1.5])
+    plt.xticks(peaks)
     plt.show()

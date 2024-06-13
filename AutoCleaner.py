@@ -96,7 +96,7 @@ def completeProcessor(experimentFileName, baselineFileName):
     finalLeft = np.zeros((len(signalLeft), len(signalLeft[0]) - 2100))
     finalRight = np.zeros((len(signalRight), len(signalRight[0]) - 2100))
     for x in range(len(signalLeft)):
-        finalLeft[x] = signalLeft[x][850:-1250]
+        finalLeft[x] = signalLeft[x][1000:-1250]
     for x in range(len(signalLeft)):
-        finalRight[x] = signalRight[x][850:-1250]
+        finalRight[x] = signalRight[x][1000:-1250]
     return finalLeft, finalRight

@@ -1,7 +1,6 @@
 import AutoCleaner as acl
 import pyabf
 import os
-import matplotlib.pyplot as plt
 import AverageTraces as avg
 import peakAnalysis as pas
 import tkinter as tk
@@ -9,6 +8,7 @@ from tkinter import ttk, filedialog, messagebox
 import numpy as np
 from datetime import datetime
 import pandas as pd
+import scipy.signal as sci
 
 #TODO Change "Process File" button to do averages and traces, export both to excel, and save the modified file as a .abf
 #TODO Peak indices should be summarized over time (peak 2 should be time in trace + 30 sec, peak 3 should be time in trace + 1 minute, etc)
@@ -41,7 +41,7 @@ class Main(tk.Frame):
 
     # Sets the values inside the dropdown menu, and sets it to update when a main file is selected
         def traceSelector(event):
-            self.trace = (int(traceDrop.get()))
+            self.trace = (int(traceDrop.get()) - 1)
         traceDrop.bind("<<ComboboxSelected>>", traceSelector)
         def dropdownUpdater():
             traceDrop['values'] = self.options
@@ -142,11 +142,11 @@ class Main(tk.Frame):
         def singleTracePeaks():
             finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
         # Left Rat Peak Analysis
-            self.peaksLeft = pas.peakGetter(finalSignalLeft[self.trace][1000:-1250])
-            pas.peakDisplay(finalSignalLeft[self.trace][1000:-1250], self.experimentFileName, "Left Rat")
+            self.peaksLeft = pas.peakGetter(finalSignalLeft[self.trace])
+            pas.peakDisplay(finalSignalLeft[self.trace], self.experimentFileName, "Left Rat")
         # Right Rat Peak Analysis
-            self.peaksRight = pas.peakGetter(finalSignalRight[self.trace][1000:-1250])
-            pas.peakDisplay(finalSignalRight[self.trace][1000:-1250], self.experimentFileName, "Right Rat")
+            self.peaksRight = sci.find_peaks(finalSignalRight[self.trace])
+            pas.peakDisplay(finalSignalRight[self.trace], self.experimentFileName, "Right Rat")
 
     # Analyzes peak decay, amplitude, and frequency across an entire signal containing X traces
         def peakAnalyzer():
