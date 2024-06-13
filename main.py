@@ -62,13 +62,14 @@ class Main(tk.Frame):
             baselineFileDisplay.insert(tk.END, self.baselinefileName)
             return self.baselinefileName  
 
+    #TODO Text displays need to remove previous files entered
     # Initialize all of the remaining buttons for the main GUI window
         explorerButton = ttk.Button(self, text="Choose a Main File", command= lambda:[fileBrowserExperiment(), dropdownUpdater()])
-        chosenFileDisplay = tk.Text(self, height= 1, width= 50)
+        chosenFileDisplay = tk.Text(self, height= 1, width= 75)
         chosenFileDisplay.grid(row= 1, column= 1)
         baselineExplorerButton = ttk.Button(self, text="Choose a Baseline File", command= fileBrowserBaseline)
         explorerButton.grid(row= 1, column= 2)
-        baselineFileDisplay = tk.Text(self, height= 1, width= 50)
+        baselineFileDisplay = tk.Text(self, height= 1, width= 75)
         baselineFileDisplay.grid(row= 2, column= 1)
         baselineExplorerButton.grid(row= 2, column= 2)
     # Fills text boxes with filepath of the main and baseline file chosen by the user
@@ -164,6 +165,7 @@ class Main(tk.Frame):
             postRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Post-Injection Peaks.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), int(self.ratNameRight)))
             
             # Writes trace data to 2 excel files: Pre-injection and post-injection
+            #TODO Fix
             preLeftWriter = pd.ExcelWriter(preLeft)
             postLeftWriter = pd.ExcelWriter(postLeft)
             preRightWriter = pd.ExcelWriter(preRight)
@@ -172,6 +174,18 @@ class Main(tk.Frame):
             with preLeftWriter as writer:
                 # Overview Sheet
                 preOverviewLeft.to_excel(writer, sheet_name= "All Traces")
+                # Bins of Three
+                preLeftGroupThree = [list(preInjectionLeft.values())[i:i+3] for i in range(0, len(preInjectionLeft), 3)]
+                z = 1
+                for groups in preLeftGroupThree:
+                    concat = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
+                                        'Peak_Time_Sec', 'Event_Window_Start', 
+                                        'Event_Window_End', 'Amplitude', 'Peak_Decay_ms',
+                                        'Width_at50_ms','Frequency'])
+                    for y in groups:
+                        concat = pd.concat([concat, y])
+                    concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
+                    z += 3
                 # Individual Traces
                 for frames in preInjectionLeft:
                     preInjectionLeft[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
@@ -179,6 +193,18 @@ class Main(tk.Frame):
             with postLeftWriter as writer:
                 # Overview Sheet
                 postOverviewLeft.to_excel(writer, sheet_name= "All Traces")
+                # Bins of Three
+                postLeftGroupThree = [list(postInjectionLeft.values())[i:i+3] for i in range(0, len(postInjectionLeft), 3)]
+                z = 1
+                for groups in postLeftGroupThree:
+                    concat = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
+                                        'Peak_Time_Sec', 'Event_Window_Start', 
+                                        'Event_Window_End', 'Amplitude', 'Peak_Decay_ms',
+                                        'Width_at50_ms','Frequency'])
+                    for y in groups:
+                        concat = pd.concat([concat, y])
+                    concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
+                    z += 3
                 # Individual Traces
                 for frames in postInjectionLeft:
                     postInjectionLeft[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
@@ -187,6 +213,18 @@ class Main(tk.Frame):
             with preRightWriter as writer:
                 # Overview Sheet
                 preOverviewRight.to_excel(writer, sheet_name= "All Traces")
+                # Bins of Three
+                preRightGroupThree = [list(preInjectionRight.values())[i:i+3] for i in range(0, len(preInjectionRight), 3)]
+                z = 1
+                for groups in preRightGroupThree:
+                    concat = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
+                                        'Peak_Time_Sec', 'Event_Window_Start', 
+                                        'Event_Window_End', 'Amplitude', 'Peak_Decay_ms',
+                                        'Width_at50_ms','Frequency'])
+                    for y in groups:
+                        concat = pd.concat([concat, y])
+                    concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
+                    z += 3
                 # Individual Traces
                 for frames in preInjectionRight:
                     preInjectionRight[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
@@ -194,9 +232,21 @@ class Main(tk.Frame):
             with postRightWriter as writer:
                 # Overview Sheet
                 postOverviewRight.to_excel(writer, sheet_name= "All Traces")
+                # Bins of Three
+                postRightGroupThree = [list(postInjectionRight.values())[i:i+3] for i in range(0, len(postInjectionRight), 3)]
+                z = 1
+                for groups in postRightGroupThree:
+                    concat = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
+                                        'Peak_Time_Sec', 'Event_Window_Start', 
+                                        'Event_Window_End', 'Amplitude', 'Peak_Decay_ms',
+                                        'Width_at50_ms','Frequency'])
+                    for y in groups: 
+                        concat = pd.concat([concat, y])
+                        concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
+                    z += 3
                 # Individual Traces
                 for frames in postInjectionRight:
-                    postInjectionLeft[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
+                    postInjectionRight[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
                     x += 1
             
             messagebox.showinfo(title= "Trace Exporter", message= "Data Exported to Excel!")

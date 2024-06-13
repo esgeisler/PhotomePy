@@ -36,7 +36,7 @@ def wholeTracePeaks(processedSignalArray, mainFile):
     for x in peaksArray:
         peakTable = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
                                         'Peak_Time_Sec', 'Event_Window_Start', 
-                                        'Event_Window_End', 'Amplitude', 'Peak_Decay_Sec',
+                                        'Event_Window_End', 'Amplitude', 'Peak_Decay_ms',
                                         'Width_at50_ms','Frequency'])
         peakTable.Event_Num = [x + 1 for x in range(len(x))]
         peakTable.Peak_Index = x
@@ -44,7 +44,7 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         peakTable.Event_Window_Start = peaksDict[z]['left_ips'].round(2)
         peakTable.Event_Window_End = peaksDict[z]['right_ips'].round(2)
         peakTable.Amplitude = peaksDict[z]['peak_heights'].round(2)
-        peakTable.Peak_Decay_Sec = ((peaksDict[z]['right_bases'] - x)/(samplingFreq/1000)).round(2)
+        peakTable.Peak_Decay_ms = ((peaksDict[z]['right_bases'] - x)/(samplingFreq/1000)).round(2)
         peakTable.Width_at50_ms = (peaksDict[z]['widths']/(samplingFreq/1000)).round(2)
         peakTable.Frequency = round(np.count_nonzero(x)/15, 2) #Peaks/second (15 second trace)
 
@@ -54,16 +54,17 @@ def wholeTracePeaks(processedSignalArray, mainFile):
     return finalDict
 
 #TODO bin every 3 traces for time-course analysis
+#TODO amplitude should be peak to trough height
 def traceProcessor(processedSignal, injectionTrace):
     preInjectionDF = {}
     preOverview = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
                                         'Peak_Time_Sec', 'Event_Window_Start', 
-                                        'Event_Window_End', 'Amplitude', 'Peak_Decay_Sec',
+                                        'Event_Window_End', 'Amplitude', 'Peak_Decay_ms',
                                         'Width_at50_ms','Frequency'])
     postInjectionDF = {}
     postOverview = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
                                         'Peak_Time_Sec', 'Event_Window_Start', 
-                                        'Event_Window_End', 'Amplitude', 'Peak_Decay_Sec',
+                                        'Event_Window_End', 'Amplitude', 'Peak_Decay_ms',
                                         'Width_at50_ms','Frequency'])
     x = 0
     for traces in processedSignal.values():
@@ -74,6 +75,7 @@ def traceProcessor(processedSignal, injectionTrace):
             postInjectionDF[x] = traces
             postOverview = pd.concat([postOverview, traces], ignore_index= True)
         x += 1
+    
     return preInjectionDF, postInjectionDF, preOverview, postOverview
 
 #Retrieves the peaks of a signal and their properties, then plots them on a graph of the chosen trace
