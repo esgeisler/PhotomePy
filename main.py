@@ -62,19 +62,23 @@ class Main(tk.Frame):
             baselineFileDisplay.insert(tk.END, self.baselinefileName)
             return self.baselinefileName  
 
-    #TODO Text displays need to remove previous files entered
     # Initialize all of the remaining buttons for the main GUI window
-        explorerButton = ttk.Button(self, text="Choose a Main File", command= lambda:[fileBrowserExperiment(), dropdownUpdater()])
+        explorerButton = ttk.Button(self, text="Choose a Main File", command= lambda:[fileBrowserExperiment(), dropdownUpdater(), chosenFileTextUpdate()])
         chosenFileDisplay = tk.Text(self, height= 1, width= 75)
         chosenFileDisplay.grid(row= 1, column= 1)
-        baselineExplorerButton = ttk.Button(self, text="Choose a Baseline File", command= fileBrowserBaseline)
+        baselineExplorerButton = ttk.Button(self, text="Choose a Baseline File", command= lambda:[fileBrowserBaseline(), baselineFileTextUpdate()])
         explorerButton.grid(row= 1, column= 2)
         baselineFileDisplay = tk.Text(self, height= 1, width= 75)
         baselineFileDisplay.grid(row= 2, column= 1)
         baselineExplorerButton.grid(row= 2, column= 2)
+    
     # Fills text boxes with filepath of the main and baseline file chosen by the user
-        chosenFileDisplay.insert(tk.END, self.experimentFileName)
-        baselineFileDisplay.insert(tk.END, self.baselinefileName)
+        def chosenFileTextUpdate():
+            chosenFileDisplay.delete("1.0", tk.END)
+            chosenFileDisplay.insert(tk.INSERT, self.experimentFileName)
+        def baselineFileTextUpdate():
+            baselineFileDisplay.delete("1.0", tk.END)
+            baselineFileDisplay.insert(tk.INSERT, self.baselinefileName)
 
     # Closes the average processing popup window, saving the values entered.
         def onPopSubmit():
