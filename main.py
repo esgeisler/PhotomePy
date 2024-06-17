@@ -207,7 +207,7 @@ class Main(tk.Frame):
                                         'Width_at50_ms','Frequency'])
                     for y in groups:
                         concat = pd.concat([concat, y])
-                    concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
+                    concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z+x, z+x+2), index=False)
                     z += 3
                 # Individual Traces
                 for frames in postInjectionLeft:
@@ -246,7 +246,7 @@ class Main(tk.Frame):
                                         'Width_at50_ms','Frequency'])
                     for y in groups: 
                         concat = pd.concat([concat, y])
-                        concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
+                        concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z+x, z+x+2), index=False)
                     z += 3
                 # Individual Traces
                 for frames in postInjectionRight:
