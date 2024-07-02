@@ -5,12 +5,10 @@ import AverageTraces as avg
 import peakAnalysis as pas
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
-import numpy as np
-from datetime import datetime
 import pandas as pd
 import scipy.signal as sci
 
-#TODO Change "Process File" button to do averages and traces, export both to excel, and save the modified file as a .abf
+#TODO Change "Process File" button to save the modified file as a .abf after the other analysis
 #TODO Peak indices should be summarized over time (peak 2 should be time in trace + 30 sec, peak 3 should be time in trace + 1 minute, etc)
 class Main(tk.Frame):
     def __init__(self, master= None, **kwargs):
@@ -33,6 +31,9 @@ class Main(tk.Frame):
         self.options = []
         self.trace = 0
         self.abfDate = tk.StringVar()
+        self.statusCheck = True
+        self.mainStatus = False
+        self.traceStatus = False
 
     # Dropdown menu for selecting the trace used in SingleTracePeaks
         traceDrop = ttk.Combobox(self,  state= 'readonly', width= 9, textvariable= self.dropValue)
@@ -87,6 +88,17 @@ class Main(tk.Frame):
             self.ratInjectionLeft = int(self.leftRatInjection.get()) - 1
             self.ratInjectionRight = int(self.rightRatInjection.get()) - 1
 
+    # Checks the status of the analysis to determine whether to display a messagebox message.
+        def statusChecker():
+            while self.statusCheck:
+                if not self.traceStatus and not self.mainStatus:
+                    continue
+                elif self.traceStatus and self.mainStatus:
+                    messagebox.showinfo(title= "Trace Exporter", message= "Data Exported to Excel!")
+                    self.traceStatus = False
+                    self.mainStatus = False
+                    break
+            
     # Creates a popup window for the user to input the rat's name/number and what trace they were injected during.
         def dataProcessorPop():
             infoPop = tk.Toplevel()
@@ -109,10 +121,8 @@ class Main(tk.Frame):
             rightRatInjTimeFill.grid(row= 2, column= 5)
 
 
-            submitButton = ttk.Button(infoPop, text="Submit", command=lambda:[onPopSubmit(), infoPop.destroy(), dataProcessorReal()])
+            submitButton = ttk.Button(infoPop, text="Submit", command=lambda:[onPopSubmit(), infoPop.destroy(), dataProcessorReal(), peakAnalyzer(), statusChecker()])
             submitButton.grid(row= 3, column= 3)
-            submitTraceButton = ttk.Button(infoPop, text="Submit (Trace Analysis)", command= lambda:[onPopSubmit(), infoPop.destroy(), peakAnalyzer()])
-            submitTraceButton.grid(row= 4, column= 3)
 
     # Averages the fluorescence of all of the traces, compiles them into an excel sheet with their trace numbers, and calculates the ΔF/F
         def dataProcessorReal():
@@ -134,7 +144,7 @@ class Main(tk.Frame):
             filenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Temp File.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameRight))
             ratDataLeft.to_excel(filenameLeft, index= False)
             ratDataRight.to_excel(filenameRight, index= False)
-            messagebox.showinfo(title= "Data Exporter", message= "Data Exported to Excel!")
+            self.mainStatus = True
 
     # Retrieves the baseline autofluorescence for the 4 channels analyzed and prints to a message box.
         def baselineFinder():
@@ -252,20 +262,16 @@ class Main(tk.Frame):
                 for frames in postInjectionRight:
                     postInjectionRight[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
                     x += 1
-            
-            messagebox.showinfo(title= "Trace Exporter", message= "Data Exported to Excel!")
+            self.traceStatus = True
 
-            
         runFileButton = ttk.Button(self, text="Process a File", command= dataProcessorPop)
         runFileButton.grid(row= 3, column= 1)
         baselineGetterButton = ttk.Button(self, text="Get the Baselines", command= baselineFinder)
         baselineGetterButton.grid(row= 3, column= 2)
-
         testerButton = ttk.Button(self, text="Event analysis on a single trace", command= singleTracePeaks)
         testerButton.grid(row=4, column=1)
 
-        peakButton = ttk.Button(self, text= "Perform event analysis on an entire signal [WIP]", command= dataProcessorPop)
-        peakButton.grid(row=5, column=1)     
+        
 
 def main():
     fp = tk.Tk()
