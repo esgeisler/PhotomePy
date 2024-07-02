@@ -121,8 +121,14 @@ class Main(tk.Frame):
             rightRatInjTimeFill.grid(row= 2, column= 5)
 
 
-            submitButton = ttk.Button(infoPop, text="Submit", command=lambda:[onPopSubmit(), infoPop.destroy(), dataProcessorReal(), peakAnalyzer(), statusChecker()])
+            submitButton = ttk.Button(infoPop, text="Submit", command=lambda:[onPopSubmit(), infoPop.destroy(), dataProcessorReal(), statusChecker()])
             submitButton.grid(row= 3, column= 3)
+
+    # Retrieves the baseline autofluorescence for the 4 channels analyzed and prints to a message box.
+        def baselineFinder():
+            pyabf.ABF(self.baselinefileName)
+            subtracted470Left, subtracted405Left, subtracted470Right, subtracted405Right = acl.BaselineGet(self.baselinefileName)
+            messagebox.showinfo(title= "Baselines", message= "Left - 470: %.2f 405: %.2f\nRight - 470: %.2f 405: %.2f"%(subtracted470Left, subtracted405Left, subtracted470Right, subtracted405Right))
 
     # Averages the fluorescence of all of the traces, compiles them into an excel sheet with their trace numbers, and calculates the ΔF/F
         def dataProcessorReal():
@@ -135,37 +141,7 @@ class Main(tk.Frame):
             averageSignalRight = avg.traceAverage(finalSignalRight)
             preInjectionAverageRight = avg.preInjectionAverage(finalSignalRight, self.ratInjectionRight)
             fluorescenceRight = avg.deltaF(averageSignalRight, preInjectionAverageRight)
-        # Saves the averaged data to an excel file with the rat's "name"
-            ratDataLeft = pd.DataFrame({"Trace Number:": range(1, len(averageSignalLeft)+1), "Average Fluorescence": averageSignalLeft, 
-                                        "Pre-Injection Average":preInjectionAverageLeft, "ΔF/F": fluorescenceLeft, "Bleaching Correction": None, })
-            ratDataRight = pd.DataFrame({"Trace Number:": range(1, len(averageSignalRight)+1), "Average Fluorescence": averageSignalRight, 
-                                        "Pre-Injection Average":preInjectionAverageRight, "ΔF/F": fluorescenceRight, "Bleaching Correction": None, })
-            filenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Temp File.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameLeft))
-            filenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Temp File.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameRight))
-            ratDataLeft.to_excel(filenameLeft, index= False)
-            ratDataRight.to_excel(filenameRight, index= False)
-            self.mainStatus = True
-
-    # Retrieves the baseline autofluorescence for the 4 channels analyzed and prints to a message box.
-        def baselineFinder():
-            pyabf.ABF(self.baselinefileName)
-            subtracted470Left, subtracted405Left, subtracted470Right, subtracted405Right = acl.BaselineGet(self.baselinefileName)
-            messagebox.showinfo(title= "Baselines", message= "Left - 470: %.2f 405: %.2f\nRight - 470: %.2f 405: %.2f"%(subtracted470Left, subtracted405Left, subtracted470Right, subtracted405Right))
-
-    # Analyzes the peak decay, amplitude, and frequency of a single trace chosen by the user.
-        def singleTracePeaks():
-            finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
-        # Left Rat Peak Analysis
-            self.peaksLeft = pas.peakGetter(finalSignalLeft[self.trace])
-            pas.peakDisplay(finalSignalLeft[self.trace], self.experimentFileName, "Left Rat")
-        # Right Rat Peak Analysis
-            self.peaksRight = sci.find_peaks(finalSignalRight[self.trace])
-            pas.peakDisplay(finalSignalRight[self.trace], self.experimentFileName, "Right Rat")
-
-    # Analyzes peak decay, amplitude, and frequency across an entire signal containing X traces
-        def peakAnalyzer():
-            finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
-            
+        # Analyzes peak decay, amplitude, and frequency across an entire signal containing X traces            
             self.peaksLeft = pas.wholeTracePeaks(finalSignalLeft, self.experimentFileName)
             self.peaksRight = pas.wholeTracePeaks(finalSignalRight, self.experimentFileName)
 
@@ -177,9 +153,17 @@ class Main(tk.Frame):
 
             preRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Pre-Injection Peaks.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), int(self.ratNameRight)))
             postRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Post-Injection Peaks.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), int(self.ratNameRight)))
-            
-            # Writes trace data to 2 excel files: Pre-injection and post-injection
-            #TODO Fix
+        # Saves the averaged data to an excel file with the rat's "name"
+            ratDataLeft = pd.DataFrame({"Trace Number:": range(1, len(averageSignalLeft)+1), "Average Fluorescence": averageSignalLeft, 
+                                        "Pre-Injection Average":preInjectionAverageLeft, "ΔF/F": fluorescenceLeft, "Bleaching Correction": None, })
+            ratDataRight = pd.DataFrame({"Trace Number:": range(1, len(averageSignalRight)+1), "Average Fluorescence": averageSignalRight, 
+                                        "Pre-Injection Average":preInjectionAverageRight, "ΔF/F": fluorescenceRight, "Bleaching Correction": None, })
+            filenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Temp File.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameLeft))
+            filenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Temp File.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameRight))
+            ratDataLeft.to_excel(filenameLeft, index= False)
+            ratDataRight.to_excel(filenameRight, index= False)
+            self.mainStatus = True
+        # Writes trace data to 2 excel files: Pre-injection and post-injection
             preLeftWriter = pd.ExcelWriter(preLeft)
             postLeftWriter = pd.ExcelWriter(postLeft)
             preRightWriter = pd.ExcelWriter(preRight)
@@ -263,6 +247,18 @@ class Main(tk.Frame):
                     postInjectionRight[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
                     x += 1
             self.traceStatus = True
+            acl.tExport(finalSignalLeft, self.ratNameLeft) #Left
+            acl.tExport(finalSignalRight, self.ratNameRight) #Right
+
+        # Analyzes the peak decay, amplitude, and frequency of a single trace chosen by the user.
+        def singleTracePeaks():
+            finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
+        # Left Rat Peak Analysis
+            self.peaksLeft = pas.peakGetter(finalSignalLeft[self.trace])
+            pas.peakDisplay(finalSignalLeft[self.trace], self.experimentFileName, "Left Rat")
+        # Right Rat Peak Analysis
+            self.peaksRight = sci.find_peaks(finalSignalRight[self.trace])
+            pas.peakDisplay(finalSignalRight[self.trace], self.experimentFileName, "Right Rat")
 
         runFileButton = ttk.Button(self, text="Process a File", command= dataProcessorPop)
         runFileButton.grid(row= 3, column= 1)
