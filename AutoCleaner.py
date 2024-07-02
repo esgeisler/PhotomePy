@@ -4,6 +4,7 @@ import statistics as stat
 import scipy.ndimage
 import numpy as np
 from datetime import datetime
+import os
 
 # Gets baseline information from 1 min-long recording data taken after trial from the "left" side of the room - channels 1 and 2
 def BaselineGet(FileName):
@@ -75,7 +76,7 @@ def ratio470405(signal470, signal405):
 
 # Saves cleaned trace file as an ABF file for later viewing in ClampFit 10
 def tExport(processedTrace, ratName):
-    abfWriter.writeABF1(sweepData= processedTrace, filename= "Rat %s Processed Data %s.abf"%(ratName, datetime.today().strftime('%Y-%m-%m')), units="V", sampleRateHz= 3333.33)
+    abfWriter.writeABF1(sweepData= processedTrace, filename= os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Processed Data.abf"%(datetime.today().strftime('%Y-%m-%m'), ratName)), units="V", sampleRateHz= 3333.33)
 
 # Compilation of the other functions in this file
 # Gets a baseline, subtracts it from a main signal, gaussian filters the 405 channel, then takes the ratio of the 470/405 channels. Finally, filters the ratio signal
