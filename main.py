@@ -8,7 +8,6 @@ from tkinter import ttk, filedialog, messagebox
 import pandas as pd
 import scipy.signal as sci
 
-#TODO Change "Process File" button to save the modified file as a .abf after the other analysis
 #TODO Peak indices should be summarized over time (peak 2 should be time in trace + 30 sec, peak 3 should be time in trace + 1 minute, etc)
 class Main(tk.Frame):
     def __init__(self, master= None, **kwargs):
