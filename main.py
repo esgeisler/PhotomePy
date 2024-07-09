@@ -246,8 +246,8 @@ class Main(tk.Frame):
                     postInjectionRight[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
                     x += 1
             self.traceStatus = True
-            acl.tExport(finalSignalLeft, self.ratNameLeft) #Left
-            acl.tExport(finalSignalRight, self.ratNameRight) #Right
+            acl.tExport(finalSignalLeft, int(self.ratNameLeft), self.abfDate) #Left
+            acl.tExport(finalSignalRight, int(self.ratNameRight), self.abfDate) #Right
 
         # Analyzes the peak decay, amplitude, and frequency of a single trace chosen by the user.
         def singleTracePeaks():
