@@ -54,7 +54,7 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         z += 1
     return finalDict
 
-#TODO amplitude should be peak to trough height
+#TODO fix FutureWarning caused by pre- and postOverview being empty by default.
 def traceProcessor(processedSignal, injectionTrace):
     preInjectionDF = {}
     preOverview = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
@@ -68,14 +68,12 @@ def traceProcessor(processedSignal, injectionTrace):
                                         'Width_at50_ms','Frequency'])
     x = 0
     for traces in processedSignal.values():
-        if traces.empty:
-            continue
-        elif x <= injectionTrace:
+        if x <= injectionTrace:
             preInjectionDF[x] = traces
-            preOverview = pd.concat([preOverview, traces], ignore_index= True)
+            preOverview = pd.concat([preOverview, traces if not traces.empty else None], ignore_index= True)
         elif x > injectionTrace:
             postInjectionDF[x] = traces
-            postOverview = pd.concat([postOverview, traces], ignore_index= True)
+            postOverview = pd.concat([postOverview, traces if not traces.empty else None], ignore_index= True)
         x += 1
     
     return preInjectionDF, postInjectionDF, preOverview, postOverview

@@ -162,6 +162,7 @@ class Main(tk.Frame):
             ratDataLeft.to_excel(filenameLeft, index= False)
             ratDataRight.to_excel(filenameRight, index= False)
             self.mainStatus = True
+        #TODO fix FutureWarning caused by concat being empty by default.
         # Writes trace data to 2 excel files: Pre-injection and post-injection
             preLeftWriter = pd.ExcelWriter(preLeft)
             postLeftWriter = pd.ExcelWriter(postLeft)
@@ -180,10 +181,8 @@ class Main(tk.Frame):
                                         'Event_Window_End', 'Amplitude', 'Peak_Decay_ms',
                                         'Width_at50_ms','Frequency'])
                     for y in groups:
-                        if not y.empty:
-                            concat = pd.concat([concat, y])
-                        elif y.empty:
-                            continue
+                        concat = pd.concat([concat, y if not y.empty else None])
+                    
                     concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
                     z += 3
                 # Individual Traces
@@ -202,10 +201,7 @@ class Main(tk.Frame):
                                         'Event_Window_End', 'Amplitude', 'Peak_Decay_ms',
                                         'Width_at50_ms','Frequency'])
                     for y in groups:
-                        if not y.empty:
-                            concat = pd.concat([concat, y])
-                        elif y.empty:
-                            continue
+                        concat = pd.concat([concat, y if not y.empty else None])
                     concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z+x, z+x+2), index=False)
                     z += 3
                 # Individual Traces
@@ -224,11 +220,8 @@ class Main(tk.Frame):
                                         'Peak_Time_Sec', 'Event_Window_Start', 
                                         'Event_Window_End', 'Amplitude', 'Peak_Decay_ms',
                                         'Width_at50_ms','Frequency'])
-                    for y in groups:
-                        if not y.empty:
-                            concat = pd.concat([concat, y])
-                        elif y.empty:
-                            continue
+                    for y in groups: 
+                        concat = pd.concat([concat, y if not y.empty else None])
                     concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
                     z += 3
                 # Individual Traces
@@ -247,10 +240,7 @@ class Main(tk.Frame):
                                         'Event_Window_End', 'Amplitude', 'Peak_Decay_ms',
                                         'Width_at50_ms','Frequency'])
                     for y in groups:
-                        if not y.empty:
-                            concat = pd.concat([concat, y])
-                        elif y.empty:
-                            continue
+                        concat = pd.concat([concat, y if not y.empty else None])
                     concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z+x, z+x+2), index=False)
                     z += 3
                 # Individual Traces
