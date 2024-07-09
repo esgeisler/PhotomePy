@@ -54,7 +54,6 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         z += 1
     return finalDict
 
-#TODO bin every 3 traces for time-course analysis
 #TODO amplitude should be peak to trough height
 def traceProcessor(processedSignal, injectionTrace):
     preInjectionDF = {}
@@ -69,7 +68,9 @@ def traceProcessor(processedSignal, injectionTrace):
                                         'Width_at50_ms','Frequency'])
     x = 0
     for traces in processedSignal.values():
-        if x <= injectionTrace:
+        if traces.empty:
+            continue
+        elif x <= injectionTrace:
             preInjectionDF[x] = traces
             preOverview = pd.concat([preOverview, traces], ignore_index= True)
         elif x > injectionTrace:

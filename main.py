@@ -180,7 +180,10 @@ class Main(tk.Frame):
                                         'Event_Window_End', 'Amplitude', 'Peak_Decay_ms',
                                         'Width_at50_ms','Frequency'])
                     for y in groups:
-                        concat = pd.concat([concat, y])
+                        if not y.empty:
+                            concat = pd.concat([concat, y])
+                        elif y.empty:
+                            continue
                     concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
                     z += 3
                 # Individual Traces
@@ -199,7 +202,10 @@ class Main(tk.Frame):
                                         'Event_Window_End', 'Amplitude', 'Peak_Decay_ms',
                                         'Width_at50_ms','Frequency'])
                     for y in groups:
-                        concat = pd.concat([concat, y])
+                        if not y.empty:
+                            concat = pd.concat([concat, y])
+                        elif y.empty:
+                            continue
                     concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z+x, z+x+2), index=False)
                     z += 3
                 # Individual Traces
@@ -219,7 +225,10 @@ class Main(tk.Frame):
                                         'Event_Window_End', 'Amplitude', 'Peak_Decay_ms',
                                         'Width_at50_ms','Frequency'])
                     for y in groups:
-                        concat = pd.concat([concat, y])
+                        if not y.empty:
+                            concat = pd.concat([concat, y])
+                        elif y.empty:
+                            continue
                     concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
                     z += 3
                 # Individual Traces
@@ -237,9 +246,12 @@ class Main(tk.Frame):
                                         'Peak_Time_Sec', 'Event_Window_Start', 
                                         'Event_Window_End', 'Amplitude', 'Peak_Decay_ms',
                                         'Width_at50_ms','Frequency'])
-                    for y in groups: 
-                        concat = pd.concat([concat, y])
-                        concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z+x, z+x+2), index=False)
+                    for y in groups:
+                        if not y.empty:
+                            concat = pd.concat([concat, y])
+                        elif y.empty:
+                            continue
+                    concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z+x, z+x+2), index=False)
                     z += 3
                 # Individual Traces
                 for frames in postInjectionRight:
