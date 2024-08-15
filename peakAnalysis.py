@@ -37,7 +37,7 @@ def wholeTracePeaks(processedSignalArray, mainFile):
     for x in peaksArray:
         peakTable = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
                                         'Peak_Time_Sec', 'Event_Window_Start', 
-                                        'Event_Window_End', 'Amplitude', 'Peak_Decay_ms',
+                                        'Event_Window_End', 'Amplitude', 'Off_Time_ms',
                                         'Width_at50_ms','Frequency'])
         peakTable.Event_Num = [x + 1 for x in range(len(x))]
         peakTable.Peak_Index = x
@@ -59,12 +59,12 @@ def traceProcessor(processedSignal, injectionTrace):
     preInjectionDF = {}
     preOverview = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
                                         'Peak_Time_Sec', 'Event_Window_Start', 
-                                        'Event_Window_End', 'Amplitude', 'Peak_Decay_ms',
+                                        'Event_Window_End', 'Amplitude', 'Off_Time_ms',
                                         'Width_at50_ms','Frequency'])
     postInjectionDF = {}
     postOverview = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
                                         'Peak_Time_Sec', 'Event_Window_Start', 
-                                        'Event_Window_End', 'Amplitude', 'Peak_Decay_ms',
+                                        'Event_Window_End', 'Amplitude', 'Off_Time_ms',
                                         'Width_at50_ms','Frequency'])
     x = 0
     for traces in processedSignal.values():

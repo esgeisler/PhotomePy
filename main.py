@@ -178,7 +178,7 @@ class Main(tk.Frame):
                 for groups in preLeftGroupThree:
                     concat = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
                                         'Peak_Time_Sec', 'Event_Window_Start', 
-                                        'Event_Window_End', 'Amplitude', 'Peak_Decay_ms',
+                                        'Event_Window_End', 'Amplitude', 'Off_Time_ms',
                                         'Width_at50_ms','Frequency'])
                     for y in groups:
                         concat = pd.concat([concat, y if not y.empty else None])
@@ -198,7 +198,7 @@ class Main(tk.Frame):
                 for groups in postLeftGroupThree:
                     concat = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
                                         'Peak_Time_Sec', 'Event_Window_Start', 
-                                        'Event_Window_End', 'Amplitude', 'Peak_Decay_ms',
+                                        'Event_Window_End', 'Amplitude', 'Off_Time_ms',
                                         'Width_at50_ms','Frequency'])
                     for y in groups:
                         concat = pd.concat([concat, y if not y.empty else None])
@@ -218,7 +218,7 @@ class Main(tk.Frame):
                 for groups in preRightGroupThree:
                     concat = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
                                         'Peak_Time_Sec', 'Event_Window_Start', 
-                                        'Event_Window_End', 'Amplitude', 'Peak_Decay_ms',
+                                        'Event_Window_End', 'Amplitude', 'Off_Time_ms',
                                         'Width_at50_ms','Frequency'])
                     for y in groups: 
                         concat = pd.concat([concat, y if not y.empty else None])
@@ -237,7 +237,7 @@ class Main(tk.Frame):
                 for groups in postRightGroupThree:
                     concat = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
                                         'Peak_Time_Sec', 'Event_Window_Start', 
-                                        'Event_Window_End', 'Amplitude', 'Peak_Decay_ms',
+                                        'Event_Window_End', 'Amplitude', 'Off_Time_ms',
                                         'Width_at50_ms','Frequency'])
                     for y in groups:
                         concat = pd.concat([concat, y if not y.empty else None])
