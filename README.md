@@ -1,4 +1,4 @@
-# fp-trace-analysis
+# PyFP Analysis
 
 A small python program designed to read pClamp .abf files, and automatically perform corrections and analysis as performed in Baird et al., 2023 (https://doi.org/10.1007/s00213-023-06340-8), in an attempt to simplify the workflow of analyzing these data.
 
