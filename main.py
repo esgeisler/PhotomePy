@@ -21,8 +21,8 @@ class Main(tk.Frame):
         self.leftRatInjection = tk.StringVar()
         self.rightRatInjection = tk.StringVar()
         self.dropValue = tk.StringVar(self, 'Select Trace')
-        self.ratNameLeft = 0
-        self.ratNameRight = 0
+        self.ratNameLeft = tk.StringVar()
+        self.ratNameRight = tk.StringVar()
         self.ratInjectionLeft = 0
         self.ratInjectionRight = 0
         self.peaksLeft = []
@@ -82,8 +82,8 @@ class Main(tk.Frame):
 
     # Closes the average processing popup window, saving the values entered.
         def onPopSubmit():
-            self.ratNameLeft = int(self.leftRatName.get())
-            self.ratNameRight = int(self.rightRatName.get())
+            self.ratNameLeft = self.leftRatName.get()
+            self.ratNameRight = self.rightRatName.get()
             self.ratInjectionLeft = int(self.leftRatInjection.get()) - 1
             self.ratInjectionRight = int(self.rightRatInjection.get()) - 1
 
@@ -147,18 +147,18 @@ class Main(tk.Frame):
             preInjectionLeft, postInjectionLeft, preOverviewLeft, postOverviewLeft = pas.traceProcessor(self.peaksLeft, self.ratInjectionLeft)
             preInjectionRight, postInjectionRight, preOverviewRight, postOverviewRight = pas.traceProcessor(self.peaksRight, self.ratInjectionRight)
 
-            preLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Pre-Injection Peaks.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), int(self.ratNameLeft)))
-            postLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Post-Injection Peaks.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), int(self.ratNameLeft)))
+            preLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Pre-Injection Peaks.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameLeft))
+            postLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Post-Injection Peaks.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameLeft))
 
-            preRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Pre-Injection Peaks.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), int(self.ratNameRight)))
-            postRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Post-Injection Peaks.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), int(self.ratNameRight)))
+            preRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Pre-Injection Peaks.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameRight))
+            postRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Post-Injection Peaks.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameRight))
         # Saves the averaged data to an excel file with the rat's "name"
             ratDataLeft = pd.DataFrame({"Trace Number:": range(1, len(averageSignalLeft)+1), "Average Fluorescence": averageSignalLeft, 
                                         "Pre-Injection Average":preInjectionAverageLeft, "ΔF/F": fluorescenceLeft, "Bleaching Correction": None, })
             ratDataRight = pd.DataFrame({"Trace Number:": range(1, len(averageSignalRight)+1), "Average Fluorescence": averageSignalRight, 
                                         "Pre-Injection Average":preInjectionAverageRight, "ΔF/F": fluorescenceRight, "Bleaching Correction": None, })
-            filenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Temp File.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameLeft))
-            filenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %i Temp File.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameRight))
+            filenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Temp File.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameLeft))
+            filenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Temp File.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameRight))
             ratDataLeft.to_excel(filenameLeft, index= False)
             ratDataRight.to_excel(filenameRight, index= False)
             self.mainStatus = True
@@ -248,8 +248,8 @@ class Main(tk.Frame):
                     postInjectionRight[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
                     x += 1
             self.traceStatus = True
-            acl.tExport(finalSignalLeft, int(self.ratNameLeft), self.abfDate) #Left
-            acl.tExport(finalSignalRight, int(self.ratNameRight), self.abfDate) #Right
+            acl.tExport(finalSignalLeft, self.ratNameLeft, self.abfDate) #Left
+            acl.tExport(finalSignalRight, self.ratNameRight, self.abfDate) #Right
 
         # Analyzes the peak decay, amplitude, and frequency of a single trace chosen by the user.
         def singleTracePeaks():
