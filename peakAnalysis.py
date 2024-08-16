@@ -45,7 +45,7 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         peakTable.Event_Window_Start = peaksDict[z]['left_ips'].round(2)
         peakTable.Event_Window_End = peaksDict[z]['right_ips'].round(2)
         peakTable.Amplitude = (peaksDict[z]['peak_heights'] - processedSignalArray[z][peaksDict[z]['right_bases']]).round(2)
-        peakTable.Peak_Decay_ms = ((peaksDict[z]['right_bases'] - x)/(samplingFreq/1000)).round(2)
+        peakTable.Off_Time_ms = ((peaksDict[z]['right_bases'] - x)/(samplingFreq/1000)).round(2)
         peakTable.Width_at50_ms = (peaksDict[z]['widths']/(samplingFreq/1000)).round(2)
         peakTable.Frequency = round(np.count_nonzero(x)/15, 2) #Peaks/second (15 second trace)
 
