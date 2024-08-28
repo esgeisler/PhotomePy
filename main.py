@@ -163,6 +163,7 @@ class Main(tk.Frame):
             ratDataRight.to_excel(filenameRight, index= False)
             self.mainStatus = True
         #TODO fix FutureWarning caused by concat being empty by default.
+        #TODO Switch to just left and right from left pre/post and right pre/post.
         # Writes trace data to 2 excel files: Pre-injection and post-injection
             preLeftWriter = pd.ExcelWriter(preLeft)
             postLeftWriter = pd.ExcelWriter(postLeft)
@@ -190,14 +191,13 @@ class Main(tk.Frame):
                                         'Width_at50_ms','Frequency'])
                     for y in groups:
                         concat = pd.concat([concat, y if not y.empty else None], ignore_index=True)
-                    ampList.append(concat["Amplitude"].rename("Amplitude %i-%i"%(z, z+2))) 
-                    offTimeList.append(concat["Off_Time_ms"].rename("Off Time %i-%i"%(z, z+2)))
-                    widthList.append(concat["Width_at50_ms"].rename("Width %i-%i"%(z, z+2)))
-                    freqList.append(concat["Frequency"].rename("Frequency %i-%i"%(z, z+2)))
+                    ampList.append(pd.DataFrame(concat["Amplitude"].rename("Amplitude %i-%i"%(z, z+2)))) 
+                    offTimeList.append(pd.DataFrame(concat["Off_Time_ms"].rename("Off Time %i-%i"%(z, z+2))))
+                    widthList.append(pd.DataFrame(concat["Width_at50_ms"].rename("Width %i-%i"%(z, z+2))))
+                    freqList.append(pd.DataFrame(concat["Frequency"].rename("Frequency %i-%i"%(z, z+2))))
                     concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
-                    print(concat)
                     z += 3
-                print(ampList)
+                
                 ampColumn = pd.concat(ampList, axis="columns")
                 offTimeColumn = pd.concat(offTimeList, axis="columns")
                 widthColumn = pd.concat(widthList, axis="columns")
@@ -239,10 +239,10 @@ class Main(tk.Frame):
                     concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z+x, z+x+2), index=False)
                     z += 3
 
-                ampColumn = pd.concat(ampList, axis="columns", join="inner")
-                offTimeColumn = pd.concat(offTimeList, axis="columns", join="inner")
-                widthColumn = pd.concat(widthList, axis="columns", join="inner")
-                freqColumn = pd.concat(freqList, axis="columns", join="inner")
+                ampColumn = pd.concat(ampList, axis="columns")
+                offTimeColumn = pd.concat(offTimeList, axis="columns")
+                widthColumn = pd.concat(widthList, axis="columns")
+                freqColumn = pd.concat(freqList, axis="columns")
 
                 ampColumn.to_excel(writer, sheet_name="Amplitude")
                 offTimeColumn.to_excel(writer, sheet_name="Off Time")
@@ -281,10 +281,10 @@ class Main(tk.Frame):
                     concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
                     z += 3
 
-                ampColumn = pd.concat(ampList, axis="columns", join="inner")
-                offTimeColumn = pd.concat(offTimeList, axis="columns", join="inner")
-                widthColumn = pd.concat(widthList, axis="columns", join="inner")
-                freqColumn = pd.concat(freqList, axis="columns", join="inner")
+                ampColumn = pd.concat(ampList, axis="columns")
+                offTimeColumn = pd.concat(offTimeList, axis="columns")
+                widthColumn = pd.concat(widthList, axis="columns")
+                freqColumn = pd.concat(freqList, axis="columns")
 
                 ampColumn.to_excel(writer, sheet_name="Amplitude")
                 offTimeColumn.to_excel(writer, sheet_name="Off Time")
@@ -323,10 +323,10 @@ class Main(tk.Frame):
                     concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z+x, z+x+2), index=False)
                     z += 3
                 
-                ampColumn = pd.concat(ampList, axis="columns", join="inner")
-                offTimeColumn = pd.concat(offTimeList, axis="columns", join="inner")
-                widthColumn = pd.concat(widthList, axis="columns", join="inner")
-                freqColumn = pd.concat(freqList, axis="columns", join="inner")
+                ampColumn = pd.concat(ampList, axis="columns")
+                offTimeColumn = pd.concat(offTimeList, axis="columns")
+                widthColumn = pd.concat(widthList, axis="columns")
+                freqColumn = pd.concat(freqList, axis="columns")
 
                 ampColumn.to_excel(writer, sheet_name="Amplitude")
                 offTimeColumn.to_excel(writer, sheet_name="Off Time")
