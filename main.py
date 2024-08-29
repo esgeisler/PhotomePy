@@ -144,14 +144,14 @@ class Main(tk.Frame):
             self.peaksLeft = pas.wholeTracePeaks(finalSignalLeft, self.experimentFileName)
             self.peaksRight = pas.wholeTracePeaks(finalSignalRight, self.experimentFileName)
 
-            preInjectionLeft, postInjectionLeft, preOverviewLeft, postOverviewLeft = pas.traceProcessor(self.peaksLeft, self.ratInjectionLeft)
-            preInjectionRight, postInjectionRight, preOverviewRight, postOverviewRight = pas.traceProcessor(self.peaksRight, self.ratInjectionRight)
+            injectionLeft, overviewLeft = pas.traceProcessor(self.peaksLeft, self.ratInjectionLeft)
+            injectionRight, overviewRight = pas.traceProcessor(self.peaksRight, self.ratInjectionRight)
 
-            preLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Pre-Injection Peaks.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameLeft))
-            postLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Post-Injection Peaks.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameLeft))
+            leftPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Peaks.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameLeft))
+            #postLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Post-Injection Peaks.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameLeft))
 
-            preRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Pre-Injection Peaks.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameRight))
-            postRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Post-Injection Peaks.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameRight))
+            rightPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Peaks.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameRight))
+            #postRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Post-Injection Peaks.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameRight))
         # Saves the averaged data to an excel file with the rat's "name"
             ratDataLeft = pd.DataFrame({"Trace Number:": range(1, len(averageSignalLeft)+1), "Average Fluorescence": averageSignalLeft, 
                                         "Pre-Injection Average":preInjectionAverageLeft, "ΔF/F": fluorescenceLeft, "Bleaching Correction": None, })
@@ -163,18 +163,17 @@ class Main(tk.Frame):
             ratDataRight.to_excel(filenameRight, index= False)
             self.mainStatus = True
         #TODO fix FutureWarning caused by concat being empty by default.
-        #TODO Switch to just left and right from left pre/post and right pre/post.
-        # Writes trace data to 2 excel files: Pre-injection and post-injection
-            preLeftWriter = pd.ExcelWriter(preLeft)
-            postLeftWriter = pd.ExcelWriter(postLeft)
-            preRightWriter = pd.ExcelWriter(preRight)
-            postRightWriter = pd.ExcelWriter(postRight)
+        # Writes trace data to 2 excel files: left and right
+            leftWriter = pd.ExcelWriter(leftPath)
+            # postLeftWriter = pd.ExcelWriter(postLeft)
+            rightWriter = pd.ExcelWriter(rightPath)
+            # postRightWriter = pd.ExcelWriter(postRight)
             x = 1
-            with preLeftWriter as writer:
+            with leftWriter as writer:
                 # Overview Sheet
-                preOverviewLeft.to_excel(writer, sheet_name= "All Traces")
+                overviewLeft.to_excel(writer, sheet_name= "All Traces")
                 # Bins of Three
-                preLeftGroupThree = [list(preInjectionLeft.values())[i:i+3] for i in range(0, len(preInjectionLeft), 3)]
+                leftGroupThree = [list(injectionLeft.values())[i:i+3] for i in range(0, len(injectionLeft), 3)]
                 ampColumn = pd.DataFrame()
                 offTimeColumn = pd.DataFrame()
                 widthColumn = pd.DataFrame()
@@ -184,7 +183,7 @@ class Main(tk.Frame):
                 widthList = []
                 freqList = []
                 z = 1
-                for groups in preLeftGroupThree:
+                for groups in leftGroupThree:
                     concat = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
                                         'Peak_Time_Sec', 'Event_Window_Start', 
                                         'Event_Window_End', 'Amplitude', 'Off_Time_ms',
@@ -208,14 +207,14 @@ class Main(tk.Frame):
                 widthColumn.to_excel(writer, sheet_name="Width")
                 freqColumn.to_excel(writer, sheet_name="Frequency")
                 # Individual Traces
-                for frames in preInjectionLeft:
-                    preInjectionLeft[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
+                for frames in injectionLeft:
+                    injectionLeft[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
                     x += 1
-            with postLeftWriter as writer:
+            with rightWriter as writer:
                 # Overview Sheet
-                postOverviewLeft.to_excel(writer, sheet_name= "All Traces")
+                overviewRight.to_excel(writer, sheet_name= "All Traces")
                 # Bins of Three
-                postLeftGroupThree = [list(postInjectionLeft.values())[i:i+3] for i in range(0, len(postInjectionLeft), 3)]
+                rightGroupThree = [list(injectionRight.values())[i:i+3] for i in range(0, len(injectionRight), 3)]
                 ampColumn = pd.DataFrame()
                 offTimeColumn = pd.DataFrame()
                 widthColumn = pd.DataFrame()
@@ -225,49 +224,7 @@ class Main(tk.Frame):
                 widthList = []
                 freqList = []
                 z = 1
-                for groups in postLeftGroupThree:
-                    concat = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
-                                        'Peak_Time_Sec', 'Event_Window_Start', 
-                                        'Event_Window_End', 'Amplitude', 'Off_Time_ms',
-                                        'Width_at50_ms','Frequency', 'Area'])
-                    for y in groups:
-                        concat = pd.concat([concat, y if not y.empty else None], ignore_index=True)
-                    ampList.append(pd.DataFrame(concat["Amplitude"].rename("Amplitude %i-%i"%(z+x, z+x+2))))
-                    offTimeList.append(pd.DataFrame(concat["Off_Time_ms"].rename("Off Time %i-%i"%(z+x, z+x+2))))
-                    widthList.append(pd.DataFrame(concat["Width_at50_ms"].rename("Width %i-%i"%(z+x, z+x+2))))
-                    freqList.append(pd.DataFrame(concat["Frequency"].rename("Frequency %i-%i"%(z+x, z+x+2))))
-                    concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z+x, z+x+2), index=False)
-                    z += 3
-
-                ampColumn = pd.concat(ampList, axis="columns")
-                offTimeColumn = pd.concat(offTimeList, axis="columns")
-                widthColumn = pd.concat(widthList, axis="columns")
-                freqColumn = pd.concat(freqList, axis="columns")
-
-                ampColumn.to_excel(writer, sheet_name="Amplitude")
-                offTimeColumn.to_excel(writer, sheet_name="Off Time")
-                widthColumn.to_excel(writer, sheet_name="Width")
-                freqColumn.to_excel(writer, sheet_name="Frequency")
-                # Individual Traces
-                for frames in postInjectionLeft:
-                    postInjectionLeft[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
-                    x += 1
-            x = 1
-            with preRightWriter as writer:
-                # Overview Sheet
-                preOverviewRight.to_excel(writer, sheet_name= "All Traces")
-                # Bins of Three
-                preRightGroupThree = [list(preInjectionRight.values())[i:i+3] for i in range(0, len(preInjectionRight), 3)]
-                ampColumn = pd.DataFrame()
-                offTimeColumn = pd.DataFrame()
-                widthColumn = pd.DataFrame()
-                freqColumn = pd.DataFrame()
-                ampList = []
-                offTimeList = []
-                widthList = []
-                freqList = []
-                z = 1
-                for groups in preRightGroupThree:
+                for groups in rightGroupThree:
                     concat = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
                                         'Peak_Time_Sec', 'Event_Window_Start', 
                                         'Event_Window_End', 'Amplitude', 'Off_Time_ms',
@@ -292,49 +249,8 @@ class Main(tk.Frame):
                 freqColumn.to_excel(writer, sheet_name="Frequency")
                 
                 # Individual Traces
-                for frames in preInjectionRight:
-                    preInjectionRight[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
-                    x += 1
-            with postRightWriter as writer:
-                # Overview Sheet
-                postOverviewRight.to_excel(writer, sheet_name= "All Traces")
-                # Bins of Three
-                postRightGroupThree = [list(postInjectionRight.values())[i:i+3] for i in range(0, len(postInjectionRight), 3)]
-                ampColumn = pd.DataFrame()
-                offTimeColumn = pd.DataFrame()
-                widthColumn = pd.DataFrame()
-                freqColumn = pd.DataFrame()
-                ampList = []
-                offTimeList = []
-                widthList = []
-                freqList = []
-                z = 1
-                for groups in postRightGroupThree:
-                    concat = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
-                                        'Peak_Time_Sec', 'Event_Window_Start', 
-                                        'Event_Window_End', 'Amplitude', 'Off_Time_ms',
-                                        'Width_at50_ms','Frequency', 'Area'])
-                    for y in groups:
-                        concat = pd.concat([concat, y if not y.empty else None], ignore_index=True)
-                    ampList.append(pd.DataFrame(concat["Amplitude"].rename("Amplitude %i-%i"%(z+x, z+x+2))))
-                    offTimeList.append(pd.DataFrame(concat["Off_Time_ms"].rename("Off Time %i-%i"%(z+x, z+x+2))))
-                    widthList.append(pd.DataFrame(concat["Width_at50_ms"].rename("Width %i-%i"%(z+x, z+x+2))))
-                    freqList.append(pd.DataFrame(concat["Frequency"].rename("Frequency %i-%i"%(z+x, z+x+2))))
-                    concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z+x, z+x+2), index=False)
-                    z += 3
-                
-                ampColumn = pd.concat(ampList, axis="columns")
-                offTimeColumn = pd.concat(offTimeList, axis="columns")
-                widthColumn = pd.concat(widthList, axis="columns")
-                freqColumn = pd.concat(freqList, axis="columns")
-
-                ampColumn.to_excel(writer, sheet_name="Amplitude")
-                offTimeColumn.to_excel(writer, sheet_name="Off Time")
-                widthColumn.to_excel(writer, sheet_name="Width")
-                freqColumn.to_excel(writer, sheet_name="Frequency")
-                # Individual Traces
-                for frames in postInjectionRight:
-                    postInjectionRight[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
+                for frames in injectionRight:
+                    injectionRight[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
                     x += 1
             self.traceStatus = True
             acl.tExport(finalSignalLeft, self.ratNameLeft, self.abfDate) #Left
