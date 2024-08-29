@@ -188,7 +188,7 @@ class Main(tk.Frame):
                     concat = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
                                         'Peak_Time_Sec', 'Event_Window_Start', 
                                         'Event_Window_End', 'Amplitude', 'Off_Time_ms',
-                                        'Width_at50_ms','Frequency'])
+                                        'Width_at50_ms','Frequency', 'Area'])
                     for y in groups:
                         concat = pd.concat([concat, y if not y.empty else None], ignore_index=True)
                     ampList.append(pd.DataFrame(concat["Amplitude"].rename("Amplitude %i-%i"%(z, z+2)))) 
@@ -229,7 +229,7 @@ class Main(tk.Frame):
                     concat = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
                                         'Peak_Time_Sec', 'Event_Window_Start', 
                                         'Event_Window_End', 'Amplitude', 'Off_Time_ms',
-                                        'Width_at50_ms','Frequency'])
+                                        'Width_at50_ms','Frequency', 'Area'])
                     for y in groups:
                         concat = pd.concat([concat, y if not y.empty else None], ignore_index=True)
                     ampList.append(pd.DataFrame(concat["Amplitude"].rename("Amplitude %i-%i"%(z+x, z+x+2))))
@@ -271,7 +271,7 @@ class Main(tk.Frame):
                     concat = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
                                         'Peak_Time_Sec', 'Event_Window_Start', 
                                         'Event_Window_End', 'Amplitude', 'Off_Time_ms',
-                                        'Width_at50_ms','Frequency'])
+                                        'Width_at50_ms','Frequency', 'Area'])
                     for y in groups:
                         concat = pd.concat([concat, y if not y.empty else None], ignore_index=True)
                     ampList.append(pd.DataFrame(concat["Amplitude"].rename("Amplitude %i-%i"%(z, z+2))))
@@ -313,7 +313,7 @@ class Main(tk.Frame):
                     concat = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
                                         'Peak_Time_Sec', 'Event_Window_Start', 
                                         'Event_Window_End', 'Amplitude', 'Off_Time_ms',
-                                        'Width_at50_ms','Frequency'])
+                                        'Width_at50_ms','Frequency', 'Area'])
                     for y in groups:
                         concat = pd.concat([concat, y if not y.empty else None], ignore_index=True)
                     ampList.append(pd.DataFrame(concat["Amplitude"].rename("Amplitude %i-%i"%(z+x, z+x+2))))

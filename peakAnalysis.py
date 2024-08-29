@@ -1,8 +1,14 @@
 import scipy.signal as sci
+import scipy.optimize as opt
+import scipy.integrate as inte
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pyabf
+
+# Defines the function for fitting a nonlinear regression to a single peak. Currently uses the quadratic equation: Y=B0 + B1*X + B2*X^2
+# def peakFunc(x, a, b, c):
+#     return (a * x**2) + (b*x) + c
 
 #Retrieves the peaks of a single trace and returns a list containing the peaks in a ndarray and their properties in a dictionary
 def peakGetter(processedSignalArray):
@@ -38,7 +44,7 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         peakTable = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
                                         'Peak_Time_Sec', 'Event_Window_Start', 
                                         'Event_Window_End', 'Amplitude', 'Off_Time_ms',
-                                        'Width_at50_ms','Frequency'])
+                                        'Width_at50_ms','Frequency', 'Area'])
         peakTable.Event_Num = [x + 1 for x in range(len(x))]
         peakTable.Peak_Index = x
         peakTable.Peak_Time_Sec = ((x/samplingFreq) + (z * 30)).round(2)
@@ -48,6 +54,16 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         peakTable.Off_Time_ms = ((peaksDict[z]['right_bases'] - x)/(samplingFreq/1000)).round(2)
         peakTable.Width_at50_ms = (peaksDict[z]['widths']/(samplingFreq/1000)).round(2)
         peakTable.Frequency = round(np.count_nonzero(x)/15, 2) #Peaks/second (15 second trace)
+        areaList = []
+        for i in range(len(x)):
+            if len(processedSignalArray[z][int(peaksDict[z]['left_bases'][i]):int(peaksDict[z]['right_bases'][i])]) == 0:
+                continue
+        # peakArea = inte.quad(func= lambda x: x**2, a=float(peaksDict[z]['left_ips'][i]), b=float(peaksDict[z]['right_ips'][i]))
+            peakArea = inte.simpson(y=processedSignalArray[z][int(peaksDict[z]['left_bases'][i]):int(peaksDict[z]['right_bases'][i])], 
+                                    x=range(int(peaksDict[z]['left_bases'][i]), int(peaksDict[z]['right_bases'][i])))
+            areaList.append(peakArea)
+        areaList = pd.Series(areaList)
+        peakTable.Area = areaList
 
         peakTable.drop(peakTable[peakTable.Peak_Index == 0].index, inplace= True)
         finalDict[z] = peakTable
@@ -60,12 +76,12 @@ def traceProcessor(processedSignal, injectionTrace):
     preOverview = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
                                         'Peak_Time_Sec', 'Event_Window_Start', 
                                         'Event_Window_End', 'Amplitude', 'Off_Time_ms',
-                                        'Width_at50_ms','Frequency'])
+                                        'Width_at50_ms','Frequency', 'Area'])
     postInjectionDF = {}
     postOverview = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
                                         'Peak_Time_Sec', 'Event_Window_Start', 
                                         'Event_Window_End', 'Amplitude', 'Off_Time_ms',
-                                        'Width_at50_ms','Frequency'])
+                                        'Width_at50_ms','Frequency', 'Area'])
     x = 0
     for traces in processedSignal.values():
         if x <= injectionTrace:
