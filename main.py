@@ -7,6 +7,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import pandas as pd
 import scipy.signal as sci
+import numpy as np
 
 class Main(tk.Frame):
     def __init__(self, master= None, **kwargs):
@@ -157,7 +158,8 @@ class Main(tk.Frame):
                     ampList.append(pd.DataFrame(concat["Amplitude"].rename("Amplitude %i-%i"%(z, z+2)))) 
                     offTimeList.append(pd.DataFrame(concat["Off_Time_ms"].rename("Off Time %i-%i"%(z, z+2))))
                     widthList.append(pd.DataFrame(concat["Width_at50_ms"].rename("Width %i-%i"%(z, z+2))))
-                    freqList.append(pd.DataFrame(concat["Frequency"].rename("Frequency %i-%i"%(z, z+2))))
+                    droppedFreq = pd.DataFrame(concat["Frequency"].rename("Frequency %i-%i"%(z, z+2))).dropna()
+                    freqList.append(droppedFreq.reindex(index=pd.Index([0,1,2])))
                     areaList.append(pd.DataFrame(concat["Area"].rename("Area %i-%i"%(z, z+2))))
                     concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
                     z += 3
@@ -165,8 +167,8 @@ class Main(tk.Frame):
                 ampColumn = pd.concat(ampList, axis="columns")
                 offTimeColumn = pd.concat(offTimeList, axis="columns")
                 widthColumn = pd.concat(widthList, axis="columns")
-                freqColumn = pd.concat(freqList, axis="columns")
-                areaList = pd.concat(areaList, axis="columns")
+                freqColumn = pd.concat(freqList, axis="columns", ignore_index=True)
+                areaColumn = pd.concat(areaList, axis="columns")
 
                 ampColumn.to_excel(writer, sheet_name="Amplitude")
                 offTimeColumn.to_excel(writer, sheet_name="Off Time")
@@ -190,7 +192,8 @@ class Main(tk.Frame):
                     ampList.append(pd.DataFrame(concat["Amplitude"].rename("Amplitude %i-%i"%(z, z+2))))
                     offTimeList.append(pd.DataFrame(concat["Off_Time_ms"].rename("Off Time %i-%i"%(z, z+2))))
                     widthList.append(pd.DataFrame(concat["Width_at50_ms"].rename("Width %i-%i"%(z, z+2))))
-                    freqList.append(pd.DataFrame(concat["Frequency"].rename("Frequency %i-%i"%(z, z+2))))
+                    droppedFreq = pd.DataFrame(concat["Frequency"].rename("Frequency %i-%i"%(z, z+2))).dropna()
+                    freqList.append(droppedFreq.reindex(index=pd.Index([0,1,2])))
                     areaList.append(pd.DataFrame(concat["Area"].rename("Area %i-%i"%(z, z+2))))
                     concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
                     z += 3
@@ -198,8 +201,8 @@ class Main(tk.Frame):
                 ampColumn = pd.concat(ampList, axis="columns")
                 offTimeColumn = pd.concat(offTimeList, axis="columns")
                 widthColumn = pd.concat(widthList, axis="columns")
-                freqColumn = pd.concat(freqList, axis="columns")
-                areaList = pd.concat(areaList, axis="columns")
+                freqColumn = pd.concat(freqList, axis="columns", ignore_index=True)
+                areaColumn = pd.concat(areaList, axis="columns")
 
                 ampColumn.to_excel(writer, sheet_name="Amplitude")
                 offTimeColumn.to_excel(writer, sheet_name="Off Time")
