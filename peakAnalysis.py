@@ -71,17 +71,15 @@ def wholeTracePeaks(processedSignalArray, mainFile):
     return finalDict
 
 #TODO fix FutureWarning caused by pre- and postOverview being empty by default.
-def traceProcessor(processedSignal, injectionTrace):
+def traceProcessor(processedSignal):
     injectionDF = {}
-    overview = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
-                                        'Peak_Time_Sec', 'Event_Window_Start', 
-                                        'Event_Window_End', 'Amplitude', 'Off_Time_ms',
-                                        'Width_at50_ms','Frequency', 'Area'])
     x = 0
+    traceList = []
     for traces in processedSignal.values():
         injectionDF[x] = traces
-        overview = pd.concat([overview, traces if not traces.empty else None], ignore_index= True)
+        traceList.append(traces)
         x += 1
+    overview = pd.concat(traceList)
     return injectionDF, overview
 
 #Retrieves the peaks of a signal and their properties, then plots them on a graph of the chosen trace

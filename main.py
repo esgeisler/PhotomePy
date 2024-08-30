@@ -8,7 +8,6 @@ from tkinter import ttk, filedialog, messagebox
 import pandas as pd
 import scipy.signal as sci
 
-#TODO Peak indices should be summarized over time (peak 2 should be time in trace + 30 sec, peak 3 should be time in trace + 1 minute, etc)
 class Main(tk.Frame):
     def __init__(self, master= None, **kwargs):
         super().__init__(master, **kwargs)
@@ -144,14 +143,11 @@ class Main(tk.Frame):
             self.peaksLeft = pas.wholeTracePeaks(finalSignalLeft, self.experimentFileName)
             self.peaksRight = pas.wholeTracePeaks(finalSignalRight, self.experimentFileName)
 
-            injectionLeft, overviewLeft = pas.traceProcessor(self.peaksLeft, self.ratInjectionLeft)
-            injectionRight, overviewRight = pas.traceProcessor(self.peaksRight, self.ratInjectionRight)
+            injectionLeft, overviewLeft = pas.traceProcessor(self.peaksLeft)
+            injectionRight, overviewRight = pas.traceProcessor(self.peaksRight)
 
             leftPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Peaks.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameLeft))
-            #postLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Post-Injection Peaks.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameLeft))
-
             rightPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Peaks.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameRight))
-            #postRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Post-Injection Peaks.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameRight))
         # Saves the averaged data to an excel file with the rat's "name"
             ratDataLeft = pd.DataFrame({"Trace Number:": range(1, len(averageSignalLeft)+1), "Average Fluorescence": averageSignalLeft, 
                                         "Pre-Injection Average":preInjectionAverageLeft, "ΔF/F": fluorescenceLeft, "Bleaching Correction": None, })
@@ -165,35 +161,23 @@ class Main(tk.Frame):
         #TODO fix FutureWarning caused by concat being empty by default.
         # Writes trace data to 2 excel files: left and right
             leftWriter = pd.ExcelWriter(leftPath)
-            # postLeftWriter = pd.ExcelWriter(postLeft)
             rightWriter = pd.ExcelWriter(rightPath)
-            # postRightWriter = pd.ExcelWriter(postRight)
             x = 1
             with leftWriter as writer:
                 # Overview Sheet
                 overviewLeft.to_excel(writer, sheet_name= "All Traces")
                 # Bins of Three
                 leftGroupThree = [list(injectionLeft.values())[i:i+3] for i in range(0, len(injectionLeft), 3)]
-                ampColumn = pd.DataFrame()
-                offTimeColumn = pd.DataFrame()
-                widthColumn = pd.DataFrame()
-                freqColumn = pd.DataFrame()
-                ampList = []
-                offTimeList = []
-                widthList = []
-                freqList = []
+                ampColumn, offTimeColumn, widthColumn, freqColumn, areaColumn = pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(),
+                ampList, offTimeList, widthList, freqList, areaList = [], [], [], [], []
                 z = 1
                 for groups in leftGroupThree:
-                    concat = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
-                                        'Peak_Time_Sec', 'Event_Window_Start', 
-                                        'Event_Window_End', 'Amplitude', 'Off_Time_ms',
-                                        'Width_at50_ms','Frequency', 'Area'])
-                    for y in groups:
-                        concat = pd.concat([concat, y if not y.empty else None], ignore_index=True)
+                    concat = pd.concat(groups, ignore_index=True)
                     ampList.append(pd.DataFrame(concat["Amplitude"].rename("Amplitude %i-%i"%(z, z+2)))) 
                     offTimeList.append(pd.DataFrame(concat["Off_Time_ms"].rename("Off Time %i-%i"%(z, z+2))))
                     widthList.append(pd.DataFrame(concat["Width_at50_ms"].rename("Width %i-%i"%(z, z+2))))
                     freqList.append(pd.DataFrame(concat["Frequency"].rename("Frequency %i-%i"%(z, z+2))))
+                    areaList.append(pd.DataFrame(concat["Area"].rename("Area %i-%i"%(z, z+2))))
                     concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
                     z += 3
                 
@@ -201,11 +185,13 @@ class Main(tk.Frame):
                 offTimeColumn = pd.concat(offTimeList, axis="columns")
                 widthColumn = pd.concat(widthList, axis="columns")
                 freqColumn = pd.concat(freqList, axis="columns")
+                areaList = pd.concat(areaList, axis="columns")
 
                 ampColumn.to_excel(writer, sheet_name="Amplitude")
                 offTimeColumn.to_excel(writer, sheet_name="Off Time")
                 widthColumn.to_excel(writer, sheet_name="Width")
                 freqColumn.to_excel(writer, sheet_name="Frequency")
+                areaColumn.to_excel(writer, sheet_name="Peak AUC")
                 # Individual Traces
                 for frames in injectionLeft:
                     injectionLeft[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
@@ -215,26 +201,16 @@ class Main(tk.Frame):
                 overviewRight.to_excel(writer, sheet_name= "All Traces")
                 # Bins of Three
                 rightGroupThree = [list(injectionRight.values())[i:i+3] for i in range(0, len(injectionRight), 3)]
-                ampColumn = pd.DataFrame()
-                offTimeColumn = pd.DataFrame()
-                widthColumn = pd.DataFrame()
-                freqColumn = pd.DataFrame()
-                ampList = []
-                offTimeList = []
-                widthList = []
-                freqList = []
+                ampColumn, offTimeColumn, widthColumn, freqColumn, areaColumn = pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(),
+                ampList, offTimeList, widthList, freqList, areaList = [], [], [], [], []
                 z = 1
                 for groups in rightGroupThree:
-                    concat = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
-                                        'Peak_Time_Sec', 'Event_Window_Start', 
-                                        'Event_Window_End', 'Amplitude', 'Off_Time_ms',
-                                        'Width_at50_ms','Frequency', 'Area'])
-                    for y in groups:
-                        concat = pd.concat([concat, y if not y.empty else None], ignore_index=True)
+                    concat = pd.concat(groups, ignore_index=True)
                     ampList.append(pd.DataFrame(concat["Amplitude"].rename("Amplitude %i-%i"%(z, z+2))))
                     offTimeList.append(pd.DataFrame(concat["Off_Time_ms"].rename("Off Time %i-%i"%(z, z+2))))
                     widthList.append(pd.DataFrame(concat["Width_at50_ms"].rename("Width %i-%i"%(z, z+2))))
                     freqList.append(pd.DataFrame(concat["Frequency"].rename("Frequency %i-%i"%(z, z+2))))
+                    areaList.append(pd.DataFrame(concat["Area"].rename("Area %i-%i"%(z, z+2))))
                     concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
                     z += 3
 
@@ -242,11 +218,13 @@ class Main(tk.Frame):
                 offTimeColumn = pd.concat(offTimeList, axis="columns")
                 widthColumn = pd.concat(widthList, axis="columns")
                 freqColumn = pd.concat(freqList, axis="columns")
+                areaList = pd.concat(areaList, axis="columns")
 
                 ampColumn.to_excel(writer, sheet_name="Amplitude")
                 offTimeColumn.to_excel(writer, sheet_name="Off Time")
                 widthColumn.to_excel(writer, sheet_name="Width")
                 freqColumn.to_excel(writer, sheet_name="Frequency")
+                areaColumn.to_excel(writer, sheet_name="Peak AUC")
                 
                 # Individual Traces
                 for frames in injectionRight:
