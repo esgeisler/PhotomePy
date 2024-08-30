@@ -15,17 +15,12 @@ class Main(tk.Frame):
     # Initialize all of the necessary variables for the GUI
         self.experimentFileName = ""
         self.baselinefileName = ""
-        self.leftRatName = tk.StringVar()
-        self.rightRatName = tk.StringVar()
-        self.leftRatInjection = tk.StringVar()
-        self.rightRatInjection = tk.StringVar()
+        self.leftRatName, self.rightRatName = tk.StringVar(), tk.StringVar()
+        self.leftRatInjection, self.rightRatInjection = tk.StringVar(), tk.StringVar()
         self.dropValue = tk.StringVar(self, 'Select Trace')
-        self.ratNameLeft = tk.StringVar()
-        self.ratNameRight = tk.StringVar()
-        self.ratInjectionLeft = 0
-        self.ratInjectionRight = 0
-        self.peaksLeft = []
-        self.peaksRight = []
+        self.ratNameLeft, self.ratNameRight = tk.StringVar(), tk.StringVar()
+        self.ratInjectionLeft, self.ratInjectionRight = 0, 0
+        self.peaksLeft, self.peaksRight = [], []
         self.options = []
         self.trace = 0
         self.abfDate = tk.StringVar()
@@ -81,10 +76,8 @@ class Main(tk.Frame):
 
     # Closes the average processing popup window, saving the values entered.
         def onPopSubmit():
-            self.ratNameLeft = self.leftRatName.get()
-            self.ratNameRight = self.rightRatName.get()
-            self.ratInjectionLeft = int(self.leftRatInjection.get()) - 1
-            self.ratInjectionRight = int(self.rightRatInjection.get()) - 1
+            self.ratNameLeft, self.ratNameRight = self.leftRatName.get(), self.rightRatName.get()
+            self.ratInjectionLeft, self.ratInjectionRight = (int(self.leftRatInjection.get()) - 1), (int(self.rightRatInjection.get()) - 1)
 
     # Checks the status of the analysis to determine whether to display a messagebox message.
         def statusChecker():
@@ -101,23 +94,18 @@ class Main(tk.Frame):
         def dataProcessorPop():
             infoPop = tk.Toplevel()
             infoPop.title("Rat Metadata Entry")
-            leftRatNameFill = ttk.Entry(infoPop, textvariable= self.leftRatName, width= 10)
-            leftRatNameLabel = ttk.Label(infoPop, text="Enter Left Rat #:")
-            rightRatNameFill = ttk.Entry(infoPop, textvariable= self.rightRatName, width= 10)
-            rightRatNameLabel = ttk.Label(infoPop, text= "Enter Right Rat #:")
+            leftRatNameFill, rightRatNameFill = ttk.Entry(infoPop, textvariable= self.leftRatName, width= 10), ttk.Entry(infoPop, textvariable= self.rightRatName, width= 10)
+            leftRatNameLabel, rightRatNameLabel = ttk.Label(infoPop, text="Enter Left Rat #:"), ttk.Label(infoPop, text= "Enter Right Rat #:")
             leftRatNameLabel.grid(row= 1, column= 1)
             leftRatNameFill.grid(row= 1, column= 2)
             rightRatNameLabel.grid(row= 1, column= 4)
             rightRatNameFill.grid(row= 1, column= 5)
-            leftRatInjTimeFill = ttk.Entry(infoPop, textvariable= self.leftRatInjection, width = 10)
-            leftRatInjTimeLabel = ttk.Label(infoPop, text="Enter Left Rat Injection Trace #:")
-            rightRatInjTimeFill = ttk.Entry(infoPop, textvariable= self.rightRatInjection, width= 10)
-            rightRatInjTimeLabel = ttk.Label(infoPop, text= "Enter Right Rat Injection Trace #:")
+            leftRatInjTimeFill, rightRatInjTimeFill = ttk.Entry(infoPop, textvariable= self.leftRatInjection, width = 10), ttk.Entry(infoPop, textvariable= self.rightRatInjection, width= 10)
+            leftRatInjTimeLabel, rightRatInjTimeLabel = ttk.Label(infoPop, text="Enter Left Rat Injection Trace #:"), ttk.Label(infoPop, text= "Enter Right Rat Injection Trace #:")
             leftRatInjTimeLabel.grid(row= 2, column= 1)
             leftRatInjTimeFill.grid(row= 2, column= 2)
             rightRatInjTimeLabel.grid(row= 2, column= 4)
             rightRatInjTimeFill.grid(row= 2, column= 5)
-
 
             submitButton = ttk.Button(infoPop, text="Submit", command=lambda:[onPopSubmit(), infoPop.destroy(), dataProcessorReal(), statusChecker()])
             submitButton.grid(row= 3, column= 3)
@@ -132,17 +120,11 @@ class Main(tk.Frame):
         def dataProcessorReal():
             finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
         # Averages the left and right signals
-            averageSignalLeft = avg.traceAverage(finalSignalLeft)
-            preInjectionAverageLeft = avg.preInjectionAverage(finalSignalLeft, self.ratInjectionLeft)
-            fluorescenceLeft = avg.deltaF(averageSignalLeft, preInjectionAverageLeft)
-
-            averageSignalRight = avg.traceAverage(finalSignalRight)
-            preInjectionAverageRight = avg.preInjectionAverage(finalSignalRight, self.ratInjectionRight)
-            fluorescenceRight = avg.deltaF(averageSignalRight, preInjectionAverageRight)
+            averageSignalLeft, averageSignalRight = avg.traceAverage(finalSignalLeft), avg.traceAverage(finalSignalRight)
+            preInjectionAverageLeft, preInjectionAverageRight = avg.preInjectionAverage(finalSignalLeft, self.ratInjectionLeft), avg.preInjectionAverage(finalSignalRight, self.ratInjectionRight)
+            fluorescenceLeft, fluorescenceRight = avg.deltaF(averageSignalLeft, preInjectionAverageLeft), avg.deltaF(averageSignalRight, preInjectionAverageRight)
         # Analyzes peak decay, amplitude, and frequency across an entire signal containing X traces            
-            self.peaksLeft = pas.wholeTracePeaks(finalSignalLeft, self.experimentFileName)
-            self.peaksRight = pas.wholeTracePeaks(finalSignalRight, self.experimentFileName)
-
+            self.peaksLeft, self.peaksRight = pas.wholeTracePeaks(finalSignalLeft, self.experimentFileName), pas.wholeTracePeaks(finalSignalRight, self.experimentFileName)
             injectionLeft, overviewLeft = pas.traceProcessor(self.peaksLeft)
             injectionRight, overviewRight = pas.traceProcessor(self.peaksRight)
 
@@ -160,8 +142,7 @@ class Main(tk.Frame):
             self.mainStatus = True
         #TODO fix FutureWarning caused by concat being empty by default.
         # Writes trace data to 2 excel files: left and right
-            leftWriter = pd.ExcelWriter(leftPath)
-            rightWriter = pd.ExcelWriter(rightPath)
+            leftWriter, rightWriter = pd.ExcelWriter(leftPath), pd.ExcelWriter(rightPath)
             x = 1
             with leftWriter as writer:
                 # Overview Sheet

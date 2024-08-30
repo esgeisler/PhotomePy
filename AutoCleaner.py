@@ -3,32 +3,25 @@ from pyabf import abfWriter
 import statistics as stat
 import scipy.ndimage
 import numpy as np
-from datetime import datetime
 import os
 
 # Gets baseline information from 1 min-long recording data taken after trial from the "left" side of the room - channels 1 and 2
 def BaselineGet(FileName):
     abf = pyabf.ABF(FileName)
-    sweepDict470Left = np.zeros(len(abf.sweepList))
-    sweepDict405Left = np.zeros(len(abf.sweepList))
-    sweepArray470Right = np.zeros(len(abf.sweepList))
-    sweepArray405Right = np.zeros(len(abf.sweepList))
-    Channel470Left = 0
-    Channel405Left = 1
-    Channel470Right = 4
-    Channel405Right = 5
+    sweepArray470Left = sweepArray405Left = sweepArray470Right = sweepArray405Right = np.zeros(len(abf.sweepList))
+    Channel470Left, Channel405Left, Channel470Right, Channel405Right = 0, 1, 4, 5
 
     abf.setSweep(sweepNumber= 0, channel= Channel470Left)
     for sweep470 in abf.sweepList:
         fluor470 = stat.mean(abf.sweepY)
-        sweepDict470Left[sweep470] = fluor470
-    mean470Left = stat.mean(sweepDict470Left)
+        sweepArray470Left[sweep470] = fluor470
+    mean470Left = stat.mean(sweepArray470Left)
     
     abf.setSweep(sweepNumber= 0, channel= Channel405Left)
     for sweep405 in abf.sweepList:
         fluor405 = stat.mean(abf.sweepY)
-        sweepDict405Left[sweep405] = fluor405
-    mean405Left = stat.mean(sweepDict405Left)
+        sweepArray405Left[sweep405] = fluor405
+    mean405Left = stat.mean(sweepArray405Left)
     
     abf.setSweep(sweepNumber= 0, channel= Channel470Right)
     for sweep470 in abf.sweepList:
@@ -83,19 +76,14 @@ def tExport(processedTrace, ratName, experimentDate):
 def completeProcessor(experimentFileName, baselineFileName):
     abf = pyabf.ABF(experimentFileName)
     baseline470Left, baseline405Left, baseline470Right, baseline405Right= BaselineGet(baselineFileName)
-    channelsLeft = [0,1]
-    channelsRight = [4,5]
+    channelsLeft, channelsRight = [0,1], [4,5]
     subtract470Left, subtract405Left = baselineSubtractor(experimentFileName, baseline470Left, baseline405Left, channelsLeft)
     subtract470Right, subtract405Right = baselineSubtractor(experimentFileName, baseline470Right, baseline405Right, channelsRight)
-    filteredLeft = wholeTraceGauss(subtract405Left)
-    filteredRight = wholeTraceGauss(subtract405Right)
-    ratioSignalLeft = ratio470405(subtract470Left, filteredLeft)
-    ratioSignalRight = ratio470405(subtract470Right, filteredRight)
-    signalLeft = wholeTraceGauss(ratioSignalLeft)
-    signalRight = wholeTraceGauss(ratioSignalRight)
+    filteredLeft, filteredRight = wholeTraceGauss(subtract405Left), wholeTraceGauss(subtract405Right)
+    ratioSignalLeft, ratioSignalRight = ratio470405(subtract470Left, filteredLeft), ratio470405(subtract470Right, filteredRight)
+    signalLeft, signalRight = wholeTraceGauss(ratioSignalLeft), wholeTraceGauss(ratioSignalRight)
 
-    finalLeft = np.zeros((len(signalLeft), len(signalLeft[0]) - 2250))
-    finalRight = np.zeros((len(signalRight), len(signalRight[0]) - 2250))
+    finalLeft, finalRight = np.zeros((len(signalLeft), len(signalLeft[0]) - 2250)), np.zeros((len(signalRight), len(signalRight[0]) - 2250))
     for x in range(len(signalLeft)):
         finalLeft[x] = signalLeft[x][1000:-1250]
     for x in range(len(signalLeft)):
