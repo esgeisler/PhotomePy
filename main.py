@@ -159,7 +159,7 @@ class Main(tk.Frame):
                     offTimeList.append(pd.DataFrame(concat["Off_Time_ms"].rename("Off Time %i-%i"%(z, z+2))))
                     widthList.append(pd.DataFrame(concat["Width_at50_ms"].rename("Width %i-%i"%(z, z+2))))
                     droppedFreq = pd.DataFrame(concat["Frequency"].rename("Frequency %i-%i"%(z, z+2))).dropna()
-                    freqList.append(droppedFreq.reindex(index=pd.Index([0,1,2])))
+                    freqList.append(droppedFreq.reset_index(drop=True))
                     areaList.append(pd.DataFrame(concat["Area"].rename("Area %i-%i"%(z, z+2))))
                     concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
                     z += 3
@@ -193,7 +193,7 @@ class Main(tk.Frame):
                     offTimeList.append(pd.DataFrame(concat["Off_Time_ms"].rename("Off Time %i-%i"%(z, z+2))))
                     widthList.append(pd.DataFrame(concat["Width_at50_ms"].rename("Width %i-%i"%(z, z+2))))
                     droppedFreq = pd.DataFrame(concat["Frequency"].rename("Frequency %i-%i"%(z, z+2))).dropna()
-                    freqList.append(droppedFreq.reindex(index=pd.Index([0,1,2])))
+                    freqList.append(droppedFreq.reset_index(drop=True))
                     areaList.append(pd.DataFrame(concat["Area"].rename("Area %i-%i"%(z, z+2))))
                     concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
                     z += 3
