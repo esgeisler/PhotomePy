@@ -48,14 +48,14 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         peakTable.Amplitude = (peaksDict[z]['peak_heights'] - processedSignalArray[z][peaksDict[z]['right_bases']]).round(2)
         peakTable.Off_Time_ms = ((peaksDict[z]['right_bases'] - x)/(samplingFreq/1000)).round(2)
         peakTable.Width_at50_ms = (peaksDict[z]['widths']/(samplingFreq/1000)).round(2)
-        peakTable.Frequency[0] = round(np.count_nonzero(x)/15, 2) #Peaks/second (15 second trace)
+        peakTable.Frequency.iat[0] = round(np.count_nonzero(x)/15, 2) #Peaks/second (15 second trace)
         areaList = []
         for i in range(len(x)):
             if len(processedSignalArray[z][int(peaksDict[z]['left_bases'][i]):int(peaksDict[z]['right_bases'][i])]) == 0:
                 continue
             peakArea = inte.simpson(y=processedSignalArray[z][int(peaksDict[z]['left_bases'][i]):int(peaksDict[z]['right_bases'][i])], 
                                     x=range(int(peaksDict[z]['left_bases'][i]), int(peaksDict[z]['right_bases'][i])))
-            areaList.append(peakArea)
+            areaList.append(peakArea.round(2))
         areaList = pd.Series(areaList)
         peakTable.Area = areaList
 
