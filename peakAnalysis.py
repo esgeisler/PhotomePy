@@ -48,7 +48,10 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         peakTable.Amplitude = (peaksDict[z]['peak_heights'] - processedSignalArray[z][peaksDict[z]['right_bases']]).round(2)
         peakTable.Off_Time_ms = ((peaksDict[z]['right_bases'] - x)/(samplingFreq/1000)).round(2)
         peakTable.Width_at50_ms = (peaksDict[z]['widths']/(samplingFreq/1000)).round(2)
-        peakTable.Frequency.iat[0] = round(np.count_nonzero(x)/15, 2) #Peaks/second (15 second trace)
+        if x.size == 0:
+            peakTable.Frequency = 0
+        else:
+            peakTable.Frequency.iat[0] = round(np.count_nonzero(x)/15, 2) #Peaks/second (15 second trace)
         areaList = []
         for i in range(len(x)):
             if len(processedSignalArray[z][int(peaksDict[z]['left_bases'][i]):int(peaksDict[z]['right_bases'][i])]) == 0:
