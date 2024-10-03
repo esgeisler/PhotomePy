@@ -87,26 +87,41 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
     peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, height=0, width=0, wlen= 20000, rel_height= 0.5)
     peakTable = pd.DataFrame(columns= ['event', 'Peak_Index', 
                                        'PeakTimeSec', 'Event_Window_Start', 
-                                       'Event_Window_End', 
-                                       'WidthMS'])
+                                       'Event_Window_End','Amplitude',
+                                        'Width_at50_ms','Frequency', 'Area'])
     peakTable.event = [x for x in range(len(peaks))]
     peakTable.Peak_Index = peaks
     peakTable.PeakTimeSec = peaks/samplingFreq
     peakTable.Event_Window_Start = peaksDict['left_ips']
     peakTable.Event_Window_End = peaksDict['right_ips']
-    peakTable.WidthMS = peaksDict['widths']/(samplingFreq/1000)
+    peakTable.Amplitude = peaksDict['peak_heights'] - processedSignalArray[peaksDict['right_bases']]
+    peakTable.Width_at50_ms = peaksDict['widths']/(samplingFreq/1000)
+    peakTable.Frequency = np.count_nonzero(peaks)/15
+    areaList = []
+    for i in range(len(peaks)):
+        if len(processedSignalArray[int(peaksDict['left_bases'][i]):int(peaksDict['right_bases'][i])]) == 0:
+            continue
+        peakArea = inte.simpson(y=processedSignalArray[int(peaksDict['left_bases'][i]):int(peaksDict['right_bases'][i])], 
+                                x=range(int(peaksDict['left_bases'][i]), int(peaksDict['right_bases'][i])))
+        areaList.append(peakArea.round(2))
+    areaList = pd.Series(areaList)
+    peakTable.Area = areaList
+
+    widthBottom = sci.peak_widths(processedSignalArray, peaks, rel_height=1)
+    widthHalf = sci.peak_widths(processedSignalArray, peaks, rel_height=0.5)
     
     fig = plt.figure()
-    lad = fig.add_subplot()
-    lad.plot(processedSignalArray)
-    lad.plot(peaks, processedSignalArray[peaks], "r.")
-    lad.plot(peaksDict['right_bases'], processedSignalArray[peaksDict['right_bases']], 'g.')
+    peakFig = fig.add_subplot()
+    peakFig.plot(processedSignalArray)
+    peakFig.plot(peaks, processedSignalArray[peaks], "r.")
+    peakFig.plot(peaksDict['right_bases'], processedSignalArray[peaksDict['right_bases']], 'g.')
     for x in range(len(processedSignalArray[peaks])):
-        lad.annotate("Trough", xycoords= 'data', size= 10, horizontalalignment= 'center',
+        peakFig.annotate("Trough", xycoords= 'data', size= 10, horizontalalignment= 'center',
                      xytext = (peaksDict['right_bases'][x], processedSignalArray[peaks][x] - 0.3), 
                      xy = (peaksDict['right_bases'][x], processedSignalArray[peaksDict['right_bases'][x]] - 0.01),
                      arrowprops=dict(facecolor= 'black', width= 1, headwidth= 5, headlength= 5)) #, horizontalalignment= 'center', verticalalignment= 'bottom')
-    lad.set_title(ratSide)
-    plt.axis([0,50000,0.5, 1.5])
+    peakFig.hlines(*widthHalf[1:], color="C6")
+    peakFig.set_title(ratSide)
+    plt.axis([0, 50000, 0, 2])
     plt.xticks(peaks)
     plt.show()
