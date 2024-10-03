@@ -45,7 +45,7 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         peakTable.Peak_Time_Sec = ((x/samplingFreq) + (z * 30)).round(2)
         peakTable.Event_Window_Start = peaksDict[z]['left_ips'].round(2)
         peakTable.Event_Window_End = peaksDict[z]['right_ips'].round(2)
-        peakTable.Amplitude = (peaksDict[z]['peak_heights'] - processedSignalArray[z][peaksDict[z]['right_bases']]).round(2)
+        peakTable.Amplitude = peaksDict[z]["prominences"].round(3)
         peakTable.Off_Time_ms = ((peaksDict[z]['right_bases'] - x)/(samplingFreq/1000)).round(2)
         peakTable.Width_at50_ms = (peaksDict[z]['widths']/(samplingFreq/1000)).round(2)
         if x.size == 0:
@@ -84,7 +84,7 @@ def traceProcessor(processedSignal):
 def peakDisplay(processedSignalArray, mainFile, ratSide):
     abf = pyabf.ABF(mainFile)
     samplingFreq = int(abf.dataPointsPerMs * 1000)
-    peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, height=0, width=0, wlen= 20000, rel_height= 0.5)
+    peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, width=0, wlen= 20000, rel_height= 0.5)
     peakTable = pd.DataFrame(columns= ['event', 'Peak_Index', 
                                        'PeakTimeSec', 'Event_Window_Start', 
                                        'Event_Window_End','Amplitude',
@@ -94,7 +94,7 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
     peakTable.PeakTimeSec = peaks/samplingFreq
     peakTable.Event_Window_Start = peaksDict['left_ips']
     peakTable.Event_Window_End = peaksDict['right_ips']
-    peakTable.Amplitude = peaksDict['peak_heights'] - processedSignalArray[peaksDict['right_bases']]
+    peakTable.Amplitude = peaksDict["prominences"]
     peakTable.Width_at50_ms = peaksDict['widths']/(samplingFreq/1000)
     peakTable.Frequency = np.count_nonzero(peaks)/15
     areaList = []
@@ -121,6 +121,8 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
                      xy = (peaksDict['right_bases'][x], processedSignalArray[peaksDict['right_bases'][x]] - 0.01),
                      arrowprops=dict(facecolor= 'black', width= 1, headwidth= 5, headlength= 5)) #, horizontalalignment= 'center', verticalalignment= 'bottom')
     peakFig.hlines(*widthHalf[1:], color="C6")
+    peakFig.hlines(*widthBottom[1:], color="C7")
+    peakFig.vlines(x=peaks, ymin=processedSignalArray[peaks] - peaksDict["prominences"], ymax=processedSignalArray[peaks], color="C5")
     peakFig.set_title(ratSide)
     plt.axis([0, 50000, 0, 2])
     plt.xticks(peaks)
