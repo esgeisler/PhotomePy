@@ -221,11 +221,7 @@ class Main(tk.Frame):
         # Analyzes the peak decay, amplitude, and frequency of a single trace chosen by the user.
         def singleTracePeaks():
             finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
-        # Left Rat Peak Analysis
-            self.peaksLeft = pas.peakGetter(finalSignalLeft[self.trace])
             pas.peakDisplay(finalSignalLeft[self.trace], self.experimentFileName, "Left Rat")
-        # Right Rat Peak Analysis
-            self.peaksRight = sci.find_peaks(finalSignalRight[self.trace])
             pas.peakDisplay(finalSignalRight[self.trace], self.experimentFileName, "Right Rat")
 
         runFileButton = ttk.Button(self, text="Process a File", command= dataProcessorPop)

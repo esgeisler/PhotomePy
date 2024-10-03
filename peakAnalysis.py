@@ -5,13 +5,8 @@ import numpy as np
 import pandas as pd
 import pyabf
 
-#Retrieves the peaks of a single trace and returns a list containing the peaks in a ndarray and their properties in a dictionary
-def peakGetter(processedSignalArray):
-    peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, width=0, wlen= 20000, rel_height= 0.5)
-    return [peaks, peaksDict]
-
 # Returns the number of peaks in the trace with the most peaks
-def peakMaxxer(processedSignalArray):
+def peakMax(processedSignalArray):
     peakList = []
     for traces in range(len(processedSignalArray)):
         peaks, peaksDict = sci.find_peaks(processedSignalArray[traces], prominence= 0.05, width=0, wlen=20000, rel_height= 0.5)
@@ -19,11 +14,12 @@ def peakMaxxer(processedSignalArray):
     longestPeak = max((len(x)) for x in peakList)
     return longestPeak
 
-# Finds peaks, widths, amplitude, frequency in every trace in a signal
+# Finds peaks in a signal and provides their widths, amplitudes, avg. frequencies, and areas across an entire .abf file
 def wholeTracePeaks(processedSignalArray, mainFile):
-    longPeak = peakMaxxer(processedSignalArray)
+    longPeak = peakMax(processedSignalArray)
     abf = pyabf.ABF(mainFile)
-    samplingFreq = (abf.dataPointsPerMs + 0.33) * 1000
+    samplingFreqMSec = abf.dataPointsPerMs + (1/3)
+    samplingFreqSec = samplingFreqMSec * 1000
     finalDict = {}
     peaksArray = np.zeros((len(abf.sweepList), longPeak))
     peaksDict = {}
@@ -42,16 +38,16 @@ def wholeTracePeaks(processedSignalArray, mainFile):
                                         'Width_at50_ms','Frequency', 'Area'])
         peakTable.Event_Num = [x + 1 for x in range(len(x))]
         peakTable.Peak_Index = x
-        peakTable.Peak_Time_Sec = ((x/samplingFreq) + (z * 30)).round(2)
+        peakTable.Peak_Time_Sec = ((x/samplingFreqSec) + (z * 30)).round(2)
         peakTable.Event_Window_Start = peaksDict[z]['left_ips'].round(2)
         peakTable.Event_Window_End = peaksDict[z]['right_ips'].round(2)
         peakTable.Amplitude = peaksDict[z]["prominences"].round(3)
-        peakTable.Off_Time_ms = ((peaksDict[z]['right_bases'] - x)/(samplingFreq/1000)).round(2)
-        peakTable.Width_at50_ms = (peaksDict[z]['widths']/(samplingFreq/1000)).round(2)
+        peakTable.Off_Time_ms = ((peaksDict[z]['right_bases'] - x)/(samplingFreqMSec)).round(2)
+        peakTable.Width_at50_ms = (peaksDict[z]['widths']/(samplingFreqMSec)).round(2)
         if x.size == 0:
             peakTable.Frequency = 0
         else:
-            peakTable.Frequency.iat[0] = round(np.count_nonzero(x)/15, 2) #Peaks/second (15 second trace)
+            peakTable.Frequency.iat[0] = round(np.count_nonzero(x)/(len(processedSignalArray)/samplingFreqSec), 2) #Peaks/second (15 second trace)
         areaList = []
         for i in range(len(x)):
             if len(processedSignalArray[z][int(peaksDict[z]['left_bases'][i]):int(peaksDict[z]['right_bases'][i])]) == 0:
@@ -63,7 +59,6 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         peakTable.Area = areaList
 
         peakTable.drop(peakTable[peakTable.Peak_Index == 0].index, inplace= True)
-        # peakTable.drop(peakTable["Frequency"][1:] if not peakTable['Frequency'].empty else None, inplace= True)
         finalDict[z] = peakTable
         z += 1
     return finalDict
@@ -83,7 +78,8 @@ def traceProcessor(processedSignal):
 #Retrieves the peaks of a signal and their properties, then plots them on a graph of the chosen trace
 def peakDisplay(processedSignalArray, mainFile, ratSide):
     abf = pyabf.ABF(mainFile)
-    samplingFreq = (abf.dataPointsPerMs + 0.33) * 1000
+    samplingFreqMSec = abf.dataPointsPerMs + (1/3)
+    samplingFreqSec = samplingFreqMSec * 1000
     peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, width=0, wlen= 20000, rel_height= 0.5)
     peakTable = pd.DataFrame(columns= ['event', 'Peak_Index', 
                                        'PeakTimeSec', 'Event_Window_Start', 
@@ -91,11 +87,10 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
                                         'Frequency', 'Area'])
     peakTable.event = [x for x in range(len(peaks))]
     peakTable.Peak_Index = peaks
-    peakTable.PeakTimeSec = peaks/samplingFreq
+    peakTable.PeakTimeSec = peaks/samplingFreqSec
     peakTable.Event_Window_Start = peaksDict['left_ips']
     peakTable.Event_Window_End = peaksDict['right_ips']
-    peakTable.Amplitude = peaksDict["prominences"]
-    peakTable.Frequency = np.count_nonzero(peaks)/15
+    peakTable.Frequency = np.count_nonzero(peaks)/(len(processedSignalArray)/samplingFreqSec)
     areaList = []
     for i in range(len(peaks)):
         if len(processedSignalArray[int(peaksDict['left_bases'][i]):int(peaksDict['right_bases'][i])]) == 0:
@@ -118,13 +113,13 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
         peakFig.annotate("Trough", xycoords= 'data', size= 10, horizontalalignment= 'center',
                      xytext = (peaksDict['right_bases'][x], processedSignalArray[peaks][x] - 0.3), 
                      xy = (peaksDict['right_bases'][x], processedSignalArray[peaksDict['right_bases'][x]] - 0.01),
-                     arrowprops=dict(facecolor= 'black', width= 1, headwidth= 5, headlength= 5)) #, horizontalalignment= 'center', verticalalignment= 'bottom')
+                     arrowprops=dict(facecolor= 'black', width= 1, headwidth= 5, headlength= 5))
     peakFig.hlines(*widthHalf[1:], color="C6")
     peakFig.hlines(*widthBottom[1:], color="C7")
     peakFig.vlines(x=peaks, ymin=processedSignalArray[peaks] - peaksDict["prominences"], ymax=processedSignalArray[peaks], color="C5")
     peakFig.set_title(ratSide)
     plt.axis([0, 47750, 0, 2])
-    seconds = np.arange(0, 47750, samplingFreq)
+    seconds = np.arange(0, 47750, samplingFreqSec)
     plt.xticks(ticks=seconds, labels=range(len(seconds)))
     plt.xlabel("Time (s)")
     plt.ylabel("Fluorescence (AU)")
