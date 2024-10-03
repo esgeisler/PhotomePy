@@ -239,7 +239,7 @@ class Main(tk.Frame):
 
 def main():
     fp = tk.Tk()
-    fp.title("Liz's Data Corrector")
+    fp.title("PhotomePy 1.0")
     window = Main(fp)
     window.pack()
     fp.mainloop()
