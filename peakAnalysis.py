@@ -106,10 +106,10 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
     peakFig.plot(processedSignalArray)
     peakFig.plot(peaks, processedSignalArray[peaks], "r.")
     peakFig.plot(peaksDict['right_bases'], processedSignalArray[peaksDict['right_bases']], 'g.')
-    for x in range(len(processedSignalArray[peaks])):
+    for i, x in enumerate(processedSignalArray[peaks]):
         peakFig.annotate("Trough", xycoords= 'data', size= 10, horizontalalignment= 'center',
-                     xytext = (peaksDict['right_bases'][x], processedSignalArray[peaks][x] - 0.3), 
-                     xy = (peaksDict['right_bases'][x], processedSignalArray[peaksDict['right_bases'][x]] - 0.01),
+                     xytext = (peaksDict['right_bases'][i], x - 0.3), 
+                     xy = (peaksDict['right_bases'][i], processedSignalArray[peaksDict['right_bases'][i]] - 0.01),
                      arrowprops=dict(facecolor= 'black', width= 1, headwidth= 5, headlength= 5))
     peakFig.hlines(*widthHalf[1:], color="C6")
     peakFig.hlines(*widthBottom[1:], color="C7")
