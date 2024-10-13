@@ -4,8 +4,8 @@ import numpy as np
 # Averages every sweep's voltage (fluorescence) in a trace, producing a dictionary of 70 averages
 def traceAverage(processedSignal):
     meanSignal = np.zeros(len(processedSignal))
-    for x in range(len(processedSignal)):
-        meanSignal[x] = stat.mean(processedSignal[x][1000:-1250])
+    for i, x in enumerate(processedSignal):
+        meanSignal[i] = stat.mean(x[1000:-1250])
     return meanSignal
 
 # Averages the sweeps before a certain time point to create a "Pre-Injection Average" of fluorescence
@@ -19,6 +19,6 @@ def preInjectionAverage(processedSignal, injectionTrace):
 # Calculates ΔF/F ((trace avg - pre inj avg)/pre inj avg)
 def deltaF(averagedSignal, preInjAvg):
     deltaFDivided = np.zeros(len(averagedSignal))
-    for sweep in range(len(averagedSignal)):
-        deltaFDivided[sweep] = (averagedSignal[sweep] - preInjAvg)/preInjAvg
+    for i, sweep in enumerate(averagedSignal):
+        deltaFDivided[i] = (sweep - preInjAvg)/preInjAvg
     return deltaFDivided

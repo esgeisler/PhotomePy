@@ -55,16 +55,16 @@ def baselineSubtractor(fileName, baseline470, baseline405, channelsToSubtract):
 # Gaussian filters an entire channel with a 40 Hz cutoff freq., as above.
 def wholeTraceGauss(signalToFilter):
     sweepArray = np.zeros((len(signalToFilter), len(signalToFilter[0])))
-    for x in range(len(signalToFilter)):
-            filteredSweep = scipy.ndimage.gaussian_filter1d(signalToFilter[x], sigma = 16)
-            sweepArray[x] = filteredSweep
+    for i, x in enumerate(signalToFilter):
+            filteredSweep = scipy.ndimage.gaussian_filter1d(x, sigma = 16)
+            sweepArray[i] = filteredSweep
     return sweepArray
 
 # Divides two channels (470nm/405nm) in one file and returns a complete channel dictionary.
 def ratio470405(signal470, signal405):
     ratioSignal = np.zeros((len(signal470), len(signal470[0])))
-    for x in range(len(signal470)):
-        ratioSignal[x] = signal470[x]/signal405[x]
+    for i, x in enumerate(signal470):
+        ratioSignal[i] = x/signal405[i]
     return ratioSignal
 
 # Saves cleaned trace file as an ABF file for later viewing in ClampFit 10 "Processed Data", "%s Rat %s Processed Data.abf"%(self.abfDate.strftime("%Y-%m-%d")
@@ -84,8 +84,8 @@ def completeProcessor(experimentFileName, baselineFileName):
     signalLeft, signalRight = wholeTraceGauss(ratioSignalLeft), wholeTraceGauss(ratioSignalRight)
 
     finalLeft, finalRight = np.zeros((len(signalLeft), len(signalLeft[0]) - 2250)), np.zeros((len(signalRight), len(signalRight[0]) - 2250))
-    for x in range(len(signalLeft)):
-        finalLeft[x] = signalLeft[x][1000:-1250]
-    for x in range(len(signalLeft)):
-        finalRight[x] = signalRight[x][1000:-1250]
+    for i, x in enumerate(signalLeft):
+        finalLeft[i] = x[1000:-1250]
+    for i, x in enumerate(signalRight):
+        finalRight[i] = x[1000:-1250]
     return finalLeft, finalRight

@@ -8,8 +8,8 @@ import pyabf
 # Returns the number of peaks in the trace with the most peaks
 def peakMax(processedSignalArray):
     peakList = []
-    for traces in range(len(processedSignalArray)):
-        peaks, peaksDict = sci.find_peaks(processedSignalArray[traces], prominence= 0.05, width=0, wlen=20000, rel_height= 0.5)
+    for t in processedSignalArray:
+        peaks, _ = sci.find_peaks(t, prominence= 0.05, width=0, wlen=20000, rel_height= 0.5)
         peakList.append(peaks)
     longestPeak = max((len(x)) for x in peakList)
     return longestPeak
@@ -23,20 +23,20 @@ def wholeTracePeaks(processedSignalArray, mainFile):
     finalDict = {}
     peaksArray = np.zeros((len(abf.sweepList), longPeak))
     peaksDict = {}
-    for traces in range(len(processedSignalArray)):
-        peaks, peaksDict[traces] = sci.find_peaks(processedSignalArray[traces], prominence= 0.05, width=0, wlen=20000, rel_height= 0.5)
+    for index, traces in enumerate(processedSignalArray):
+        peaks, peaksDict[index] = sci.find_peaks(traces, prominence= 0.05, width=0, wlen=20000, rel_height= 0.5)
         peaks = np.pad(peaks, pad_width= (0, longPeak - len(peaks)), mode= 'constant', constant_values= 0)
-        peaksArray[traces] = peaks
-        for i in peaksDict[traces]:
-           paddedEntry = np.pad(peaksDict[traces][i], pad_width= (0, longPeak - len(peaksDict[traces][i])), mode= 'constant', constant_values= 0)
-           peaksDict[traces][i] = paddedEntry
+        peaksArray[index] = peaks
+        for i in peaksDict[index]:
+           paddedEntry = np.pad(peaksDict[index][i], pad_width= (0, longPeak - len(peaksDict[index][i])), mode= 'constant', constant_values= 0)
+           peaksDict[index][i] = paddedEntry
     z = 0
     for x in peaksArray:
         peakTable = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
                                         'Peak_Time_Sec', 'Event_Window_Start', 
                                         'Event_Window_End', 'Amplitude', 'Off_Time_ms',
                                         'Width_at50_ms','Frequency', 'Area'])
-        peakTable.Event_Num = [x + 1 for x in range(len(x))]
+        peakTable.Event_Num = [x + 1 for x, _ in enumerate(x)]
         peakTable.Peak_Index = x
         peakTable.Peak_Time_Sec = ((x/samplingFreqSec) + (z * 30)).round(2)
         peakTable.Event_Window_Start = peaksDict[z]['left_ips'].round(2)
@@ -49,7 +49,7 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         else:
             peakTable.Frequency.iat[0] = round(np.count_nonzero(x)/(len(processedSignalArray)/samplingFreqMSec), 2) #Peaks/second (15 second trace)
         areaList = []
-        for i in range(len(x)):
+        for i, _ in enumerate(x):
             if len(processedSignalArray[z][int(peaksDict[z]['left_bases'][i]):int(peaksDict[z]['right_bases'][i])]) == 0:
                 continue
             peakArea = inte.simpson(y=processedSignalArray[z][int(peaksDict[z]['left_bases'][i]):int(peaksDict[z]['right_bases'][i])], 
@@ -85,14 +85,14 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
                                        'PeakTimeSec', 'Event_Window_Start', 
                                        'Event_Window_End','Amplitude',
                                         'Frequency', 'Area'])
-    peakTable.event = [x for x in range(len(peaks))]
+    peakTable.event = [x + 1 for x, _ in enumerate(peaks)]
     peakTable.Peak_Index = peaks
     peakTable.PeakTimeSec = peaks/samplingFreqSec
     peakTable.Event_Window_Start = peaksDict['left_ips']
     peakTable.Event_Window_End = peaksDict['right_ips']
     peakTable.Frequency = np.count_nonzero(peaks)/(len(processedSignalArray)/samplingFreqSec)
     areaList = []
-    for i in range(len(peaks)):
+    for i, _ in enumerate(peaks):
         if len(processedSignalArray[int(peaksDict['left_bases'][i]):int(peaksDict['right_bases'][i])]) == 0:
             continue
         peakArea = inte.simpson(y=processedSignalArray[int(peaksDict['left_bases'][i]):int(peaksDict['right_bases'][i])], 
