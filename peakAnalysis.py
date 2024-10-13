@@ -30,8 +30,7 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         for i in peaksDict[index]:
            paddedEntry = np.pad(peaksDict[index][i], pad_width= (0, longPeak - len(peaksDict[index][i])), mode= 'constant', constant_values= 0)
            peaksDict[index][i] = paddedEntry
-    z = 0
-    for x in peaksArray:
+    for z, x in enumerate(peaksArray):
         peakTable = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
                                         'Peak_Time_Sec', 'Event_Window_Start', 
                                         'Event_Window_End', 'Amplitude', 'Off_Time_ms',
@@ -55,12 +54,10 @@ def wholeTracePeaks(processedSignalArray, mainFile):
             peakArea = inte.simpson(y=processedSignalArray[z][int(peaksDict[z]['left_bases'][i]):int(peaksDict[z]['right_bases'][i])], 
                                     x=range(int(peaksDict[z]['left_bases'][i]), int(peaksDict[z]['right_bases'][i])))
             areaList.append(peakArea.round(2))
-        areaList = pd.Series(areaList)
-        peakTable.Area = areaList
+        peakTable.Area = pd.Series(areaList)
 
         peakTable.drop(peakTable[peakTable.Peak_Index == 0].index, inplace= True)
         finalDict[z] = peakTable
-        z += 1
     return finalDict
 
 #TODO fix FutureWarning caused by pre- and postOverview being empty by default.
