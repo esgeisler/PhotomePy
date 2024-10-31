@@ -11,14 +11,15 @@ def traceAverage(processedSignal):
 # Averages the sweeps before a certain time point to create a "Pre-Injection Average" of fluorescence
 def preInjectionAverage(processedSignal, injectionTrace):
     if injectionTrace <= 1:
-        raise ValueError("Injection trace must be larger than 1")
-    if injectionTrace > len(processedSignal):
-        raise IndexError("Injection trace is larger than total sweeps in signal")
-    preInjArray = np.zeros(injectionTrace)
-    for x in range(0, injectionTrace):
-        preInjArray[x] = stat.mean(processedSignal[x][1000:-1250])
-    preInjAvg = stat.mean(preInjArray)
-    return preInjAvg
+        raise ValueError("Injection traces must be larger than 1")
+    elif injectionTrace > len(processedSignal):
+        raise IndexError("Injection traces are larger than total sweeps in signals")
+    else:
+        preInjArray = np.zeros(injectionTrace)
+        for x in range(0, injectionTrace):
+            preInjArray[x] = stat.mean(processedSignal[x][1000:-1250])
+        preInjAvg = stat.mean(preInjArray)
+        return preInjAvg
 
 # Calculates ΔF/F ((trace avg - pre inj avg)/pre inj avg)
 def deltaF(averagedSignal, preInjAvg):
