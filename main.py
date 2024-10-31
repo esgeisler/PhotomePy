@@ -160,9 +160,25 @@ class Main(tk.Frame):
 
     # Retrieves the baseline autofluorescence for the 4 channels analyzed and prints to a message box.
         def baselineFinder():
-            pyabf.ABF(self.baselinefileName)
-            subtracted470Left, subtracted405Left, subtracted470Right, subtracted405Right = acl.BaselineGet(self.baselinefileName)
-            messagebox.showinfo(title= "Baselines", message= "Left - 470: %.2f 405: %.2f\nRight - 470: %.2f 405: %.2f"%(subtracted470Left, subtracted405Left, subtracted470Right, subtracted405Right))
+            try:
+                pyabf.ABF(self.baselinefileName)
+                subtracted470Left, subtracted405Left, subtracted470Right, subtracted405Right = acl.BaselineGet(self.baselinefileName)
+                messagebox.showinfo(title= "Baselines", message= "Left - 470: %.2f 405: %.2f\nRight - 470: %.2f 405: %.2f"%(subtracted470Left, subtracted405Left, subtracted470Right, subtracted405Right))
+            except FileNotFoundError:
+                answer = messagebox.askretrycancel(title="Python Error", message="No baseline file found. Would you like to select a new file?", icon="error")
+                if answer:
+                    self.baselinefileName = ""
+                    baselineFileTextUpdate()
+                    self.errorStatus = True
+                    return
+                elif not answer:
+                    self.destroy()
+                    sys.exit(0)
+            except PermissionError as e:
+                if e.errno == 13:
+                    pass
+                else:
+                    raise IOError("Something is wrong with this file")
 
     # Averages the fluorescence of all of the traces, compiles them into an excel sheet with their trace numbers, and calculates the ΔF/F
         def dataProcessorReal():
