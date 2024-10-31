@@ -49,16 +49,30 @@ class Main(tk.Frame):
                 self.options = [str(x + 1) for x in abf.sweepList]
                 self.abfDate = abf.abfDateTime
                 chosenFileDisplay.insert(tk.END, self.experimentFileName)
-            except IOError:
+            except PermissionError:
                 pass
             else:
                 return self.experimentFileName
     
     # Opens the baseline file containing the baseline autofluorescence
         def fileBrowserBaseline():
-            self.baselinefileName = filedialog.askopenfilename(initialdir= os.path.join(os.getcwd(), "Raw Data"), title= "Select a Main File", filetypes=(("Axon Binary Fles", "*.abf*"), ("All Files," "*.*")))
-            baselineFileDisplay.insert(tk.END, self.baselinefileName)
-            return self.baselinefileName  
+            x = 0
+            while x == 0:
+                try:
+                    self.baselinefileName = filedialog.askopenfilename(initialdir= os.path.join(os.getcwd(), "Raw Data"), title= "Select a Baseline File", 
+                                                                       filetypes=(("Axon Binary Fles", "*.abf*"), ("All Files," "*.*")))
+
+                    abf = pyabf.ABF(self.baselinefileName)
+                    if len(abf.sweepList) > 1:
+                        raise ValueError("Baseline files must be single-trace files")
+                except ValueError:
+                    messagebox.showinfo(title= "Error", message= "Please select a baseline file with a single sweep")
+                    continue
+                except PermissionError:
+                    pass
+                else:
+                    baselineFileDisplay.insert(tk.END, self.baselinefileName)
+                    return self.baselinefileName
 
     # Initialize all of the remaining buttons for the main GUI window
         explorerButton = ttk.Button(self, text="Choose a Main File", command= lambda:[fileBrowserExperiment(), dropdownUpdater(), chosenFileTextUpdate()])
