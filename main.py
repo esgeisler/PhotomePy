@@ -175,8 +175,7 @@ class Main(tk.Frame):
                         return
                     if not answer:
                         self.destroy()
-                        sys.exit(0)
-            
+                        sys.exit(0) 
         # Averages the left and right signals
             try:
                 averageSignalLeft, averageSignalRight = avg.traceAverage(finalSignalLeft), avg.traceAverage(finalSignalRight)
@@ -184,6 +183,15 @@ class Main(tk.Frame):
                 fluorescenceLeft, fluorescenceRight = avg.deltaF(averageSignalLeft, preInjectionAverageLeft), avg.deltaF(averageSignalRight, preInjectionAverageRight)
             except ValueError:
                 answer = messagebox.askretrycancel(title="Python Error", message="Injection trace values must be greater than 1. Please re-enter your trace number", icon="error")
+                if answer:
+                    self.errorStatus = True
+                    dataProcessorPop()
+                    return
+                if not answer:
+                    self.destroy()
+                    sys.exit(0)
+            except IndexError:
+                answer = messagebox.askretrycancel(title="Python Error", message="Injection trace values cannot be larger than the total traces in a dataset. Please re-enter your trace number", icon="error")
                 if answer:
                     self.errorStatus = True
                     dataProcessorPop()

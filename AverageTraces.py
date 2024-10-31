@@ -12,6 +12,8 @@ def traceAverage(processedSignal):
 def preInjectionAverage(processedSignal, injectionTrace):
     if injectionTrace <= 1:
         raise ValueError("Injection trace must be larger than 1")
+    if injectionTrace > len(processedSignal):
+        raise IndexError("Injection trace is larger than total sweeps in signal")
     preInjArray = np.zeros(injectionTrace)
     for x in range(0, injectionTrace):
         preInjArray[x] = stat.mean(processedSignal[x][1000:-1250])
