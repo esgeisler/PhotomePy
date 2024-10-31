@@ -6,8 +6,6 @@ import peakAnalysis as pas
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import pandas as pd
-import scipy.signal as sci
-import numpy as np
 
 class Main(tk.Frame):
     def __init__(self, master= None, **kwargs):
@@ -29,13 +27,14 @@ class Main(tk.Frame):
         self.mainStatus = False
         self.traceStatus = False
 
+
     # Dropdown menu for selecting the trace used in SingleTracePeaks
         traceDrop = ttk.Combobox(self,  state= 'readonly', width= 9, textvariable= self.dropValue)
         traceDrop['values'] = []
         traceDrop.grid(row= 4, column=2)
 
     # Sets the values inside the dropdown menu, and sets it to update when a main file is selected
-        def traceSelector(event):
+        def traceSelector():
             self.trace = (int(traceDrop.get()) - 1)
         traceDrop.bind("<<ComboboxSelected>>", traceSelector)
         def dropdownUpdater():
@@ -44,12 +43,16 @@ class Main(tk.Frame):
     # Opens the main file, containing data from the session with 2 rats
         def fileBrowserExperiment():
             self.experimentFileName = filedialog.askopenfilename(initialdir= os.path.join(os.getcwd(), "Raw Data"), title= "Select a Main File", 
-                                                                 filetypes=(("Axon Binary Fles", "*.abf*"), ("All Files," "*.*")))
-            chosenFileDisplay.insert(tk.END, self.experimentFileName)
-            abf = pyabf.ABF(self.experimentFileName)
-            self.options = [str(x + 1) for x in abf.sweepList]
-            self.abfDate = abf.abfDateTime
-            return self.experimentFileName
+                                                                filetypes=(("Axon Binary Fles", "*.abf*"), ("All Files," "*.*")))
+            try:
+                abf = pyabf.ABF(self.experimentFileName)
+                self.options = [str(x + 1) for x in abf.sweepList]
+                self.abfDate = abf.abfDateTime
+                chosenFileDisplay.insert(tk.END, self.experimentFileName)
+            except IOError:
+                pass
+            else:
+                return self.experimentFileName
     
     # Opens the baseline file containing the baseline autofluorescence
         def fileBrowserBaseline():

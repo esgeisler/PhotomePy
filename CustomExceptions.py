@@ -1,0 +1,2 @@
+class FileSelectionException(Exception):
+    pass
