@@ -40,8 +40,7 @@ def BaselineGet(FileName):
 def baselineSubtractor(fileName, baseline470, baseline405, channelsToSubtract):
     abf = pyabf.ABF(fileName)
     abf.setSweep(0)
-    sweepArray470 = np.zeros((len(abf.sweepList), len(abf.sweepX)))
-    sweepArray405 = np.zeros((len(abf.sweepList), len(abf.sweepX)))
+    sweepArray470, sweepArray405 = np.zeros((len(abf.sweepList), len(abf.sweepX))), np.zeros((len(abf.sweepList), len(abf.sweepX)))
     #470
     for sweeps in abf.sweepList:
         abf.setSweep(sweeps, channel= channelsToSubtract[0])

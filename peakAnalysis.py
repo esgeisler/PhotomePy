@@ -10,8 +10,8 @@ def peakMax(processedSignalArray):
     peakList = []
     for t in processedSignalArray:
         peaks, _ = sci.find_peaks(t, prominence= 0.05, width=0, wlen=20000, rel_height= 0.5)
-        peakList.append(peaks)
-    longestPeak = max((len(x)) for x in peakList)
+        peakList.append(len(peaks))
+    longestPeak = max(peakList)
     return longestPeak
 
 # Finds peaks in a signal and provides their widths, amplitudes, avg. frequencies, and areas across an entire .abf file
@@ -63,12 +63,10 @@ def wholeTracePeaks(processedSignalArray, mainFile):
 #TODO fix FutureWarning caused by pre- and postOverview being empty by default.
 def traceProcessor(processedSignal):
     injectionDF = {}
-    x = 0
     traceList = []
-    for traces in processedSignal.values():
+    for x, traces in enumerate(processedSignal.values()):
         injectionDF[x] = traces
         traceList.append(traces)
-        x += 1
     overview = pd.concat(traceList)
     return injectionDF, overview
 
