@@ -74,6 +74,10 @@ def tExport(processedTrace, ratName, experimentDate):
 # Compilation of the other functions in this file
 # Gets a baseline, subtracts it from a main signal, gaussian filters the 405 channel, then takes the ratio of the 470/405 channels. Finally, filters the ratio signal
 def completeProcessor(experimentFileName, baselineFileName):
+    if not os.path.exists(experimentFileName):
+        raise FileNotFoundError("main")
+    elif not os.path.exists(baselineFileName):
+        raise FileNotFoundError("baseline")
     abf = pyabf.ABF(experimentFileName)
     baseline470Left, baseline405Left, baseline470Right, baseline405Right= BaselineGet(baselineFileName)
     channelsLeft, channelsRight = [0,1], [4,5]

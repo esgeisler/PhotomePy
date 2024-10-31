@@ -10,6 +10,8 @@ def traceAverage(processedSignal):
 
 # Averages the sweeps before a certain time point to create a "Pre-Injection Average" of fluorescence
 def preInjectionAverage(processedSignal, injectionTrace):
+    if injectionTrace <= 1:
+        raise ValueError("Injection trace must be larger than 1")
     preInjArray = np.zeros(injectionTrace)
     for x in range(0, injectionTrace):
         preInjArray[x] = stat.mean(processedSignal[x][1000:-1250])
