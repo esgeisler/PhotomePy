@@ -331,9 +331,33 @@ class Main(tk.Frame):
 
         # Analyzes the peak decay, amplitude, and frequency of a single trace chosen by the user.
         def singleTracePeaks():
-            finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
-            pas.peakDisplay(finalSignalLeft[self.trace], self.experimentFileName, "Left Rat")
-            pas.peakDisplay(finalSignalRight[self.trace], self.experimentFileName, "Right Rat")
+            try:
+                finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
+                pas.peakDisplay(finalSignalLeft[self.trace], self.experimentFileName, "Left Rat")
+                pas.peakDisplay(finalSignalRight[self.trace], self.experimentFileName, "Right Rat")
+            except FileNotFoundError as e:
+                if str(e) == "main":
+                    answer = messagebox.askretrycancel(title="Python Error", message="No main file found. Would you like to select a new file?", icon="error")
+                    if answer:
+                        self.experimentFileName = ""
+                        chosenFileTextUpdate()
+                        self.errorStatus = True
+                        return
+                    elif not answer:
+                        self.destroy()
+                        sys.exit(0)
+                elif str(e) == "baseline":
+                    answer = messagebox.askretrycancel(title="Python Error", message="No baseline file found. Would you like to select a new file?", icon="error")
+                    if answer:
+                        self.baselinefileName = ""
+                        baselineFileTextUpdate()
+                        self.errorStatus = True
+                        return
+                    elif not answer:
+                        self.destroy()
+                        sys.exit(0)
+                else:
+                    raise
 
         runFileButton = ttk.Button(self, text="Process a File", command= dataProcessorPop)
         runFileButton.grid(row= 3, column= 1)
