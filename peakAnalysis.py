@@ -7,12 +7,12 @@ import pyabf
 
 # Returns the number of peaks in the trace with the most peaks
 def peakMax(processedSignalArray):
-    peakList = []
-    for t in processedSignalArray:
+    peakArray = np.zeros(np.size(processedSignalArray, 0))
+    for i, t in enumerate(processedSignalArray):
         peaks, _ = sci.find_peaks(t, prominence= 0.05, width=0, wlen=20000, rel_height= 0.5)
-        peakList.append(len(peaks))
-    longestPeak = max(peakList)
-    return longestPeak
+        peakArray[i] = np.size(peaks)
+    longestPeak = np.max(peakArray)
+    return int(longestPeak)
 
 # Finds peaks in a signal and provides their widths, amplitudes, avg. frequencies, and areas across an entire .abf file
 def wholeTracePeaks(processedSignalArray, mainFile):
