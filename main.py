@@ -35,7 +35,7 @@ class Main(tk.Frame):
         traceDrop.grid(row= 4, column=2)
 
     # Sets the values inside the dropdown menu, and sets it to update when a main file is selected
-        def traceSelector():
+        def traceSelector(trace):
             self.trace = (int(traceDrop.get()) - 1)
         traceDrop.bind("<<ComboboxSelected>>", traceSelector)
         def dropdownUpdater():
@@ -155,7 +155,7 @@ class Main(tk.Frame):
             rightRatInjTimeLabel.grid(row= 2, column= 4)
             rightRatInjTimeFill.grid(row= 2, column= 5)
 
-            submitButton = ttk.Button(infoPop, text="Submit", command=lambda:[onPopSubmit(), infoPop.destroy()])
+            submitButton = ttk.Button(infoPop, text="Submit", command=lambda:[infoPop.destroy(), onPopSubmit()])
             submitButton.grid(row= 3, column= 3)
 
     # Retrieves the baseline autofluorescence for the 4 channels analyzed and prints to a message box.

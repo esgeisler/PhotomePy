@@ -23,9 +23,16 @@ def wholeTracePeaks(processedSignalArray, mainFile):
     finalDict = {}
     peaksArray = np.zeros((len(abf.sweepList), longPeak))
     peaksDict = {}
+    widthArray = np.zeros((len(abf.sweepList), 4, longPeak))
     for index, traces in enumerate(processedSignalArray):
         peaks, peaksDict[index] = sci.find_peaks(traces, prominence= 0.05, width=0, wlen=20000, rel_height= 0.5)
+        bottomWidth = sci.peak_widths(traces, peaks, rel_height=1, prominence_data=(peaksDict[index]['prominences'], 
+                                                                                             peaksDict[index]["left_bases"], peaksDict[index]["right_bases"]), wlen=20000)
         peaks = np.pad(peaks, pad_width= (0, longPeak - len(peaks)), mode= 'constant', constant_values= 0)
+        bottomWidth = np.array(bottomWidth)
+        for i, param in enumerate(bottomWidth):
+            param = np.pad(param, pad_width= (0, longPeak - len(param)), mode= 'constant', constant_values= 0)
+            widthArray[index][i] = param
         peaksArray[index] = peaks
         for i in peaksDict[index]:
            paddedEntry = np.pad(peaksDict[index][i], pad_width= (0, longPeak - len(peaksDict[index][i])), mode= 'constant', constant_values= 0)
@@ -43,16 +50,21 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         peakTable.Amplitude = peaksDict[z]["prominences"].round(3)
         peakTable.Off_Time_ms = ((peaksDict[z]['right_bases'] - x)/(samplingFreqMSec)).round(2)
         peakTable.Width_at50_ms = (peaksDict[z]['widths']/(samplingFreqMSec)).round(2)
-        if x.size == 0:
+        if np.size(x) == 0:
             peakTable.Frequency = 0
         else:
             peakTable.Frequency.iat[0] = round(np.count_nonzero(x)/((len(processedSignalArray[z]) + 2250)/samplingFreqSec), 2) #Peaks/second (15 second trace)
         areaList = []
-        for i, _ in enumerate(x):
-            if len(processedSignalArray[z][int(peaksDict[z]['left_bases'][i]):int(peaksDict[z]['right_bases'][i])]) == 0:
+        for i, peakNum in enumerate(x):
+            if len(processedSignalArray[z][int(widthArray[z][2][i]):int(widthArray[z][3][i])]) == 0:
                 continue
-            peakArea = inte.simpson(y=processedSignalArray[z][int(peaksDict[z]['left_bases'][i]):int(peaksDict[z]['right_bases'][i])], 
-                                    x=range(int(peaksDict[z]['left_bases'][i]), int(peaksDict[z]['right_bases'][i])))
+            peakArea = inte.simpson(y=processedSignalArray[z][int(widthArray[z][2][i]):int(widthArray[z][3][i])], 
+                                    x=np.arange(int(widthArray[z][2][i]), int(widthArray[z][3][i])))
+            peaksInArea = [y for y in x if ((widthArray[z][2][i] < y < widthArray[z][3][i]) and y != peakNum)]
+            if len(peaksInArea) > 0:
+                for j, _ in enumerate(peaksInArea):
+                    peakArea -= inte.simpson(y=processedSignalArray[z][int(widthArray[z][2][j]):int(widthArray[z][3][j])], 
+                                    x=np.arange(int(widthArray[z][2][j]), int(widthArray[z][3][j])))
             areaList.append(peakArea.round(2))
         peakTable.Area = pd.Series(areaList)
 
@@ -78,26 +90,18 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
     peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, width=0, wlen= 20000, rel_height= 0.5)
     peakTable = pd.DataFrame(columns= ['event', 'Peak_Index', 
                                        'PeakTimeSec', 'Event_Window_Start', 
-                                       'Event_Window_End','Amplitude',
-                                        'Frequency', 'Area'])
+                                       'Event_Window_End','Amplitude'])
     peakTable.event = [x + 1 for x, _ in enumerate(peaks)]
     peakTable.Peak_Index = peaks
     peakTable.PeakTimeSec = peaks/samplingFreqSec
     peakTable.Event_Window_Start = peaksDict['left_ips']
     peakTable.Event_Window_End = peaksDict['right_ips']
-    peakTable.Frequency = np.count_nonzero(peaks)/(len(processedSignalArray)/samplingFreqSec)
-    areaList = []
-    for i, _ in enumerate(peaks):
-        if len(processedSignalArray[int(peaksDict['left_bases'][i]):int(peaksDict['right_bases'][i])]) == 0:
-            continue
-        peakArea = inte.simpson(y=processedSignalArray[int(peaksDict['left_bases'][i]):int(peaksDict['right_bases'][i])], 
-                                x=range(int(peaksDict['left_bases'][i]), int(peaksDict['right_bases'][i])))
-        areaList.append(peakArea.round(2))
-    areaList = pd.Series(areaList)
-    peakTable.Area = areaList
+    
 
-    widthBottom = sci.peak_widths(processedSignalArray, peaks, rel_height=1)
-    widthHalf = sci.peak_widths(processedSignalArray, peaks, rel_height=0.5)
+    widthBottom = sci.peak_widths(processedSignalArray, peaks, rel_height=1, prominence_data=(peaksDict['prominences'], 
+                                                                                             peaksDict["left_bases"], peaksDict["right_bases"]), wlen=20000)
+    widthHalf = sci.peak_widths(processedSignalArray, peaks, rel_height=0.5, prominence_data=(peaksDict['prominences'], 
+                                                                                             peaksDict["left_bases"], peaksDict["right_bases"]), wlen=20000)
     
     fig = plt.figure()
     peakFig = fig.add_subplot()
@@ -109,6 +113,8 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
                      xytext = (peaksDict['right_bases'][i], x - 0.3), 
                      xy = (peaksDict['right_bases'][i], processedSignalArray[peaksDict['right_bases'][i]] - 0.01),
                      arrowprops=dict(facecolor= 'black', width= 1, headwidth= 5, headlength= 5))
+        peakFig.fill_between(np.arange(int(widthBottom[2][i]), int(widthBottom[3][i])), processedSignalArray[int(widthBottom[2][i]):int(widthBottom[3][i])], 
+                             widthBottom[1][i], color="C1", alpha=0.3)
     peakFig.hlines(*widthHalf[1:], color="C6")
     peakFig.hlines(*widthBottom[1:], color="C7")
     peakFig.vlines(x=peaks, ymin=processedSignalArray[peaks] - peaksDict["prominences"], ymax=processedSignalArray[peaks], color="C5")
