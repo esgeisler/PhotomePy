@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pyabf
+import sys
+np.set_printoptions(threshold=sys.maxsize)
 
 # Returns the number of peaks in the trace with the most peaks
 def peakMax(processedSignalArray):
@@ -24,10 +26,13 @@ def wholeTracePeaks(processedSignalArray, mainFile):
     peaksArray = np.zeros((len(abf.sweepList), longPeak))
     peaksDict = {}
     widthArray = np.zeros((len(abf.sweepList), 4, longPeak))
+    overlapPeaks = [[0]*longPeak for i in abf.sweepList]
     for index, traces in enumerate(processedSignalArray):
         peaks, peaksDict[index] = sci.find_peaks(traces, prominence= 0.05, width=0, wlen=20000, rel_height= 0.5)
-        bottomWidth = sci.peak_widths(traces, peaks, rel_height=1, prominence_data=(peaksDict[index]['prominences'], 
-                                                                                             peaksDict[index]["left_bases"], peaksDict[index]["right_bases"]), wlen=20000)
+        bottomWidth = sci.peak_widths(traces, peaks, rel_height=1, 
+                                      prominence_data=(peaksDict[index]['prominences'], 
+                                        peaksDict[index]["left_bases"], peaksDict[index]["right_bases"]), 
+                                        wlen=20000)
         peaks = np.pad(peaks, pad_width= (0, longPeak - len(peaks)), mode= 'constant', constant_values= 0)
         bottomWidth = np.array(bottomWidth)
         for i, param in enumerate(bottomWidth):
@@ -37,6 +42,8 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         for i in peaksDict[index]:
            paddedEntry = np.pad(peaksDict[index][i], pad_width= (0, longPeak - len(peaksDict[index][i])), mode= 'constant', constant_values= 0)
            peaksDict[index][i] = paddedEntry
+    for k, checkPeak in np.ndenumerate(peaksArray):
+            overlapPeaks[k[0]][k[1]] = np.array([y for y in peaksArray[k[0]] if ((widthArray[k[0]][2][k[1]] < y < widthArray[k[0]][3][k[1]]) and y != checkPeak)])
     for z, x in enumerate(peaksArray):
         peakTable = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
                                         'Peak_Time_Sec', 'Event_Window_Start', 
@@ -60,13 +67,16 @@ def wholeTracePeaks(processedSignalArray, mainFile):
                 continue
             peakArea = inte.simpson(y=processedSignalArray[z][int(widthArray[z][2][i]):int(widthArray[z][3][i])], 
                                     x=np.arange(int(widthArray[z][2][i]), int(widthArray[z][3][i])))
-            peaksInArea = [y for y in x if ((widthArray[z][2][i] < y < widthArray[z][3][i]) and y != peakNum)]
+            peaksInArea = overlapPeaks[z][i]
             if len(peaksInArea) > 0:
                 for areaPeakSub in peaksInArea:
                     j = np.where(x == areaPeakSub)
                     peakArea -= inte.simpson(y=processedSignalArray[z][int(widthArray[z][2][j]):int(widthArray[z][3][j])], 
                                     x=np.arange(int(widthArray[z][2][j]), int(widthArray[z][3][j])))
-            areaList.append(peakArea.round(2))
+                areaList.append(peakArea.round(2))
+            else:     
+                areaList.append(peakArea.round(2))
+            
         peakTable.Area = pd.Series(areaList)
 
         peakTable.drop(peakTable[peakTable.Peak_Index == 0].index, inplace= True)
