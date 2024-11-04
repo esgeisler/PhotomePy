@@ -62,7 +62,8 @@ def wholeTracePeaks(processedSignalArray, mainFile):
                                     x=np.arange(int(widthArray[z][2][i]), int(widthArray[z][3][i])))
             peaksInArea = [y for y in x if ((widthArray[z][2][i] < y < widthArray[z][3][i]) and y != peakNum)]
             if len(peaksInArea) > 0:
-                for j, _ in enumerate(peaksInArea):
+                for areaPeakSub in peaksInArea:
+                    j = np.where(x == areaPeakSub)
                     peakArea -= inte.simpson(y=processedSignalArray[z][int(widthArray[z][2][j]):int(widthArray[z][3][j])], 
                                     x=np.arange(int(widthArray[z][2][j]), int(widthArray[z][3][j])))
             areaList.append(peakArea.round(2))
