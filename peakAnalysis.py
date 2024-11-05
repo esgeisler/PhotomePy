@@ -26,7 +26,8 @@ def wholeTracePeaks(processedSignalArray, mainFile):
     peaksArray = np.zeros((len(abf.sweepList), longPeak))
     peaksDict = {}
     widthArray = np.zeros((len(abf.sweepList), 4, longPeak))
-    overlapPeaks = [[0]*longPeak for i in abf.sweepList]
+    overlapPeaks = [[0]*longPeak for h in abf.sweepList]
+    adjustedArea = np.zeros((len(abf.sweepList), longPeak))
     for index, traces in enumerate(processedSignalArray):
         peaks, peaksDict[index] = sci.find_peaks(traces, prominence= 0.05, width=0, wlen=20000, rel_height= 0.5)
         bottomWidth = sci.peak_widths(traces, peaks, rel_height=1, 
@@ -61,24 +62,33 @@ def wholeTracePeaks(processedSignalArray, mainFile):
             peakTable.Frequency = 0
         else:
             peakTable.Frequency.iat[0] = round(np.count_nonzero(x)/((len(processedSignalArray[z]) + 2250)/samplingFreqSec), 2) #Peaks/second (15 second trace)
-        areaList = []
-        for i, peakNum in enumerate(x):
+        degreeNPeaks = {}
+        for i, peakOfDegree in enumerate(x):
             if len(processedSignalArray[z][int(widthArray[z][2][i]):int(widthArray[z][3][i])]) == 0:
-                continue
-            peakArea = inte.simpson(y=processedSignalArray[z][int(widthArray[z][2][i]):int(widthArray[z][3][i])], 
-                                    x=np.arange(int(widthArray[z][2][i]), int(widthArray[z][3][i])))
-            peaksInArea = overlapPeaks[z][i]
-            if len(peaksInArea) > 0:
-                for areaPeakSub in peaksInArea:
-                    j = np.where(x == areaPeakSub)
-                    peakArea -= inte.simpson(y=processedSignalArray[z][int(widthArray[z][2][j]):int(widthArray[z][3][j])], 
-                                    x=np.arange(int(widthArray[z][2][j]), int(widthArray[z][3][j])))
-                areaList.append(peakArea.round(2))
-            else:     
-                areaList.append(peakArea.round(2))
+                 continue
+            degreeNPeaks[peakOfDegree] = len(overlapPeaks[z][i])
+        sortedDegreeNPeaks = dict(sorted(degreeNPeaks.items(), key=lambda item: item[1]))
+        for n, u in enumerate(sortedDegreeNPeaks):
+            i = np.where(x == u)
+            if len(processedSignalArray[z][int(widthArray[z][2][i[0][0]]):int(widthArray[z][3][i[0][0]])]) == 0:
+                 continue
+            peaksInArea = overlapPeaks[z][i[0][0]]
+            peakArea = inte.simpson(y=processedSignalArray[z][int(widthArray[z][2][i[0][0]]):int(widthArray[z][3][i[0][0]])], 
+                                            x=np.arange(int(widthArray[z][2][i[0][0]]), int(widthArray[z][3][i[0][0]])))
+            match degreeNPeaks[u]:
+                case 0:
+                    adjustedArea[z][i[0][0]] = peakArea.round(2)
+                # case 1:
+                #     j = np.where(x == u)
+                #     peakArea -= adjustedArea[z][j[0][0]]
+                #     adjustedArea[z][i[0][0]] = peakArea.round(2)
+                case _:
+                    for l in peaksInArea:
+                        j = np.where(x == l)
+                        peakArea -= adjustedArea[z][j[0][0]]
+                    adjustedArea[z][i[0][0]] = peakArea.round(2)
             
-        peakTable.Area = pd.Series(areaList)
-
+        peakTable.Area = pd.Series(adjustedArea[z])
         peakTable.drop(peakTable[peakTable.Peak_Index == 0].index, inplace= True)
         finalDict[z] = peakTable
     return finalDict
