@@ -7,6 +7,7 @@ import peakAnalysis as pas
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import pandas as pd
+import cProfile
 
 class Main(tk.Frame):
     def __init__(self, master= None, **kwargs):
@@ -255,7 +256,6 @@ class Main(tk.Frame):
             #TODO fix FutureWarning caused by concat being empty by default.
             # Writes trace data to 2 excel files: left and right
                 leftWriter, rightWriter = pd.ExcelWriter(leftPath), pd.ExcelWriter(rightPath)
-                x = 1
                 with leftWriter as writer:
                     # Overview Sheet
                     overviewLeft.to_excel(writer, sheet_name= "All Traces")
@@ -287,9 +287,8 @@ class Main(tk.Frame):
                     freqColumn.to_excel(writer, sheet_name="Frequency")
                     areaColumn.to_excel(writer, sheet_name="Peak AUC")
                     # Individual Traces
-                    for frames in injectionLeft:
-                        injectionLeft[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
-                        x += 1
+                    for x, frames in enumerate(injectionLeft):
+                        injectionLeft[frames].to_excel(writer, sheet_name= "Trace %i"%(x+1), index= False)
                 with rightWriter as writer:
                     # Overview Sheet
                     overviewRight.to_excel(writer, sheet_name= "All Traces")
@@ -322,12 +321,12 @@ class Main(tk.Frame):
                     areaColumn.to_excel(writer, sheet_name="Peak AUC")
                     
                     # Individual Traces
-                    for frames in injectionRight:
-                        injectionRight[frames].to_excel(writer, sheet_name= "Trace %i"%x, index= False)
-                        x += 1
+                    for x, frames in enumerate(injectionRight):
+                        injectionRight[frames].to_excel(writer, sheet_name= "Trace %i"%(x+1), index= False)
                 self.traceStatus = True
                 acl.tExport(finalSignalLeft, self.ratNameLeft, self.abfDate) #Left
                 acl.tExport(finalSignalRight, self.ratNameRight, self.abfDate) #Right
+                
 
         # Analyzes the peak decay, amplitude, and frequency of a single trace chosen by the user.
         def singleTracePeaks():
@@ -357,7 +356,7 @@ class Main(tk.Frame):
                         self.destroy()
                         sys.exit(0)
                 else:
-                    raise
+                    raise  
 
         runFileButton = ttk.Button(self, text="Process a File", command= dataProcessorPop)
         runFileButton.grid(row= 3, column= 1)
@@ -365,7 +364,6 @@ class Main(tk.Frame):
         baselineGetterButton.grid(row= 3, column= 2)
         testerButton = ttk.Button(self, text="Event analysis on a single trace", command= singleTracePeaks)
         testerButton.grid(row=4, column=1)
-
         
 
 def main():
@@ -374,6 +372,7 @@ def main():
     window = Main(fp)
     window.pack()
     fp.mainloop()
+    
 
 if __name__ == "__main__":
     main()

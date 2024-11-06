@@ -11,7 +11,7 @@ np.set_printoptions(threshold=sys.maxsize)
 def peakMax(processedSignalArray):
     peakArray = np.zeros(np.size(processedSignalArray, 0))
     for i, t in enumerate(processedSignalArray):
-        peaks, _ = sci.find_peaks(t, prominence= 0.05, width=0, wlen=20000, rel_height= 0.5)
+        peaks, _ = sci.find_peaks(t, prominence= 0.05, wlen=20000)
         peakArray[i] = np.size(peaks)
     longestPeak = np.max(peakArray)
     return int(longestPeak)
@@ -22,10 +22,8 @@ def wholeTracePeaks(processedSignalArray, mainFile):
     abf = pyabf.ABF(mainFile)
     samplingFreqMSec = abf.dataPointsPerMs + (1/3)
     samplingFreqSec = samplingFreqMSec * 1000
-    finalDict = {}
-    peaksArray = np.zeros((len(abf.sweepList), longPeak))
-    peaksDict = {}
-    widthArray = np.zeros((len(abf.sweepList), 4, longPeak))
+    peaksDict, finalDict = {}, {}
+    peaksArray, widthArray = np.zeros((len(abf.sweepList), longPeak)), np.zeros((len(abf.sweepList), 4, longPeak))
     overlapPeaks = [[0]*longPeak for h in abf.sweepList]
     adjustedArea = np.zeros((len(abf.sweepList), longPeak))
     for index, traces in enumerate(processedSignalArray):
@@ -46,6 +44,7 @@ def wholeTracePeaks(processedSignalArray, mainFile):
     for k, checkPeak in np.ndenumerate(peaksArray):
             overlapPeaks[k[0]][k[1]] = np.array([y for y in peaksArray[k[0]] if ((widthArray[k[0]][2][k[1]] < y < widthArray[k[0]][3][k[1]]) and y != checkPeak)])
     for z, x in enumerate(peaksArray):
+        degreeNPeaks = {}
         peakTable = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
                                         'Peak_Time_Sec', 'Event_Window_Start', 
                                         'Event_Window_End', 'Amplitude', 'Off_Time_ms',
@@ -58,17 +57,17 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         peakTable.Amplitude = peaksDict[z]["prominences"].round(3)
         peakTable.Off_Time_ms = ((peaksDict[z]['right_bases'] - x)/(samplingFreqMSec)).round(2)
         peakTable.Width_at50_ms = (peaksDict[z]['widths']/(samplingFreqMSec)).round(2)
-        if np.size(x) == 0:
-            peakTable.Frequency = 0
-        else:
-            peakTable.Frequency.iat[0] = round(np.count_nonzero(x)/((len(processedSignalArray[z]) + 2250)/samplingFreqSec), 2) #Peaks/second (15 second trace)
-        degreeNPeaks = {}
+        match np.size(x):
+            case 0:
+                peakTable.Frequency = 0
+            case _:
+                peakTable.Frequency.iat[0] = round(np.count_nonzero(x)/((len(processedSignalArray[z]) + 2250)/samplingFreqSec), 2) #Peaks/second (15 second trace)
         for i, peakOfDegree in enumerate(x):
             if len(processedSignalArray[z][int(widthArray[z][2][i]):int(widthArray[z][3][i])]) == 0:
                  continue
             degreeNPeaks[peakOfDegree] = len(overlapPeaks[z][i])
         sortedDegreeNPeaks = dict(sorted(degreeNPeaks.items(), key=lambda item: item[1]))
-        for n, u in enumerate(sortedDegreeNPeaks):
+        for _, u in enumerate(sortedDegreeNPeaks):
             i = np.where(x == u)
             if len(processedSignalArray[z][int(widthArray[z][2][i[0][0]]):int(widthArray[z][3][i[0][0]])]) == 0:
                  continue
@@ -78,10 +77,6 @@ def wholeTracePeaks(processedSignalArray, mainFile):
             match degreeNPeaks[u]:
                 case 0:
                     adjustedArea[z][i[0][0]] = peakArea.round(2)
-                # case 1:
-                #     j = np.where(x == u)
-                #     peakArea -= adjustedArea[z][j[0][0]]
-                #     adjustedArea[z][i[0][0]] = peakArea.round(2)
                 case _:
                     for l in peaksInArea:
                         j = np.where(x == l)
@@ -109,12 +104,12 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
     samplingFreqMSec = abf.dataPointsPerMs + (1/3)
     samplingFreqSec = samplingFreqMSec * 1000
     peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, width=0, wlen= 20000, rel_height= 0.5)
-    peakTable = pd.DataFrame(columns= ['event', 'Peak_Index', 
-                                       'PeakTimeSec', 'Event_Window_Start', 
-                                       'Event_Window_End','Amplitude'])
+    peakTable = pd.DataFrame(columns= ['event', 'Peak_Index',
+                                        'Event_Window_Start', 
+                                        'Event_Window_End',
+                                        'Amplitude'])
     peakTable.event = [x + 1 for x, _ in enumerate(peaks)]
     peakTable.Peak_Index = peaks
-    peakTable.PeakTimeSec = peaks/samplingFreqSec
     peakTable.Event_Window_Start = peaksDict['left_ips']
     peakTable.Event_Window_End = peaksDict['right_ips']
     
@@ -130,10 +125,14 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
     peakFig.plot(peaks, processedSignalArray[peaks], "r.")
     peakFig.plot(peaksDict['right_bases'], processedSignalArray[peaksDict['right_bases']], 'g.')
     for i, x in enumerate(processedSignalArray[peaks]):
-        peakFig.annotate("Trough", xycoords= 'data', size= 10, horizontalalignment= 'center',
+        peakFig.annotate("Trough for Peak %i"%i, xycoords= 'data', size= 8, horizontalalignment= 'center',
                      xytext = (peaksDict['right_bases'][i], x - 0.3), 
                      xy = (peaksDict['right_bases'][i], processedSignalArray[peaksDict['right_bases'][i]] - 0.01),
                      arrowprops=dict(facecolor= 'black', width= 1, headwidth= 5, headlength= 5))
+        peakFig.annotate("Peak %i"%i, xycoords= 'data', size= 8, horizontalalignment= 'center',
+                         xytext= (peaks[i], processedSignalArray[peaks][i] + 0.01),
+                         xy = (peaks[i], processedSignalArray[peaks][i]))
+
         peakFig.fill_between(np.arange(int(widthBottom[2][i]), int(widthBottom[3][i])), processedSignalArray[int(widthBottom[2][i]):int(widthBottom[3][i])], 
                              widthBottom[1][i], color="C1", alpha=0.3)
     peakFig.hlines(*widthHalf[1:], color="C6")
