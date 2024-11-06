@@ -44,8 +44,8 @@ class Main(tk.Frame):
 
     # Opens the main file, containing data from the session with 2 rats
         def fileBrowserExperiment():
-            x = 0
-            while x == 0:
+            t = False
+            while not t:
                 try:
                     self.experimentFileName = filedialog.askopenfilename(initialdir= os.path.join(os.getcwd(), "Raw Data"), title= "Select a Main File", 
                                                                     filetypes=(("Axon Binary Fles", "*.abf*"), ("All Files," "*.*")))
@@ -59,7 +59,7 @@ class Main(tk.Frame):
                     continue
                 except PermissionError as e:
                     if e.errno == 13:
-                        x = 1
+                        t = True
                     else:
                         raise IOError("Something is wrong with this file")
                 else:
@@ -68,8 +68,8 @@ class Main(tk.Frame):
     
     # Opens the baseline file containing the baseline autofluorescence
         def fileBrowserBaseline():
-            x = 0
-            while x == 0:
+            t = False
+            while not t:
                 try:
                     self.baselinefileName = filedialog.askopenfilename(initialdir= os.path.join(os.getcwd(), "Raw Data"), title= "Select a Baseline File", 
                                                                        filetypes=(("Axon Binary Fles", "*.abf*"), ("All Files," "*.*")))
@@ -81,7 +81,7 @@ class Main(tk.Frame):
                     continue
                 except PermissionError as e:
                     if e.errno == 13:
-                        x = 1
+                        t = True
                     else:
                         raise IOError("Something is wrong with this file")
                 else:

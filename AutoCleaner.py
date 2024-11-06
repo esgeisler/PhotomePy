@@ -12,27 +12,23 @@ def BaselineGet(FileName):
     Channel470Left, Channel405Left, Channel470Right, Channel405Right = 0, 1, 4, 5
 
     abf.setSweep(sweepNumber= 0, channel= Channel470Left)
-    for sweep470 in abf.sweepList:
-        fluor470 = stat.mean(abf.sweepY)
-        sweepArray470Left[sweep470] = fluor470
+    for i in abf.sweepList:
+        sweepArray470Left[i] = stat.mean(abf.sweepY)
     mean470Left = stat.mean(sweepArray470Left)
     
     abf.setSweep(sweepNumber= 0, channel= Channel405Left)
-    for sweep405 in abf.sweepList:
-        fluor405 = stat.mean(abf.sweepY)
-        sweepArray405Left[sweep405] = fluor405
+    for i in abf.sweepList:
+        sweepArray405Left[i] = stat.mean(abf.sweepY)
     mean405Left = stat.mean(sweepArray405Left)
     
     abf.setSweep(sweepNumber= 0, channel= Channel470Right)
-    for sweep470 in abf.sweepList:
-        fluor470 = stat.mean(abf.sweepY)
-        sweepArray470Right[sweep470] = fluor470
+    for i in abf.sweepList:
+        sweepArray470Right[i] = stat.mean(abf.sweepY)
     mean470Right = stat.mean(sweepArray470Right)
     
     abf.setSweep(sweepNumber= 0, channel= Channel405Right)
-    for sweep405 in abf.sweepList:
-        fluor405 = stat.mean(abf.sweepY)
-        sweepArray405Right[sweep405] = fluor405
+    for i in abf.sweepList:
+        sweepArray405Right[i] = stat.mean(abf.sweepY)
     mean405Right = stat.mean(sweepArray405Right)
     return mean470Left, mean405Left, mean470Right, mean405Right
 
@@ -55,8 +51,8 @@ def baselineSubtractor(fileName, baseline470, baseline405, channelsToSubtract):
 def wholeTraceGauss(signalToFilter):
     sweepArray = np.zeros((len(signalToFilter), len(signalToFilter[0])))
     for i, x in enumerate(signalToFilter):
-            filteredSweep = scipy.ndimage.gaussian_filter1d(x, sigma = 16)
-            sweepArray[i] = filteredSweep
+        filteredSweep = scipy.ndimage.gaussian_filter1d(x, sigma = 16)
+        sweepArray[i] = filteredSweep
     return sweepArray
 
 # Divides two channels (470nm/405nm) in one file and returns a complete channel dictionary.
