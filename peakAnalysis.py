@@ -48,7 +48,7 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         peakTable = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 
                                         'Peak_Time_Sec', 'Event_Window_Start', 
                                         'Event_Window_End', 'Amplitude', 'Off_Time_ms',
-                                        'Width_at50_ms','Frequency', 'Area'])
+                                        'Width_at50_ms','Frequency', 'Avg_Area', 'Total_Area'])
         peakTable.Event_Num = [x + 1 for x, _ in enumerate(x)]
         peakTable.Peak_Index = x
         peakTable.Peak_Time_Sec = ((x/samplingFreqSec) + (z * 30)).round(2)
@@ -57,11 +57,7 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         peakTable.Amplitude = peaksDict[z]["prominences"].round(3)
         peakTable.Off_Time_ms = ((peaksDict[z]['right_bases'] - x)/(samplingFreqMSec)).round(2)
         peakTable.Width_at50_ms = (peaksDict[z]['widths']/(samplingFreqMSec)).round(2)
-        match np.size(x):
-            case 0:
-                peakTable.Frequency = 0
-            case _:
-                peakTable.Frequency.iat[0] = round(np.count_nonzero(x)/((len(processedSignalArray[z]) + 2250)/samplingFreqSec), 2) #Peaks/second (15 second trace)
+        
         for i, peakOfDegree in enumerate(x):
             if len(processedSignalArray[z][int(widthArray[z][2][i]):int(widthArray[z][3][i])]) == 0:
                  continue
@@ -82,8 +78,15 @@ def wholeTracePeaks(processedSignalArray, mainFile):
                         j = np.where(x == l)
                         peakArea -= adjustedArea[z][j[0][0]]
                     adjustedArea[z][i[0][0]] = peakArea.round(2)
-            
-        peakTable.Area = pd.Series(adjustedArea[z])
+                    
+        peakTable.Avg_Area = pd.Series(adjustedArea[z])
+        match np.size(x):
+            case 0:
+                peakTable.Frequency = 0
+                peakTable.Total_Area = 0
+            case _:
+                peakTable.Frequency.iat[0] = round(np.count_nonzero(x)/((len(processedSignalArray[z]) + 2250)/samplingFreqSec), 2) #Peaks/second (15 second trace)
+                peakTable.Total_Area.iat[0] = sum(adjustedArea[z])
         peakTable.drop(peakTable[peakTable.Peak_Index == 0].index, inplace= True)
         finalDict[z] = peakTable
     return finalDict
@@ -103,8 +106,8 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
     abf = pyabf.ABF(mainFile)
     samplingFreqMSec = abf.dataPointsPerMs + (1/3)
     samplingFreqSec = samplingFreqMSec * 1000
+    seconds = np.arange(0, 47750, samplingFreqSec)
     peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, width=0, wlen= 20000, rel_height= 0.5)
-
     widthBottom = sci.peak_widths(processedSignalArray, peaks, rel_height=1, prominence_data=(peaksDict['prominences'], 
                                                                                              peaksDict["left_bases"], peaksDict["right_bases"]), wlen=20000)
     widthHalf = sci.peak_widths(processedSignalArray, peaks, rel_height=0.5, prominence_data=(peaksDict['prominences'], 
@@ -131,7 +134,6 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
     peakFig.vlines(x=peaks, ymin=processedSignalArray[peaks] - peaksDict["prominences"], ymax=processedSignalArray[peaks], color="C5")
     peakFig.set_title(ratSide)
     plt.axis([0, 47750, 0, 2])
-    seconds = np.arange(0, 47750, samplingFreqSec)
     plt.xticks(ticks=seconds, labels=range(len(seconds)))
     plt.xlabel("Time (s)")
     plt.ylabel("Fluorescence (AU)")

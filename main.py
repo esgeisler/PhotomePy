@@ -262,8 +262,8 @@ class Main(tk.Frame):
                     overviewLeft.to_excel(writer, sheet_name= "All Traces")
                     # Bins of Three
                     leftGroupThree = [list(injectionLeft.values())[i:i+3] for i in range(0, len(injectionLeft), 3)]
-                    ampColumn, offTimeColumn, widthColumn, freqColumn, areaColumn = pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(),
-                    ampList, offTimeList, widthList, freqList, areaList = [], [], [], [], []
+                    ampColumn, offTimeColumn, widthColumn, freqColumn, areaColumn, totAreaColumn = pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+                    ampList, offTimeList, widthList, freqList, areaList, totAreaList = [], [], [], [], [], []
                     z = 1
                     for groups in leftGroupThree:
                         concat = pd.concat(groups, ignore_index=True)
@@ -272,7 +272,9 @@ class Main(tk.Frame):
                         widthList.append(pd.DataFrame(concat["Width_at50_ms"].rename("Width %i-%i"%(z, z+2))))
                         droppedFreq = pd.DataFrame(concat["Frequency"].rename("Frequency %i-%i"%(z, z+2))).dropna()
                         freqList.append(droppedFreq.reset_index(drop=True))
-                        areaList.append(pd.DataFrame(concat["Area"].rename("Area %i-%i"%(z, z+2))))
+                        areaList.append(pd.DataFrame(concat["Avg_Area"].rename("Area %i-%i"%(z, z+2))))
+                        droppedArea = pd.DataFrame(concat["Total_Area"].rename("Total Area %i-%i"%(z, z+2))).dropna()
+                        totAreaList.append(droppedArea.reset_index(drop=True))
                         concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
                         z += 3
                     
@@ -281,12 +283,14 @@ class Main(tk.Frame):
                     widthColumn = pd.concat(widthList, axis="columns")
                     freqColumn = pd.concat(freqList, axis="columns", ignore_index=True)
                     areaColumn = pd.concat(areaList, axis="columns")
+                    totAreaColumn = pd.concat(totAreaList, axis="columns", ignore_index=True)
 
                     ampColumn.to_excel(writer, sheet_name="Amplitude")
                     offTimeColumn.to_excel(writer, sheet_name="Off Time")
                     widthColumn.to_excel(writer, sheet_name="Width")
                     freqColumn.to_excel(writer, sheet_name="Frequency")
                     areaColumn.to_excel(writer, sheet_name="Peak AUC")
+                    totAreaColumn.to_excel(writer, sheet_name="Total Area")
                     # Individual Traces
                     for x, frames in enumerate(injectionLeft):
                         injectionLeft[frames].to_excel(writer, sheet_name= "Trace %i"%(x+1), index= False)
@@ -295,8 +299,8 @@ class Main(tk.Frame):
                     overviewRight.to_excel(writer, sheet_name= "All Traces")
                     # Bins of Three
                     rightGroupThree = [list(injectionRight.values())[i:i+3] for i in range(0, len(injectionRight), 3)]
-                    ampColumn, offTimeColumn, widthColumn, freqColumn, areaColumn = pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(),
-                    ampList, offTimeList, widthList, freqList, areaList = [], [], [], [], []
+                    ampColumn, offTimeColumn, widthColumn, freqColumn, areaColumn, totAreaColumn = pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+                    ampList, offTimeList, widthList, freqList, areaList, totAreaList = [], [], [], [], [], []
                     z = 1
                     for groups in rightGroupThree:
                         concat = pd.concat(groups, ignore_index=True)
@@ -305,7 +309,9 @@ class Main(tk.Frame):
                         widthList.append(pd.DataFrame(concat["Width_at50_ms"].rename("Width %i-%i"%(z, z+2))))
                         droppedFreq = pd.DataFrame(concat["Frequency"].rename("Frequency %i-%i"%(z, z+2))).dropna()
                         freqList.append(droppedFreq.reset_index(drop=True))
-                        areaList.append(pd.DataFrame(concat["Area"].rename("Area %i-%i"%(z, z+2))))
+                        areaList.append(pd.DataFrame(concat["Avg_Area"].rename("Mean Area %i-%i"%(z, z+2))))
+                        droppedArea = pd.DataFrame(concat["Total_Area"].rename("Total Area %i-%i"%(z, z+2))).dropna()
+                        totAreaList.append(droppedArea.reset_index(drop=True))
                         concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
                         z += 3
 
@@ -314,12 +320,14 @@ class Main(tk.Frame):
                     widthColumn = pd.concat(widthList, axis="columns")
                     freqColumn = pd.concat(freqList, axis="columns", ignore_index=True)
                     areaColumn = pd.concat(areaList, axis="columns")
+                    totAreaColumn = pd.concat(totAreaList, axis="columns", ignore_index=True)
 
                     ampColumn.to_excel(writer, sheet_name="Amplitude")
                     offTimeColumn.to_excel(writer, sheet_name="Off Time")
                     widthColumn.to_excel(writer, sheet_name="Width")
                     freqColumn.to_excel(writer, sheet_name="Frequency")
-                    areaColumn.to_excel(writer, sheet_name="Peak AUC")
+                    areaColumn.to_excel(writer, sheet_name="Mean Area")
+                    totAreaColumn.to_excel(writer, sheet_name="Total Area")
                     
                     # Individual Traces
                     for x, frames in enumerate(injectionRight):
