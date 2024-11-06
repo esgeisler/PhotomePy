@@ -186,26 +186,27 @@ class Main(tk.Frame):
             try:
                 finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
             except FileNotFoundError as e:
-                if str(e) == "main":
-                    answer = messagebox.askretrycancel(title="Python Error", message="No main file found. Would you like to select a new file?", icon="error")
-                    if answer:
-                        self.experimentFileName = ""
-                        chosenFileTextUpdate()
-                        self.errorStatus = True
-                        return
-                    elif not answer:
-                        self.destroy()
-                        sys.exit(0)
-                elif str(e) == "baseline":
-                    answer = messagebox.askretrycancel(title="Python Error", message="No baseline file found. Would you like to select a new file?", icon="error")
-                    if answer:
-                        self.baselinefileName = ""
-                        baselineFileTextUpdate()
-                        self.errorStatus = True
-                        return
-                    elif not answer:
-                        self.destroy()
-                        sys.exit(0) 
+                match str(e):
+                    case "main":
+                        answer = messagebox.askretrycancel(title="Python Error", message="No main file found. Would you like to select a new file?", icon="error")
+                        if answer:
+                            self.experimentFileName = ""
+                            chosenFileTextUpdate()
+                            self.errorStatus = True
+                            return
+                        elif not answer:
+                            self.destroy()
+                            sys.exit(0)
+                    case "baseline":
+                        answer = messagebox.askretrycancel(title="Python Error", message="No baseline file found. Would you like to select a new file?", icon="error")
+                        if answer:
+                            self.baselinefileName = ""
+                            baselineFileTextUpdate()
+                            self.errorStatus = True
+                            return
+                        elif not answer:
+                            self.destroy()
+                            sys.exit(0) 
         # Averages the left and right signals
             try:
                 averageSignalLeft, averageSignalRight = avg.traceAverage(finalSignalLeft), avg.traceAverage(finalSignalRight)
@@ -335,28 +336,29 @@ class Main(tk.Frame):
                 pas.peakDisplay(finalSignalLeft[self.trace], self.experimentFileName, "Left Rat")
                 pas.peakDisplay(finalSignalRight[self.trace], self.experimentFileName, "Right Rat")
             except FileNotFoundError as e:
-                if str(e) == "main":
-                    answer = messagebox.askretrycancel(title="Python Error", message="No main file found. Would you like to select a new file?", icon="error")
-                    if answer:
-                        self.experimentFileName = ""
-                        chosenFileTextUpdate()
-                        self.errorStatus = True
-                        return
-                    elif not answer:
-                        self.destroy()
-                        sys.exit(0)
-                elif str(e) == "baseline":
-                    answer = messagebox.askretrycancel(title="Python Error", message="No baseline file found. Would you like to select a new file?", icon="error")
-                    if answer:
-                        self.baselinefileName = ""
-                        baselineFileTextUpdate()
-                        self.errorStatus = True
-                        return
-                    elif not answer:
-                        self.destroy()
-                        sys.exit(0)
-                else:
-                    raise  
+                match str(e):
+                    case "main":
+                        answer = messagebox.askretrycancel(title="Python Error", message="No main file found. Would you like to select a new file?", icon="error")
+                        if answer:
+                            self.experimentFileName = ""
+                            chosenFileTextUpdate()
+                            self.errorStatus = True
+                            return
+                        elif not answer:
+                            self.destroy()
+                            sys.exit(0)
+                    case "baseline":
+                        answer = messagebox.askretrycancel(title="Python Error", message="No baseline file found. Would you like to select a new file?", icon="error")
+                        if answer:
+                            self.baselinefileName = ""
+                            baselineFileTextUpdate()
+                            self.errorStatus = True
+                            return
+                        elif not answer:
+                            self.destroy()
+                            sys.exit(0)
+                    case _:
+                        raise  
 
         runFileButton = ttk.Button(self, text="Process a File", command= dataProcessorPop)
         runFileButton.grid(row= 3, column= 1)
