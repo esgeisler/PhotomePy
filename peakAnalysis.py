@@ -104,15 +104,6 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
     samplingFreqMSec = abf.dataPointsPerMs + (1/3)
     samplingFreqSec = samplingFreqMSec * 1000
     peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, width=0, wlen= 20000, rel_height= 0.5)
-    peakTable = pd.DataFrame(columns= ['event', 'Peak_Index',
-                                        'Event_Window_Start', 
-                                        'Event_Window_End',
-                                        'Amplitude'])
-    peakTable.event = [x + 1 for x, _ in enumerate(peaks)]
-    peakTable.Peak_Index = peaks
-    peakTable.Event_Window_Start = peaksDict['left_ips']
-    peakTable.Event_Window_End = peaksDict['right_ips']
-    
 
     widthBottom = sci.peak_widths(processedSignalArray, peaks, rel_height=1, prominence_data=(peaksDict['prominences'], 
                                                                                              peaksDict["left_bases"], peaksDict["right_bases"]), wlen=20000)
@@ -125,11 +116,11 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
     peakFig.plot(peaks, processedSignalArray[peaks], "r.")
     peakFig.plot(peaksDict['right_bases'], processedSignalArray[peaksDict['right_bases']], 'g.')
     for i, x in enumerate(processedSignalArray[peaks]):
-        peakFig.annotate("Trough for Peak %i"%i, xycoords= 'data', size= 8, horizontalalignment= 'center',
+        peakFig.annotate("Trough for Peak %i"%(i+1), xycoords= 'data', size= 8, horizontalalignment= 'center',
                      xytext = (peaksDict['right_bases'][i], x - 0.3), 
                      xy = (peaksDict['right_bases'][i], processedSignalArray[peaksDict['right_bases'][i]] - 0.01),
                      arrowprops=dict(facecolor= 'black', width= 1, headwidth= 5, headlength= 5))
-        peakFig.annotate("Peak %i"%i, xycoords= 'data', size= 8, horizontalalignment= 'center',
+        peakFig.annotate("Peak %i"%(i+1), xycoords= 'data', size= 8, horizontalalignment= 'center',
                          xytext= (peaks[i], processedSignalArray[peaks][i] + 0.01),
                          xy = (peaks[i], processedSignalArray[peaks][i]))
 
