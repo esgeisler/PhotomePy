@@ -276,7 +276,11 @@ class Main(tk.Frame):
                         concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
                         z += 3
                     
-                    ampColumn, offTimeColumn, widthColumn, freqColumn, areaColumn = pd.concat(ampList, axis="columns"), pd.concat(widthList, axis="columns"), pd.concat(freqList, axis="columns", ignore_index=True), areaColumn = pd.concat(areaList, axis="columns")
+                    ampColumn = pd.concat(ampList, axis="columns")
+                    offTimeColumn = pd.concat(offTimeList, axis="columns")
+                    widthColumn = pd.concat(widthList, axis="columns")
+                    freqColumn = pd.concat(freqList, axis="columns", ignore_index=True)
+                    areaColumn = pd.concat(areaList, axis="columns")
 
                     ampColumn.to_excel(writer, sheet_name="Amplitude")
                     offTimeColumn.to_excel(writer, sheet_name="Off Time")
@@ -305,7 +309,11 @@ class Main(tk.Frame):
                         concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
                         z += 3
 
-                    ampColumn, offTimeColumn, widthColumn, freqColumn, areaColumn = pd.concat(ampList, axis="columns"), pd.concat(widthList, axis="columns"), pd.concat(freqList, axis="columns", ignore_index=True), areaColumn = pd.concat(areaList, axis="columns")
+                    ampColumn = pd.concat(ampList, axis="columns")
+                    offTimeColumn = pd.concat(offTimeList, axis="columns")
+                    widthColumn = pd.concat(widthList, axis="columns")
+                    freqColumn = pd.concat(freqList, axis="columns", ignore_index=True)
+                    areaColumn = pd.concat(areaList, axis="columns")
 
                     ampColumn.to_excel(writer, sheet_name="Amplitude")
                     offTimeColumn.to_excel(writer, sheet_name="Off Time")
