@@ -8,28 +8,16 @@ import os
 # Gets baseline information from 1 min-long recording data taken after trial from the "left" side of the room - channels 1 and 2
 def BaselineGet(FileName):
     abf = pyabf.ABF(FileName)
-    sweepArray470Left = sweepArray405Left = sweepArray470Right = sweepArray405Right = np.zeros(len(abf.sweepList))
     Channel470Left, Channel405Left, Channel470Right, Channel405Right = 0, 1, 4, 5
+    channels = [Channel470Left, Channel405Left, Channel470Right, Channel405Right]
+    sweepArrays = {Channel470Left:0.0, Channel405Left:0.0, 
+                   Channel470Right:0.0, Channel405Right:0.0}
 
-    abf.setSweep(sweepNumber= 0, channel= Channel470Left)
-    for i in abf.sweepList:
-        sweepArray470Left[i] = stat.mean(abf.sweepY)
-    mean470Left = stat.mean(sweepArray470Left)
-    
-    abf.setSweep(sweepNumber= 0, channel= Channel405Left)
-    for i in abf.sweepList:
-        sweepArray405Left[i] = stat.mean(abf.sweepY)
-    mean405Left = stat.mean(sweepArray405Left)
-    
-    abf.setSweep(sweepNumber= 0, channel= Channel470Right)
-    for i in abf.sweepList:
-        sweepArray470Right[i] = stat.mean(abf.sweepY)
-    mean470Right = stat.mean(sweepArray470Right)
-    
-    abf.setSweep(sweepNumber= 0, channel= Channel405Right)
-    for i in abf.sweepList:
-        sweepArray405Right[i] = stat.mean(abf.sweepY)
-    mean405Right = stat.mean(sweepArray405Right)
+    for c in channels:
+        abf.setSweep(sweepNumber= 0, channel= c)
+        sweepArrays[c] = stat.mean(abf.sweepY)
+
+    mean470Left, mean405Left, mean470Right, mean405Right = sweepArrays[Channel470Left], sweepArrays[Channel405Left], sweepArrays[Channel470Right], sweepArrays[Channel405Right]
     return mean470Left, mean405Left, mean470Right, mean405Right
 
 #Function that subtracts baseline from baseline getters from a chosen channel, returns those as full channel trace dictionaries
