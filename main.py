@@ -262,8 +262,8 @@ class Main(tk.Frame):
                     overviewLeft.to_excel(writer, sheet_name= "All Traces")
                     # Bins of Three
                     leftGroupThree = [list(injectionLeft.values())[i:i+3] for i in range(0, len(injectionLeft), 3)]
-                    ampColumn, offTimeColumn, widthColumn, freqColumn, areaColumn, totAreaColumn = pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
-                    ampList, offTimeList, widthList, freqList, areaList, totAreaList = [], [], [], [], [], []
+                    ampColumn, offTimeColumn, widthColumn, freqColumn, areaColumn, totAreaColumn, riseColumn, decayColumn = (pd.DataFrame() for i in range(8))
+                    ampList, offTimeList, widthList, freqList, areaList, totAreaList, riseList, decayList = ([] for i in range(8))
                     z = 1
                     for groups in leftGroupThree:
                         concat = pd.concat(groups, ignore_index=True)
@@ -276,6 +276,8 @@ class Main(tk.Frame):
                         droppedArea = pd.DataFrame(concat["Total_Area"].rename("Total Area %i-%i"%(z, z+2))).dropna()
                         totAreaList.append(droppedArea.reset_index(drop=True))
                         concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
+                        riseList.append(pd.DataFrame(concat["Rise_Tau_exp"].rename("Rise Tau %i-%i"%(z, z+2))))
+                        decayList.append(pd.DataFrame(concat["Decay_Tau_exp"].rename("Decay Tau %i-%i"%(z, z+2))))
                         z += 3
                     
                     ampColumn = pd.concat(ampList, axis="columns")
@@ -284,6 +286,8 @@ class Main(tk.Frame):
                     freqColumn = pd.concat(freqList, axis="columns", ignore_index=True)
                     areaColumn = pd.concat(areaList, axis="columns")
                     totAreaColumn = pd.concat(totAreaList, axis="columns", ignore_index=True)
+                    riseColumn = pd.concat(riseList, axis="columns")
+                    decayColumn = pd.concat(decayList, axis="columns")
 
                     ampColumn.to_excel(writer, sheet_name="Amplitude")
                     offTimeColumn.to_excel(writer, sheet_name="Off Time")
@@ -291,6 +295,9 @@ class Main(tk.Frame):
                     freqColumn.to_excel(writer, sheet_name="Frequency")
                     areaColumn.to_excel(writer, sheet_name="Peak AUC")
                     totAreaColumn.to_excel(writer, sheet_name="Total Area")
+                    riseColumn.to_excel(writer, sheet_name="Rise Tau")
+                    decayColumn.to_excel(writer, sheet_name="Decay Tau")
+
                     # Individual Traces
                     for x, frames in enumerate(injectionLeft):
                         injectionLeft[frames].to_excel(writer, sheet_name= "Trace %i"%(x+1), index= False)
@@ -299,8 +306,8 @@ class Main(tk.Frame):
                     overviewRight.to_excel(writer, sheet_name= "All Traces")
                     # Bins of Three
                     rightGroupThree = [list(injectionRight.values())[i:i+3] for i in range(0, len(injectionRight), 3)]
-                    ampColumn, offTimeColumn, widthColumn, freqColumn, areaColumn, totAreaColumn = pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
-                    ampList, offTimeList, widthList, freqList, areaList, totAreaList = [], [], [], [], [], []
+                    ampColumn, offTimeColumn, widthColumn, freqColumn, areaColumn, totAreaColumn, riseColumn, decayColumn = (pd.DataFrame() for i in range(8))
+                    ampList, offTimeList, widthList, freqList, areaList, totAreaList, riseList, decayList = ([] for i in range(8))
                     z = 1
                     for groups in rightGroupThree:
                         concat = pd.concat(groups, ignore_index=True)
@@ -313,6 +320,8 @@ class Main(tk.Frame):
                         droppedArea = pd.DataFrame(concat["Total_Area"].rename("Total Area %i-%i"%(z, z+2))).dropna()
                         totAreaList.append(droppedArea.reset_index(drop=True))
                         concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
+                        riseList.append(pd.DataFrame(concat["Rise_Tau_exp"].rename("Rise Tau %i-%i"%(z, z+2))))
+                        decayList.append(pd.DataFrame(concat["Decay_Tau_exp"].rename("Decay Tau %i-%i"%(z, z+2))))
                         z += 3
 
                     ampColumn = pd.concat(ampList, axis="columns")
@@ -321,13 +330,17 @@ class Main(tk.Frame):
                     freqColumn = pd.concat(freqList, axis="columns", ignore_index=True)
                     areaColumn = pd.concat(areaList, axis="columns")
                     totAreaColumn = pd.concat(totAreaList, axis="columns", ignore_index=True)
+                    riseColumn = pd.concat(riseList, axis="columns")
+                    decayColumn = pd.concat(decayList, axis="columns")
 
                     ampColumn.to_excel(writer, sheet_name="Amplitude")
                     offTimeColumn.to_excel(writer, sheet_name="Off Time")
                     widthColumn.to_excel(writer, sheet_name="Width")
                     freqColumn.to_excel(writer, sheet_name="Frequency")
-                    areaColumn.to_excel(writer, sheet_name="Mean Area")
+                    areaColumn.to_excel(writer, sheet_name="Peak AUC")
                     totAreaColumn.to_excel(writer, sheet_name="Total Area")
+                    riseColumn.to_excel(writer, sheet_name="Rise Tau")
+                    decayColumn.to_excel(writer, sheet_name="Decay Tau")
                     
                     # Individual Traces
                     for x, frames in enumerate(injectionRight):
