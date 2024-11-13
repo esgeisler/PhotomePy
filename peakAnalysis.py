@@ -19,7 +19,7 @@ def peakMax(processedSignalArray):
 
 # Exponential decay equation for plotting the changes in fluorescence after a dopamine event
 def tauFit(tau, a, b):
-    return a*np.exp(-b/tau)
+    return a*np.exp(-b * tau)
 
 # Finds peaks in a signal and provides their widths, amplitudes, avg. frequencies, and areas across an entire .abf file
 def wholeTracePeaks(processedSignalArray, mainFile):
@@ -88,7 +88,7 @@ def wholeTracePeaks(processedSignalArray, mainFile):
                  continue
             peaksInArea = overlapPeaks[z][i[0][0]]
             peakArea = inte.simpson(y=processedSignalArray[z][int(widthBottomArray[z][2][i[0][0]]):int(widthBottomArray[z][3][i[0][0]])], 
-                                    x=np.arange(int(widthBottomArray[z][2][i[0][0]]), int(widthBottomArray[z][3][i[0][0]])))
+                                    x=np.arange(int(widthBottomArray[z][2][i[0][0]]), int(widthBottomArray[z][3][i[0][0]]))/samplingFreqMSec)
             match degreeNPeaks[u]:
                 case 0:
                     adjustedArea[z][i[0][0]] = peakArea.round(2)
@@ -107,40 +107,48 @@ def wholeTracePeaks(processedSignalArray, mainFile):
                 peakTable.Frequency.iat[0] = round(np.count_nonzero(x)/((len(processedSignalArray[z]) + 2250)/samplingFreqSec), 2) #Peaks/second (15 second trace)
                 peakTable.Total_Area.iat[0] = sum(adjustedArea[z])
         peakTable.drop(peakTable[peakTable.Peak_Index == 0].index, inplace= True)
-        for i, p in enumerate(x):
+        for i, p in enumerate(x): # Determines rise and decay time constants (tau) for each peak in a sweep
             if len(processedSignalArray[z][int(widthBottomArray[z][2][i]):int(widthBottomArray[z][3][i])]) == 0:
                 continue
-            decayTau = processedSignalArray[z][int(p):int(width90Array[z][3][i])]
-            riseTau = processedSignalArray[z][int(width90Array[z][2][i]):int(p)]
-    #TODO implement decay and rise tau and time analysis across the a data point.
+            decayTau = np.array(processedSignalArray[z][int(p):int(width90Array[z][3][i])])
+            riseTau = np.array(processedSignalArray[z][int(width90Array[z][2][i]):int(p)])
+            decWidth = int(len(decayTau))
+            riseWidth = int(len(riseTau))
+    #TODO implement time analysis across the a data point.
         # Event Decay
-            p0 = (1, -10)
+            p0 = (processedSignalArray[z][int(p)], -1)
             if len(decayTau) == 0:
                 continue
             else:
                 try:
-                    decArray = list(range(int(p), int(width90Array[z][3][i])))
-                    popt, _ = opt.curve_fit(tauFit, decArray, decayTau, p0=p0, bounds=opt.Bounds(lb=[0, -np.inf], 
-                                                                                                ub=[np.inf, np.inf]), 
-                                                                                                maxfev=10000, xtol=1e-6, ftol=1e-6)
-                    print(popt, "decay")
-                    decayTauList[z][i] = abs((1/popt[1])/samplingFreqSec)
-                except RuntimeError:
-                    decayTauList[z][i] = 0
+                    decArray = np.array(list(range(0, decWidth)), dtype=np.float64)
+                    popt, _ = opt.curve_fit(lambda t, a, b: a * np.exp((b/samplingFreqSec) * (t/samplingFreqSec)), decArray, decayTau, p0=p0, 
+                                            bounds=opt.Bounds(lb=[-np.inf, -np.inf], 
+                                                              ub=[np.inf, np.inf]),
+                                                              maxfev=35000, xtol=1e-6, ftol=1e-6)
+                    if popt[1] - p == 0:
+                        continue
+                    decayTauList[z][i] = abs(1/(popt[1]/1000))
+                except RuntimeError as e:
+                    if str(e) == "Optimal parameters not found: The maximum number of function evaluations is exceeded.":
+                        decayTauList[z][i] = 0
             # Event Rise
-            p0 = (1, 0.3)
+            p0 = (processedSignalArray[z][int(width90Array[z][2][i])], 1)
             if len(riseTau) == 0:
                 continue
             else:
                 try:
-                    riseArray = list(range(int(width90Array[z][2][i]), int(p)))
-                    popt, _ = opt.curve_fit(tauFit, riseArray, riseTau, p0=p0, bounds=opt.Bounds(lb=[0, -np.inf], 
-                                                                                                ub=[np.inf, np.inf]), 
-                                                                                                maxfev=10000, xtol=1e-6, ftol=1e-6)
-                    riseTauList[z][i] = abs((1/popt[1])/samplingFreqSec)
-                    print(popt, "rise")
-                except RuntimeError:
-                    riseTauList[z][i] = 0
+                    riseArray = np.array(list(range(0, riseWidth)), dtype=np.float64)
+                    popt, _ = opt.curve_fit(lambda t, a, b: a * np.exp((b/samplingFreqSec) * (t/samplingFreqSec)), riseArray, riseTau, p0=p0, 
+                                            bounds=opt.Bounds(lb=[-np.inf, -np.inf], 
+                                                              ub=[np.inf, np.inf]),
+                                                              maxfev=35000, xtol=1e-6, ftol=1e-6)
+                    if popt[1] - p == 0:
+                        continue
+                    riseTauList[z][i] = abs(1/(popt[1]/1000))
+                except RuntimeError as e:
+                    if str(e) == "Optimal parameters not found: The maximum number of function evaluations is exceeded.":
+                        decayTauList[z][i] = 0
             peakTable.Decay_Tau_exp = pd.Series(decayTauList[z])
             peakTable.Rise_Tau_exp = pd.Series(riseTauList[z])
         print("Trace #%i done!"%z)
@@ -190,31 +198,41 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
                          xy = (x, processedSignalArray[x]))
         peakFig.fill_between(np.arange(int(widthBottom[2][i]), int(widthBottom[3][i])), processedSignalArray[int(widthBottom[2][i]):int(widthBottom[3][i])], 
                              widthBottom[1][i], color="C1", alpha=0.3)
-        p0 = (1, -10)
+        p0 = (processedSignalArray[int(x)], -1)
         # Event Decay
-        decayTau = processedSignalArray[int(x):int(width90[3][i])]
+        decayTau = np.array(processedSignalArray[int(x):int(width90[3][i])])
+        decWidth = int(len(decayTau))
         if len(decayTau) == 0:
             continue
         else:
-            decArray = list(range(int(x), int(width90[3][i])))
-            popt, pcov = opt.curve_fit(tauFit, decArray, decayTau, p0=p0, bounds=opt.Bounds(lb=[0, -np.inf], 
-                                                                                            ub=[np.inf, np.inf]), maxfev=35000, xtol=1e-6, ftol=1e-6)
-            print(popt)
+            decArray = np.array(list(range(0, decWidth)))
+            
+            popt, _ = opt.curve_fit(lambda t, a, b: a * np.exp((b/samplingFreqSec) * (t/samplingFreqSec)), decArray, decayTau, p0=p0, 
+                                    bounds=opt.Bounds(lb=[-np.inf, -np.inf], 
+                                                      ub=[np.inf, np.inf]), 
+                                                      maxfev=35000, xtol=1e-6, ftol=1e-6)
             x_dec = np.linspace(np.min(decArray), np.max(decArray), 1000)
-            y_dec = tauFit(x_dec, *popt)
-            peakFig.plot(x_dec, y_dec, color="C9")
-        p0 = (1, 0.3)
+            a = popt[0]
+            b = popt[1]
+            y_dec = a * np.exp((b/samplingFreqSec) * (x_dec/samplingFreqSec))
+            peakFig.plot(x_dec+x, y_dec, color="C9")
+            print("Tau (Decay):", abs(1/(popt[1]/1000)))
+        p0 = (processedSignalArray[int(width90[2][i])], 1)
         # Event Rise
-        riseTau = processedSignalArray[int(width90[2][i]):x]
+        riseTau = np.array(processedSignalArray[int(width90[2][i]):x])
+        riseWidth = int(len(riseTau))
         if len(riseTau) == 0:
             continue
         else:
-            riseArray = list(range(int(width90[2][i]), x))
-            popt, pcov = opt.curve_fit(tauFit, riseArray, riseTau, p0=p0, bounds=opt.Bounds(lb=[0, -np.inf], 
+            riseArray = np.array(list(range(0, riseWidth)))
+            popt, _ = opt.curve_fit(lambda t, a, b: a * np.exp((b/samplingFreqSec) * (t/samplingFreqSec)), riseArray, riseTau, p0=p0, bounds=opt.Bounds(lb=[-np.inf, -np.inf], 
                                                                                             ub=[np.inf, np.inf]), maxfev=35000, xtol=1e-6, ftol=1e-6)
             x_rise = np.linspace(np.min(riseArray), np.max(riseArray), 1000)
-            y_rise = tauFit(x_rise, *popt)
-            peakFig.plot(x_rise, y_rise, color="C8")
+            a = popt[0]
+            b = popt[1]
+            y_rise = a * np.exp((b/samplingFreqSec) * (x_rise/samplingFreqSec))
+            peakFig.plot(x_rise+width90[2][i], y_rise, color="C8")
+            print("Tau (Rise):", abs(1/(popt[1]/1000)))
 
     
     peakFig.hlines(*widthHalf[1:], color="C6")
