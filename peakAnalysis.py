@@ -130,7 +130,13 @@ def wholeTracePeaks(processedSignalArray, mainFile):
                                                     bounds=opt.Bounds(lb=[0, 0, 0], 
                                                                     ub=[np.inf, np.inf, np.inf]),
                                                                     maxfev=1000)
-                            riseTauList[z][i[0][0]] = abs(1/popt[1])
+                            squaredDiffs = np.square(adjustedRiseTau - (popt[0] * np.exp(popt[1] * ((riseArray/samplingFreqSec))) + popt[2]))
+                            squaredDiffsFromMean = np.square(adjustedRiseTau - np.mean(adjustedRiseTau))
+                            rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
+                            if rSquared < 0.7:
+                                riseTauList[z][i[0][0]] = np.NaN
+                            else:
+                                riseTauList[z][i[0][0]] = abs(1/popt[1])
                         case _:
                             adjustedRiseTau = np.array(processedSignalArray[z][int(widthHalfArray[z][2][i[0][0]]):int(u)])
                             p0 = (processedSignalArray[z][int(widthHalfArray[z][2][i[0][0]])], 1, processedSignalArray[z][int(width10Array[z][2][i[0][0]])])
@@ -148,8 +154,13 @@ def wholeTracePeaks(processedSignalArray, mainFile):
                                                     bounds=opt.Bounds(lb=[0, 0, 0], 
                                                                     ub=[np.inf, np.inf, np.inf]),
                                                                     maxfev=1000)
-
-                            riseTauList[z][i[0][0]] = abs(1/popt[1])
+                            squaredDiffs = np.square(adjustedRiseTau - (popt[0] * np.exp(popt[1] * ((riseArray/samplingFreqSec))) + popt[2]))
+                            squaredDiffsFromMean = np.square(adjustedRiseTau - np.mean(adjustedRiseTau))
+                            rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
+                            if rSquared < 0.7:
+                                riseTauList[z][i[0][0]] = np.NaN
+                            else:
+                                riseTauList[z][i[0][0]] = abs(1/popt[1])
                 except RuntimeError as e:
                     if str(e) == "Optimal parameters not found: The maximum number of function evaluations is exceeded.":
                         riseTauList[z][i[0][0]] = 0 
@@ -170,7 +181,13 @@ def wholeTracePeaks(processedSignalArray, mainFile):
                             popt, _ = opt.curve_fit(lambda t, a, b, c: a * np.exp(b * t) + c, decArray/samplingFreqSec, adjustedDecayTau, p0=p0, 
                                                     bounds=opt.Bounds(lb=[0, -np.inf, 0], 
                                                                     ub=[np.inf, 0, np.inf]))
-                            decayTauList[z][i[0][0]] = abs(1/popt[1])
+                            squaredDiffs = np.square(adjustedDecayTau - (popt[0] * np.exp(popt[1] * ((decArray/samplingFreqSec))) + popt[2]))
+                            squaredDiffsFromMean = np.square(adjustedDecayTau - np.mean(adjustedDecayTau))
+                            rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
+                            if rSquared < 0.7:
+                                decayTauList[z][i[0][0]] = np.NaN
+                            else:
+                                decayTauList[z][i[0][0]] = abs(1/popt[1])
                         case _:
                             adjustedDecayTau = np.array(processedSignalArray[z][int(u):int(widthHalfArray[z][3][i[0][0]])])
                             p0 = (processedSignalArray[z][int(u)], -1, processedSignalArray[z][int(widthHalfArray[z][3][i[0][0]])])
@@ -187,7 +204,13 @@ def wholeTracePeaks(processedSignalArray, mainFile):
                             popt, _ = opt.curve_fit(lambda t, a, b, c: a * np.exp((b * t)) + c, decArray/samplingFreqSec, adjustedDecayTau, p0=p0, 
                                                     bounds=opt.Bounds(lb=[0, -np.inf, 0], 
                                                                     ub=[np.inf, 0, np.inf]))
-                            decayTauList[z][i[0][0]] = abs(1/popt[1])
+                            squaredDiffs = np.square(adjustedDecayTau - (popt[0] * np.exp(popt[1] * ((decArray/samplingFreqSec))) + popt[2]))
+                            squaredDiffsFromMean = np.square(adjustedDecayTau - np.mean(adjustedDecayTau))
+                            rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
+                            if rSquared < 0.7:
+                                decayTauList[z][i[0][0]] = np.NaN
+                            else:
+                                decayTauList[z][i[0][0]] = abs(1/popt[1])
                 except RuntimeError as e:
                     if str(e) == "Optimal parameters not found: The maximum number of function evaluations is exceeded.":
                         decayTauList[z][i[0][0]] = 0
@@ -222,7 +245,7 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
     samplingFreqSec = samplingFreqMSec * 1000
     seconds = np.arange(0, 47750, samplingFreqSec)
     decayNPeaks, riseNPeaks = {}, {}
-    peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, wlen= 20000)
+    peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.04, wlen= 20000)
     overlapRise, overlapDecay = [0 for _ in range(len(peaks))], [0 for _ in range(len(peaks))]
     widthBottom = sci.peak_widths(processedSignalArray, peaks, rel_height=1, prominence_data=(peaksDict['prominences'], 
                                                                                              peaksDict["left_bases"], peaksDict["right_bases"]), wlen=20000)
@@ -283,10 +306,15 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
                         a = popt[0]
                         b = popt[1]
                         c = popt[2]
-                        print(a,b, x_rise[-1]/samplingFreqSec, "rise")
+                        squaredDiffs = np.square(adjustedRiseTau - (a * np.exp(b * ((riseArray/samplingFreqSec))) + c))
+                        squaredDiffsFromMean = np.square(adjustedRiseTau - np.mean(adjustedRiseTau))
+                        rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
+                        print(f"R² = {rSquared}", "rise")
+                        if rSquared < 0.7:
+                            print("Fit quality poor; not shown")
+                            continue
                         y_rise = a * np.exp(b * (x_rise/samplingFreqSec)) + c
                         peakFig.plot(x_rise+width90[2][i], y_rise, color="C8")
-                        # print("Tau (Rise):", abs(1/(popt[1]/1000)))
                     case _:
                         adjustedRiseTau = np.array(processedSignalArray[int(widthHalf[2][i[0][0]]):int(u)])
                         p0 = (processedSignalArray[int(widthHalf[2][i[0][0]])], 1, processedSignalArray[int(width10[2][i[0][0]])])
@@ -310,7 +338,13 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
                         a = popt[0]
                         b = popt[1]
                         c = popt[2]
-                        print(a,b, x_rise[-1]/samplingFreqSec, "rise")
+                        squaredDiffs = np.square(adjustedRiseTau - (a * np.exp(b * ((riseArray/samplingFreqSec))) + c))
+                        squaredDiffsFromMean = np.square(adjustedRiseTau - np.mean(adjustedRiseTau))
+                        rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
+                        print(f"R² = {rSquared}", "rise")
+                        if rSquared < 0.7:
+                            print("Fit quality poor; not shown")
+                            continue
                         y_rise = a * np.exp(b * (x_rise/samplingFreqSec)) + c
                         peakFig.plot(x_rise+widthHalf[2][i], y_rise, color="C8")
                         # print("Tau (Rise):", abs(1/(popt[1]/1000)))
@@ -338,8 +372,14 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
                         a = popt[0]
                         b = popt[1]
                         c = popt[2]
-                        print(a,b, x_dec[-1]/samplingFreqSec, "decay")
                         y_dec = a * np.exp(b * ((x_dec/samplingFreqSec))) + c
+                        squaredDiffs = np.square(adjustedDecayTau - (a * np.exp(b * ((decArray/samplingFreqSec))) + c))
+                        squaredDiffsFromMean = np.square(adjustedDecayTau - np.mean(adjustedDecayTau))
+                        rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
+                        print(f"R² = {rSquared}", "decay")
+                        if rSquared < 0.7:
+                            print("Fit quality poor; not shown")
+                            continue
                         peakFig.plot(x_dec+u, y_dec, color="C9")
                         # print("Tau (Decay):", abs(1/(popt[1]/1000)))
                     case _:
@@ -365,7 +405,13 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
                         a = popt[0]
                         b = popt[1]
                         c = popt[2]
-                        print(a,b, x_dec[-1]/samplingFreqSec, "decay")
+                        squaredDiffs = np.square(adjustedDecayTau - (a * np.exp(b * ((decArray/samplingFreqSec))) + c))
+                        squaredDiffsFromMean = np.square(adjustedDecayTau - np.mean(adjustedDecayTau))
+                        rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
+                        print(f"R² = {rSquared}", "decay")
+                        if rSquared < 0.7:
+                            print("Fit quality poor; not shown")
+                            continue
                         y_dec = a * np.exp(b * ((x_dec/samplingFreqSec))) + c
                         peakFig.plot(x_dec+u, y_dec, color="C9")
                         # print("Tau (Decay):", abs(1/(popt[1]/1000)))
