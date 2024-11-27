@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Geisler"
+  given-names: "Elizabeth"
+  orcid: "https://orcid.org/0009-0003-5886-5779"
+title: "PhotomePy"
+version: 1.0
+doi: 
+date-released: 2024-11-27
+url: "https://github.com/esgeisler/PhotomePy"
