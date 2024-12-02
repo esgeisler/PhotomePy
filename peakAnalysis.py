@@ -164,6 +164,9 @@ def wholeTracePeaks(processedSignalArray, mainFile):
                 except RuntimeError as e:
                     if str(e) == "Optimal parameters not found: The maximum number of function evaluations is exceeded.":
                         riseTauList[z][i[0][0]] = 0 
+                except ValueError as e:
+                    if str(e) == "'x0' is infeasible":
+                        riseTauList[z][i[0][0]] = 0 
         peakTable.Rise_Tau_exp = pd.Series(riseTauList[z])
         for _, u in enumerate(sortedDegreeDecay):
             i = np.where(x == u)
@@ -214,6 +217,9 @@ def wholeTracePeaks(processedSignalArray, mainFile):
                 except RuntimeError as e:
                     if str(e) == "Optimal parameters not found: The maximum number of function evaluations is exceeded.":
                         decayTauList[z][i[0][0]] = 0
+                except ValueError as e:
+                    if str(e) == "'x0' is infeasible":
+                        riseTauList[z][i[0][0]] = 0 
         peakTable.Decay_Tau_exp = pd.Series(decayTauList[z])
         match np.size(x): # Determines frequency and total area of a sweep
             case 0:
