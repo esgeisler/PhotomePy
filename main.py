@@ -210,8 +210,10 @@ class Main(tk.Frame):
         # Averages the left and right signals
             try:
                 averageSignalLeft, averageSignalRight = avg.traceAverage(finalSignalLeft), avg.traceAverage(finalSignalRight)
-                preInjectionAverageLeft, preInjectionAverageRight = avg.preInjectionAverage(finalSignalLeft, self.leftRatInjectionInt), avg.preInjectionAverage(finalSignalRight, self.rightRatInjectionInt)
+                preInjectionAverageLeft, _ = avg.preInjectionAverage(finalSignalLeft, self.leftRatInjectionInt)
+                preInjectionAverageRight, _ = avg.preInjectionAverage(finalSignalRight, self.rightRatInjectionInt)
                 fluorescenceLeft, fluorescenceRight = avg.deltaF(averageSignalLeft, preInjectionAverageLeft), avg.deltaF(averageSignalRight, preInjectionAverageRight)
+                zScoreLeft, zScoreRight = avg.zCalc(averageSignalLeft, finalSignalLeft, self.leftRatInjectionInt), avg.zCalc(averageSignalRight, finalSignalRight, self.rightRatInjectionInt)
             except ValueError as e:
                 if str(e) == "Injection traces must be larger than 1":
                     answer = messagebox.askretrycancel(title="Python Error", message="Injection trace values must be greater than 1. Please re-enter your trace number", icon="error")
@@ -246,9 +248,9 @@ class Main(tk.Frame):
                 rightPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Peaks.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameRight))
             # Saves the averaged data to an excel file with the rat's "name"
                 ratDataLeft = pd.DataFrame({"Trace Number:": range(1, len(averageSignalLeft)+1), "Average Fluorescence": averageSignalLeft, 
-                                            "Pre-Injection Average":preInjectionAverageLeft, "ΔF/F": fluorescenceLeft, "Bleaching Correction": None, })
+                                            "Pre-Injection Average":preInjectionAverageLeft, "ΔF/F": fluorescenceLeft, "Bleaching Correction": None, "Z-Score": zScoreLeft})
                 ratDataRight = pd.DataFrame({"Trace Number:": range(1, len(averageSignalRight)+1), "Average Fluorescence": averageSignalRight, 
-                                            "Pre-Injection Average":preInjectionAverageRight, "ΔF/F": fluorescenceRight, "Bleaching Correction": None, })
+                                            "Pre-Injection Average":preInjectionAverageRight, "ΔF/F": fluorescenceRight, "Bleaching Correction": None, "Z-Score": zScoreRight})
                 filenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Temp File.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameLeft))
                 filenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Temp File.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameRight))
                 ratDataLeft.to_excel(filenameLeft, index= False)

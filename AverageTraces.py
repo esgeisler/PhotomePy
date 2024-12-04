@@ -19,7 +19,8 @@ def preInjectionAverage(processedSignal, injectionTrace):
         for x in range(0, injectionTrace):
             preInjArray[x] = stat.mean(processedSignal[x][1000:-1250])
         preInjAvg = stat.mean(preInjArray)
-        return preInjAvg
+        preInjStdDev = stat.stdev(preInjArray)
+        return preInjAvg, preInjStdDev
 
 # Calculates ΔF/F ((trace avg - pre inj avg)/pre inj avg)
 def deltaF(averagedSignal, preInjAvg):
@@ -27,3 +28,11 @@ def deltaF(averagedSignal, preInjAvg):
     for i, sweep in enumerate(averagedSignal):
         deltaFDivided[i] = (sweep - preInjAvg)/preInjAvg
     return deltaFDivided
+
+# Calculates Z-score ("Standard Score") from the each trace
+def zCalc(averagedSignal, processedSignal, injectionTrace):
+    zScoreArray = np.zeros(len(processedSignal))
+    sampleMean, sampleSigma = preInjectionAverage(processedSignal, injectionTrace)
+    for i, sweep in enumerate(averagedSignal):
+        zScoreArray[i] = (sweep - sampleMean)/sampleSigma
+    return zScoreArray
