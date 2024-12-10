@@ -4,9 +4,11 @@ import statistics as stat
 import scipy.stats as sciStat
 import scipy.ndimage
 import scipy.signal as sig
+import scipy.optimize as opt
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+import csv
 
 # Gets baseline information from 1 min-long recording data taken after trial from the "left" side of the room - channels 1 and 2
 def BaselineGet(FileName):
@@ -101,6 +103,61 @@ def isoLinRegPlot(fileName, isosbesticChannel, chosenTrace, ratSide):
     plt.minorticks_on()
     plt.show()
 
+# PRELIMINARY Takes the numbers from deltaF or zCalc and fits a bi-exponential decay function to them
+def doubleExpDecayFit(filteredSignal):
+    flatSignal = filteredSignal.reshape(-1)
+    xDecay = np.arange(0, len(flatSignal))
+    yDecay = [i for i in flatSignal]
+    p0 = (max(yDecay), -1, max(yDecay), -1, min(yDecay))
+    popt, _ = opt.curve_fit(lambda t, a, b, c, d, e: (a * np.exp(b * t)) + (c * np.exp(d * t)) + e, xDecay, yDecay, p0=p0, 
+                                                bounds=opt.Bounds(lb=[0, -np.inf, 0, -np.inf, min(yDecay)], 
+                                                                ub=[np.inf, 0, np.inf, 0, np.inf]),
+                                                                maxfev=1000)
+    a, b, c, d, e = popt[0], popt[1], popt[2], popt[3], popt[4]
+    squaredDiffs = np.square(yDecay - (a * np.exp(b * xDecay)) + (c * np.exp(d * xDecay)) + e)
+    squaredDiffsFromMean = np.square(yDecay - np.mean(yDecay))
+    rSquared = 1 - (np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean))
+    xDecFinal = np.linspace(np.min(xDecay), np.max(xDecay), len(filteredSignal))
+    yDecFinal = (a * np.exp(b * xDecFinal)) + (c * np.exp(d * xDecFinal)) + e
+    return yDecFinal, rSquared
+
+def unbleachSignal(filteredSignal, decayFactor):
+    unbleachedArray = np.zeros((len(filteredSignal), len(filteredSignal[0])))
+    convert1d = 0
+    for i, y in enumerate(filteredSignal):
+        unbleachedArray[i] = y - decayFactor[convert1d]
+        convert1d += 1
+    return unbleachedArray
+
+# Reads a CSV file containing all previous data for decay values and averages them, creating an array of average decay
+def averageCSV():
+    meanDecay405Left, meanDecay470Left, meanDecay405Right, meanDecay470Right = np.arange(0, 47750), np.arange(0, 47750), np.arange(0, 47750), np.arange(0, 47750)
+    with open(os.path.join(os.getcwd(), 'Left405Decay.csv'), 'r') as csvfile:
+        decayReader = csv.reader(csvfile)
+        leftArray = np.zeros((len(decayReader), len(decayReader[0])))
+        for i, row in enumerate(decayReader):
+            leftArray[i] = row
+        meanDecay405Left = leftArray.mean(axis=0)     
+    with open(os.path.join(os.getcwd(), 'Right405Decay.csv'), 'r') as csvfile:
+        decayReader = csv.reader(csvfile)
+        rightArray = np.zeros((len(decayReader), len(decayReader[0])))
+        for i, row in enumerate(decayReader):
+            rightArray[i] = row
+        meanDecay405Right = rightArray.mean(axis=0)
+    with open(os.path.join(os.getcwd(), 'Left470Decay.csv'), 'r') as csvfile:
+        decayReader = csv.reader(csvfile)
+        leftArray = np.zeros((len(decayReader), len(decayReader[0])))
+        for i, row in enumerate(decayReader):
+            leftArray[i] = row
+        meanDecay470Left = leftArray.mean(axis=0)     
+    with open(os.path.join(os.getcwd(), 'Right470Decay.csv'), 'r') as csvfile:
+        decayReader = csv.reader(csvfile)
+        rightArray = np.zeros((len(decayReader), len(decayReader[0])))
+        for i, row in enumerate(decayReader):
+            rightArray[i] = row
+        meanDecay470Right = rightArray.mean(axis=0)
+    return meanDecay405Left, meanDecay470Left, meanDecay405Right, meanDecay470Right
+
 # Saves cleaned trace file as an ABF file for later viewing in ClampFit 10 "Processed Data", "%s Rat %s Processed Data.abf"%(self.abfDate.strftime("%Y-%m-%d")
 def tExport(processedTrace, ratName, experimentDate):
     abfWriter.writeABF1(sweepData= processedTrace, filename= os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Processed Data.abf"%(experimentDate.strftime("%Y-%m-%d"), ratName)), units="V", sampleRateHz= 3333.33)
@@ -128,19 +185,44 @@ def completeProcessor(experimentFileName, baselineFileName):
         finalRight[i] = x[1000:-1250]
     return finalLeft, finalRight
 
-def newCompleteProcessor(experimentFileName, baselineFileName):
+def newCompleteProcessor(experimentFileName, baselineFileName, salineStatus):
     baseline470Left, baseline405Left, baseline470Right, baseline405Right= BaselineGet(baselineFileName)
     channelsLeft, channelsRight = [0,1], [4,5]
     subtract470Left, subtract405Left = baselineSubtractor(experimentFileName, baseline470Left, baseline405Left, channelsLeft)
     subtract470Right, subtract405Right = baselineSubtractor(experimentFileName, baseline470Right, baseline405Right, channelsRight)
-    medFiltered405Left, medFiltered405Right = wholeTraceMedFilt(subtract405Left), wholeTraceMedFilt(subtract405Right)
-    medFiltered470Left, medFiltered470Right = wholeTraceMedFilt(subtract470Left), wholeTraceMedFilt(subtract470Right)
-    unbleachedLeft, unbleachedRight = isoLinReg(medFiltered405Left, medFiltered470Left), isoLinReg(medFiltered405Right, medFiltered470Right)
-    signalLeft, signalRight = wholeTraceGauss(unbleachedLeft), wholeTraceGauss(unbleachedRight)
+    filtered405Left, filtered405Right = wholeTraceGauss(wholeTraceMedFilt(subtract405Left)), wholeTraceGauss(wholeTraceMedFilt(subtract405Right))
+    filtered470Left, filtered470Right = wholeTraceGauss(wholeTraceMedFilt(subtract470Left)), wholeTraceGauss(wholeTraceMedFilt(subtract470Right))
+    if salineStatus:
+        decayFit405Left, _ = doubleExpDecayFit(filtered405Left)
+        decayFit470Left, _ = doubleExpDecayFit(filtered470Left)
+        decayFit405Right, _ = doubleExpDecayFit(filtered405Right)
+        decayFit470Right, _ = doubleExpDecayFit(filtered470Right)
+        unbleached405Left, unbleached405Right = unbleachSignal(filtered405Left, decayFit405Left), unbleachSignal(filtered405Right, decayFit405Right)
+        unbleached470Left, unbleached470Right = unbleachSignal(filtered470Left, decayFit470Left), unbleachSignal(filtered470Right, decayFit470Right)
+        with open('Left405Decay.csv', 'a') as csvfile:
+            decayWriter = csv.writer(csvfile)
+            decayWriter.writerow([i for i in decayFit405Left])
+        with open('Right405Decay.csv', 'a') as csvfile:
+            decayWriter = csv.writer(csvfile)
+            decayWriter.writerow([i for i in decayFit405Right])
+        with open('Left470Decay.csv', 'a') as csvfile:
+            decayWriter = csv.writer(csvfile)
+            decayWriter.writerow([i for i in decayFit470Left])
+        with open('Right470Decay.csv', 'a') as csvfile:
+            decayWriter = csv.writer(csvfile)
+            decayWriter.writerow([i for i in decayFit470Right])
+    elif not salineStatus:
+        decayFit405Left, decayFit470Left, decayFit405Right, decayFit470Right = averageCSV()
+        unbleached405Left, unbleached405Right = unbleachSignal(filtered405Left, decayFit405Left), unbleachSignal(filtered405Right, decayFit405Right)
+        unbleached470Left, unbleached470Right = unbleachSignal(filtered470Left, decayFit470Left), unbleachSignal(filtered470Right, decayFit470Right)
+        signalLeft, signalRight = isoLinReg(unbleached405Left, unbleached470Left), isoLinReg(unbleached405Right, unbleached470Right)
+    unbleachedSignals = np.array[unbleached405Left.mean(axis=1), unbleached470Left.mean(axis=1), unbleached405Right.mean(axis=1), unbleached470Right.mean(axis=1)]
+    signalLeft, signalRight = isoLinReg(unbleached405Left, unbleached470Left), isoLinReg(unbleached405Right, unbleached470Right)
+    
 
     finalLeft, finalRight = np.zeros((len(signalLeft), len(signalLeft[0]))), np.zeros((len(signalRight), len(signalRight[0])))
     for i, x in enumerate(signalLeft):
         finalLeft[i] = x
     for i, x in enumerate(signalRight):
         finalRight[i] = x
-    return finalLeft, finalRight
+    return finalLeft, finalRight, unbleachedSignals

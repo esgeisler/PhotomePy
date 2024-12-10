@@ -187,7 +187,7 @@ class Main(tk.Frame):
         def dataProcessorReal():
             try:
                 finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
-                newFinalSignalLeft, newFinalSignalRight = acl.newCompleteProcessor(self.experimentFileName, self.baselinefileName)
+                newFinalSignalLeft, newFinalSignalRight, traceDecayFunction = acl.newCompleteProcessor(self.experimentFileName, self.baselinefileName, self.controlStatus)
             except FileNotFoundError as e:
                 match str(e):
                     case "main":
@@ -276,8 +276,8 @@ class Main(tk.Frame):
                                             "Pre-Injection Average":preInjectionAverageRight, "ΔF/F": fluorescenceRight, "Bleaching Correction": None, "Z-Score": zScoreRight,
                                             })
                         elif rats == newLeftOverviewWriter:
-                            ratData = pd.DataFrame({"Trace Number:": range(1, len(newAverageSignalRight)+1), "Average Fluorescence": newAverageSignalRight, "Median Fluorescence": newMedianSignalRight,
-                                            "Pre-Injection Average":newPreInjectionAverageRight, "ΔF/F": newFluorescenceRight, "Bleaching Correction": None, "Z-Score": newZScoreRight,
+                            ratData = pd.DataFrame({"Trace Number:": range(1, len(newAverageSignalLeft)+1), "Average Fluorescence": newAverageSignalLeft, "Median Fluorescence": newMedianSignalLeft,
+                                            "Pre-Injection Average":newPreInjectionAverageLeft, "ΔF/F": newFluorescenceLeft, "Bleaching Correction": None, "Z-Score": newZScoreLeft,
                                             })
                         elif rats == newRightOverviewWriter:
                             ratData = pd.DataFrame({"Trace Number:": range(1, len(newAverageSignalRight)+1), "Average Fluorescence": newAverageSignalRight, "Median Fluorescence": newMedianSignalRight,
@@ -286,10 +286,10 @@ class Main(tk.Frame):
                         ratData.to_excel(writer, index= False, sheet_name="Overview")
                         if self.controlStatus.get() == 1:
                             if rats == leftOverviewWriter:
-                                bleachX, bleachY, bleachCorr = avg.doubleExpDecayFit(averageSignalLeft)
+                                bleachY, bleachCorr = traceDecayFunction[0, 1]
                             elif rats == rightOverviewWriter:
-                                bleachX, bleachY, bleachCorr = avg.doubleExpDecayFit(averageSignalRight)
-                            bleachFit = pd.DataFrame({"Trace Number:": bleachX + 1, "Bleaching Correction:": bleachY, "Goodness of fit(R^2):": bleachCorr})
+                                bleachY, bleachCorr = traceDecayFunction[2, 3]
+                            bleachFit = pd.DataFrame({"Trace Number:": range(1, len(bleachY) + 1), "Bleaching Correction:": bleachY, "Goodness of fit(R^2):": bleachCorr})
                             bleachFit.to_excel(writer, index=False, sheet_name="Bleaching Correction")
                 self.mainStatus = True
             #TODO fix FutureWarning caused by concat being empty by default.
