@@ -1,9 +1,11 @@
 import pyabf
 from pyabf import abfWriter
 import statistics as stat
+import scipy.stats as sciStat
 import scipy.ndimage
 import numpy as np
 import os
+import matplotlib.pyplot as plt
 
 # Gets baseline information from 1 min-long recording data taken after trial from the "left" side of the room - channels 1 and 2
 def BaselineGet(FileName):
@@ -47,6 +49,31 @@ def ratio470405(signal470, signal405):
     for i, x in enumerate(signal470):
         ratioSignal[i] = x/signal405[i]
     return ratioSignal
+
+# PRELIMINARY: Creates a linear regression of the 405 signal to create a predicted signal for motion (to subtract from the 470 signal)
+def isoLinReg(fileName, isosbesticChannel, chosenTrace, ratSide):
+    abf = pyabf.ABF(fileName)
+    abf.setSweep(chosenTrace)
+    yArray, xArray = np.zeros((len(abf.sweepList), len(abf.sweepX))), np.zeros((len(abf.sweepList), len(abf.sweepX)))
+    for i in abf.sweepList:
+        abf.setSweep(i, channel=isosbesticChannel)
+        yArray[i] = abf.sweepY
+        xArray[i] = abf.sweepX
+    samplingFreqMSec = abf.dataPointsPerMs + (1/3)
+    samplingFreqSec = samplingFreqMSec * 1000
+    seconds = np.arange(0, 47750, samplingFreqSec)
+    line = sciStat.linregress(x=xArray[chosenTrace][1000:-1250], y=yArray[chosenTrace][1000:-1250])
+    fig = plt.figure()
+    motionFig = fig.add_subplot()
+    motionFig.plot(yArray[chosenTrace][1000:-1250], 'c.', label="Raw Data")
+    motionFig.plot(line.intercept + line.slope*xArray[chosenTrace][1000:-1250], 'k', label=f"Line of Best Fit (R²): {line.rvalue**2:.3f}")
+    motionFig.set_title(ratSide)
+    plt.xticks(ticks=seconds, labels=range(len(seconds)))
+    plt.xlabel("Time (s)")
+    plt.ylabel("Fluorescence (AU)")
+    plt.legend()
+    plt.minorticks_on()
+    plt.show()
 
 # Saves cleaned trace file as an ABF file for later viewing in ClampFit 10 "Processed Data", "%s Rat %s Processed Data.abf"%(self.abfDate.strftime("%Y-%m-%d")
 def tExport(processedTrace, ratName, experimentDate):
