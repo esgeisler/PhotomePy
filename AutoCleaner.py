@@ -51,7 +51,7 @@ def ratio470405(signal470, signal405):
     return ratioSignal
 
 # PRELIMINARY: Creates a linear regression of the 405 signal to create a predicted signal for motion (to subtract from the 470 signal)
-def isoLinReg(fileName, isosbesticChannel, chosenTrace, ratSide):
+def isoLinRegPlot(fileName, isosbesticChannel, chosenTrace, ratSide):
     abf = pyabf.ABF(fileName)
     abf.setSweep(chosenTrace)
     yArray, xArray = np.zeros((len(abf.sweepList), len(abf.sweepX))), np.zeros((len(abf.sweepList), len(abf.sweepX)))

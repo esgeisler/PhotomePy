@@ -347,9 +347,9 @@ class Main(tk.Frame):
         def singleTracePeaks():
             try:
                 finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
-                acl.isoLinReg(self.experimentFileName, 1, self.trace, "Left Rat Motion Correlation")
+                acl.isoLinRegPlot(self.experimentFileName, 1, self.trace, "Left Rat Motion Correlation")
                 pas.peakDisplay(finalSignalLeft[self.trace], self.experimentFileName, "Left Rat")
-                acl.isoLinReg(self.experimentFileName, 5, self.trace, "Right Rat Motion Correlation")
+                acl.isoLinRegPlot(self.experimentFileName, 5, self.trace, "Right Rat Motion Correlation")
                 pas.peakDisplay(finalSignalRight[self.trace], self.experimentFileName, "Right Rat")
             except FileNotFoundError as e:
                 match str(e):
