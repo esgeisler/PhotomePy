@@ -187,6 +187,7 @@ class Main(tk.Frame):
         def dataProcessorReal():
             try:
                 finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
+                newFinalSignalLeft, newFinalSignalRight = acl.newCompleteProcessor(self.experimentFileName, self.baselinefileName)
             except FileNotFoundError as e:
                 match str(e):
                     case "main":
@@ -213,10 +214,16 @@ class Main(tk.Frame):
             try:
                 averageSignalLeft, medianSignalLeft = avg.traceAverage(finalSignalLeft)
                 averageSignalRight, medianSignalRight = avg.traceAverage(finalSignalRight)
+                newAverageSignalLeft, newMedianSignalLeft = avg.traceAverage(newFinalSignalLeft)
+                newAverageSignalRight, newMedianSignalRight = avg.traceAverage(newFinalSignalRight)
                 preInjectionAverageLeft, _ = avg.preInjectionAverage(finalSignalLeft, self.leftRatInjectionInt)
                 preInjectionAverageRight, _ = avg.preInjectionAverage(finalSignalRight, self.rightRatInjectionInt)
+                newPreInjectionAverageLeft, _ = avg.preInjectionAverage(newFinalSignalLeft, self.leftRatInjectionInt)
+                newPreInjectionAverageRight, _ = avg.preInjectionAverage(newFinalSignalRight, self.rightRatInjectionInt)
                 fluorescenceLeft, fluorescenceRight = avg.deltaF(averageSignalLeft, preInjectionAverageLeft), avg.deltaF(averageSignalRight, preInjectionAverageRight)
                 zScoreLeft, zScoreRight = avg.zCalc(averageSignalLeft, finalSignalLeft, self.leftRatInjectionInt), avg.zCalc(averageSignalRight, finalSignalRight, self.rightRatInjectionInt)
+                newFluorescenceLeft, newFluorescenceRight = avg.deltaF(newAverageSignalLeft, newPreInjectionAverageLeft), avg.deltaF(newAverageSignalRight, newPreInjectionAverageRight)
+                newZScoreLeft, newZScoreRight = avg.zCalc(newAverageSignalLeft, newFinalSignalLeft, self.leftRatInjectionInt), avg.zCalc(newAverageSignalRight, newFinalSignalRight, self.rightRatInjectionInt)
                 
             except ValueError as e:
                 if str(e) == "Injection traces must be larger than 1":
@@ -253,8 +260,11 @@ class Main(tk.Frame):
             # Saves the averaged data to an excel file with the rat's "name"
                 filenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Temp File.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameLeft))
                 filenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Temp File.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameRight))
+                newFilenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s NEW Temp File.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameLeft))
+                newFilenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s NEW Temp File.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameRight))
                 leftOverviewWriter, rightOverviewWriter = pd.ExcelWriter(filenameLeft), pd.ExcelWriter(filenameRight)
-                leftOrRight = [leftOverviewWriter, rightOverviewWriter]
+                newLeftOverviewWriter, newRightOverviewWriter = pd.ExcelWriter(newFilenameLeft), pd.ExcelWriter(newFilenameRight)
+                leftOrRight = [leftOverviewWriter, rightOverviewWriter, newLeftOverviewWriter, newRightOverviewWriter]
                 for rats in leftOrRight:
                     with rats as writer:
                         if rats == leftOverviewWriter:
@@ -264,6 +274,14 @@ class Main(tk.Frame):
                         elif rats == rightOverviewWriter:
                             ratData = pd.DataFrame({"Trace Number:": range(1, len(averageSignalRight)+1), "Average Fluorescence": averageSignalRight, "Median Fluorescence": medianSignalRight,
                                             "Pre-Injection Average":preInjectionAverageRight, "ΔF/F": fluorescenceRight, "Bleaching Correction": None, "Z-Score": zScoreRight,
+                                            })
+                        elif rats == newLeftOverviewWriter:
+                            ratData = pd.DataFrame({"Trace Number:": range(1, len(newAverageSignalRight)+1), "Average Fluorescence": newAverageSignalRight, "Median Fluorescence": newMedianSignalRight,
+                                            "Pre-Injection Average":newPreInjectionAverageRight, "ΔF/F": newFluorescenceRight, "Bleaching Correction": None, "Z-Score": newZScoreRight,
+                                            })
+                        elif rats == newRightOverviewWriter:
+                            ratData = pd.DataFrame({"Trace Number:": range(1, len(newAverageSignalRight)+1), "Average Fluorescence": newAverageSignalRight, "Median Fluorescence": newMedianSignalRight,
+                                            "Pre-Injection Average":newPreInjectionAverageRight, "ΔF/F": newFluorescenceRight, "Bleaching Correction": None, "Z-Score": newZScoreRight,
                                             })
                         ratData.to_excel(writer, index= False, sheet_name="Overview")
                         if self.controlStatus.get() == 1:

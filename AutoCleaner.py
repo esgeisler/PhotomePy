@@ -3,6 +3,7 @@ from pyabf import abfWriter
 import statistics as stat
 import scipy.stats as sciStat
 import scipy.ndimage
+import scipy.signal as sig
 import numpy as np
 import os
 import matplotlib.pyplot as plt
@@ -35,6 +36,13 @@ def baselineSubtractor(fileName, baseline470, baseline405, channelsToSubtract):
         sweepArray405[i] = [x - baseline405 for x in abf.sweepY]
     return sweepArray470, sweepArray405
 
+def wholeTraceMedFilt(signalToFilter):
+    sweepArray = np.zeros((len(signalToFilter), len(signalToFilter[0])))
+    for i, x in enumerate(signalToFilter):
+        medFilteredSweep = sig.medfilt(x, kernel_size=5)
+        sweepArray[i] = medFilteredSweep
+    return sweepArray
+
 # Gaussian filters an entire channel with a 40 Hz cutoff freq., as above.
 def wholeTraceGauss(signalToFilter):
     sweepArray = np.zeros((len(signalToFilter), len(signalToFilter[0])))
@@ -49,6 +57,24 @@ def ratio470405(signal470, signal405):
     for i, x in enumerate(signal470):
         ratioSignal[i] = x/signal405[i]
     return ratioSignal
+
+# PRELIM: Linear Regression with no plot, across an entire trace
+def isoLinReg(signal405, signal470):
+    yArray = np.zeros((len(signal405), len(signal405[0][1000:-1250])))
+    bumper470 = np.zeros((len(signal470), len(signal470[0][1000:-1250])))
+    motionCorrectedSignal = np.zeros((len(signal470), len(signal470[0][1000:-1250])))
+    for i, x in enumerate(signal405):
+        yArray[i] = x[1000:-1250]
+    flatY = yArray.reshape(-1)
+    xArray = np.arange(len(flatY))
+    line = sciStat.linregress(x=xArray, y=flatY)
+    for i, x in enumerate(signal470):
+        bumper470[i] = x[1000:-1250]
+    convert1d = 0
+    for i, x in np.ndenumerate(bumper470):
+        motionCorrectedSignal[i[0]][i[1]] = x - (line.intercept + line.slope*xArray[convert1d])
+        convert1d +=1
+    return motionCorrectedSignal
 
 # PRELIMINARY: Creates a linear regression of the 405 signal to create a predicted signal for motion (to subtract from the 470 signal)
 def isoLinRegPlot(fileName, isosbesticChannel, chosenTrace, ratSide):
@@ -100,4 +126,21 @@ def completeProcessor(experimentFileName, baselineFileName):
         finalLeft[i] = x[1000:-1250]
     for i, x in enumerate(signalRight):
         finalRight[i] = x[1000:-1250]
+    return finalLeft, finalRight
+
+def newCompleteProcessor(experimentFileName, baselineFileName):
+    baseline470Left, baseline405Left, baseline470Right, baseline405Right= BaselineGet(baselineFileName)
+    channelsLeft, channelsRight = [0,1], [4,5]
+    subtract470Left, subtract405Left = baselineSubtractor(experimentFileName, baseline470Left, baseline405Left, channelsLeft)
+    subtract470Right, subtract405Right = baselineSubtractor(experimentFileName, baseline470Right, baseline405Right, channelsRight)
+    medFiltered405Left, medFiltered405Right = wholeTraceMedFilt(subtract405Left), wholeTraceMedFilt(subtract405Right)
+    medFiltered470Left, medFiltered470Right = wholeTraceMedFilt(subtract470Left), wholeTraceMedFilt(subtract470Right)
+    unbleachedLeft, unbleachedRight = isoLinReg(medFiltered405Left, medFiltered470Left), isoLinReg(medFiltered405Right, medFiltered470Right)
+    signalLeft, signalRight = wholeTraceGauss(unbleachedLeft), wholeTraceGauss(unbleachedRight)
+
+    finalLeft, finalRight = np.zeros((len(signalLeft), len(signalLeft[0]))), np.zeros((len(signalRight), len(signalRight[0])))
+    for i, x in enumerate(signalLeft):
+        finalLeft[i] = x
+    for i, x in enumerate(signalRight):
+        finalRight[i] = x
     return finalLeft, finalRight
