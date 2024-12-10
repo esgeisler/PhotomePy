@@ -1,13 +1,14 @@
 import statistics as stat
 import numpy as np
-import scipy.optimize as opt
 
 # Averages every sweep's voltage (fluorescence) in a trace, producing a dictionary of 70 averages
 def traceAverage(processedSignal):
     meanSignal = np.zeros(len(processedSignal))
+    medianSignal = np.zeros(len(processedSignal))
     for i, x in enumerate(processedSignal):
         meanSignal[i] = stat.mean(x[1000:-1250])
-    return meanSignal
+        medianSignal[i] = stat.median(x[100:-1250])
+    return meanSignal, medianSignal
 
 # Averages the sweeps before a certain time point to create a "Pre-Injection Average" of fluorescence
 def preInjectionAverage(processedSignal, injectionTrace):
@@ -37,20 +38,3 @@ def zCalc(averagedSignal, processedSignal, injectionTrace):
     for i, sweep in enumerate(averagedSignal):
         zScoreArray[i] = (sweep - sampleMean)/sampleSigma
     return zScoreArray
-
-# Takes the numbers from deltaF or zCalc and fits a bi-exponential decay function to them
-def doubleExpDecayFit(normalizedSignal):
-    p0 = (1,-1,1,-1,1)
-    xDecay = np.arange(0, len(normalizedSignal))
-    yDecay = [i for i in normalizedSignal]
-    popt, _ = opt.curve_fit(lambda t, a, b, c, d, e: (a * np.exp(b * t)) + (c * np.exp(d *t)) + e, xDecay, yDecay, p0=p0, 
-                                                bounds=opt.Bounds(lb=[0, -np.inf, 0, -np.inf, min(yDecay)], 
-                                                                ub=[np.inf, 0, np.inf, 0, np.inf]),
-                                                                maxfev=1000)
-    a, b, c, d, e = popt[0], popt[1], popt[2], popt[3], popt[4]
-    squaredDiffs = np.square(yDecay - (a * np.exp(b * xDecay)) + (c * np.exp(d * xDecay)) + e)
-    squaredDiffsFromMean = np.square(yDecay - np.mean(yDecay))
-    rSquared = 1 - (np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean))
-    xDecFinal = np.linspace(np.min(xDecay), np.max(xDecay), len(normalizedSignal))
-    yDecFinal = (a * np.exp(b * xDecFinal)) + (c * np.exp(d * xDecFinal)) + e
-    return xDecFinal, yDecFinal, rSquared
