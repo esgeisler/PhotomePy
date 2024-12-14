@@ -187,7 +187,7 @@ class Main(tk.Frame):
         def dataProcessorReal():
             try:
                 finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
-                newFinalSignalLeft, newFinalSignalRight, traceDecayFunction = acl.newCompleteProcessor(self.experimentFileName, self.baselinefileName, self.controlStatus)
+                newFinalSignalLeft, newFinalSignalRight, traceDecayFunction = acl.newCompleteProcessor(self.experimentFileName, self.baselinefileName, self.controlStatus.get(), self.ratNameLeft, self.ratNameRight, self.abfDate)  
             except FileNotFoundError as e:
                 match str(e):
                     case "main":
@@ -286,10 +286,10 @@ class Main(tk.Frame):
                         ratData.to_excel(writer, index= False, sheet_name="Overview")
                         if self.controlStatus.get() == 1:
                             if rats == leftOverviewWriter:
-                                bleachY, bleachCorr = traceDecayFunction[0, 1]
+                                bleachY = traceDecayFunction[1] - traceDecayFunction[0]
                             elif rats == rightOverviewWriter:
-                                bleachY, bleachCorr = traceDecayFunction[2, 3]
-                            bleachFit = pd.DataFrame({"Trace Number:": range(1, len(bleachY) + 1), "Bleaching Correction:": bleachY, "Goodness of fit(R^2):": bleachCorr})
+                                bleachY  = traceDecayFunction[3] - traceDecayFunction[2]
+                            bleachFit = pd.DataFrame({"Trace Number:": range(1, len(bleachY) + 1), "Bleaching Correction:": bleachY, "Goodness of fit(R^2):": 0})
                             bleachFit.to_excel(writer, index=False, sheet_name="Bleaching Correction")
                 self.mainStatus = True
             #TODO fix FutureWarning caused by concat being empty by default.

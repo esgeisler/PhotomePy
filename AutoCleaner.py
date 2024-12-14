@@ -9,6 +9,8 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 import csv
+import pandas as pd
+from pathlib import Path
 
 # Gets baseline information from 1 min-long recording data taken after trial from the "left" side of the room - channels 1 and 2
 def BaselineGet(FileName):
@@ -130,32 +132,37 @@ def unbleachSignal(filteredSignal, decayFactor):
     return unbleachedArray
 
 # Reads a CSV file containing all previous data for decay values and averages them, creating an array of average decay
-def averageCSV():
+def averageCSV(ratNameLeft, ratNameRight):
     meanDecay405Left, meanDecay470Left, meanDecay405Right, meanDecay470Right = np.arange(0, 47750), np.arange(0, 47750), np.arange(0, 47750), np.arange(0, 47750)
-    with open(os.path.join(os.getcwd(), 'Left405Decay.csv'), 'r') as csvfile:
-        decayReader = csv.reader(csvfile)
-        leftArray = np.zeros((len(decayReader), len(decayReader[0])))
-        for i, row in enumerate(decayReader):
-            leftArray[i] = row
-        meanDecay405Left = leftArray.mean(axis=0)     
-    with open(os.path.join(os.getcwd(), 'Right405Decay.csv'), 'r') as csvfile:
-        decayReader = csv.reader(csvfile)
-        rightArray = np.zeros((len(decayReader), len(decayReader[0])))
-        for i, row in enumerate(decayReader):
-            rightArray[i] = row
-        meanDecay405Right = rightArray.mean(axis=0)
-    with open(os.path.join(os.getcwd(), 'Left470Decay.csv'), 'r') as csvfile:
-        decayReader = csv.reader(csvfile)
-        leftArray = np.zeros((len(decayReader), len(decayReader[0])))
-        for i, row in enumerate(decayReader):
-            leftArray[i] = row
-        meanDecay470Left = leftArray.mean(axis=0)     
-    with open(os.path.join(os.getcwd(), 'Right470Decay.csv'), 'r') as csvfile:
-        decayReader = csv.reader(csvfile)
-        rightArray = np.zeros((len(decayReader), len(decayReader[0])))
-        for i, row in enumerate(decayReader):
-            rightArray[i] = row
-        meanDecay470Right = rightArray.mean(axis=0)
+    for x in ['Left405Decay.csv', 'Right405Decay.csv', 'Left470Decay.csv', 'Right470Decay.csv']:
+        meanReader = pd.read_csv(x)
+        meanReader = meanReader.set_index("Experiment", drop=True).rename_axis(None)
+        meanIndex = pd.Index(meanReader.index)
+        decayArray = pd.DataFrame()
+        for row in meanIndex:
+            if "Rat %s"%ratNameLeft in row:
+                decayArray = pd.concat([decayArray, meanReader.loc[row]], axis=1)
+            elif "Rat %s"%ratNameRight in row:
+                decayArray = pd.concat([decayArray, meanReader.loc[row]], axis=1)
+            else:
+                pass
+        # deleteHere = np.argwhere(decayArray==np.NaN)
+        # decayArray = np.delete(decayArray, deleteHere)
+        # decayArray[np.all(np.isnan(decayArray), axis=0)] = 0
+        decayArray = decayArray.transpose()
+        match x:
+            case 'Left405Decay.csv':
+                meanDecay405Left = decayArray.mean(axis=0)
+            case 'Right405Decay.csv':
+                meanDecay405Right = decayArray.mean(axis=0)
+            case 'Left470Decay.csv':
+                meanDecay470Left = decayArray.mean(axis=0)
+            case 'Right470Decay.csv':
+                meanDecay470Right = decayArray.mean(axis=0)
+            case None:
+                raise ValueError("Please Generate a CSV file from a vehicle control first")
+            case _:
+                raise ValueError("Invalid CSV")
     return meanDecay405Left, meanDecay470Left, meanDecay405Right, meanDecay470Right
 
 # Saves cleaned trace file as an ABF file for later viewing in ClampFit 10 "Processed Data", "%s Rat %s Processed Data.abf"%(self.abfDate.strftime("%Y-%m-%d")
@@ -185,41 +192,99 @@ def completeProcessor(experimentFileName, baselineFileName):
         finalRight[i] = x[1000:-1250]
     return finalLeft, finalRight
 
-def newCompleteProcessor(experimentFileName, baselineFileName, salineStatus):
+def newCompleteProcessor(experimentFileName, baselineFileName, salineStatus, ratNameLeft, ratNameRight, experimentDate):
     baseline470Left, baseline405Left, baseline470Right, baseline405Right= BaselineGet(baselineFileName)
     channelsLeft, channelsRight = [0,1], [4,5]
     subtract470Left, subtract405Left = baselineSubtractor(experimentFileName, baseline470Left, baseline405Left, channelsLeft)
     subtract470Right, subtract405Right = baselineSubtractor(experimentFileName, baseline470Right, baseline405Right, channelsRight)
     filtered405Left, filtered405Right = wholeTraceGauss(wholeTraceMedFilt(subtract405Left)), wholeTraceGauss(wholeTraceMedFilt(subtract405Right))
     filtered470Left, filtered470Right = wholeTraceGauss(wholeTraceMedFilt(subtract470Left)), wholeTraceGauss(wholeTraceMedFilt(subtract470Right))
-    if salineStatus:
+    if salineStatus == 1:
         decayFit405Left, _ = doubleExpDecayFit(filtered405Left)
         decayFit470Left, _ = doubleExpDecayFit(filtered470Left)
         decayFit405Right, _ = doubleExpDecayFit(filtered405Right)
         decayFit470Right, _ = doubleExpDecayFit(filtered470Right)
         unbleached405Left, unbleached405Right = unbleachSignal(filtered405Left, decayFit405Left), unbleachSignal(filtered405Right, decayFit405Right)
         unbleached470Left, unbleached470Right = unbleachSignal(filtered470Left, decayFit470Left), unbleachSignal(filtered470Right, decayFit470Right)
-        with open('Left405Decay.csv', 'a') as csvfile:
-            decayWriter = csv.writer(csvfile)
-            decayWriter.writerow([i for i in decayFit405Left])
-        with open('Right405Decay.csv', 'a') as csvfile:
-            decayWriter = csv.writer(csvfile)
-            decayWriter.writerow([i for i in decayFit405Right])
-        with open('Left470Decay.csv', 'a') as csvfile:
-            decayWriter = csv.writer(csvfile)
-            decayWriter.writerow([i for i in decayFit470Left])
-        with open('Right470Decay.csv', 'a') as csvfile:
-            decayWriter = csv.writer(csvfile)
-            decayWriter.writerow([i for i in decayFit470Right])
-    elif not salineStatus:
-        decayFit405Left, decayFit470Left, decayFit405Right, decayFit470Right = averageCSV()
+        # signalLeft, signalRight = isoLinReg(unbleached405Left, unbleached470Left), isoLinReg(unbleached405Right, unbleached470Right)
+        unbleachedSignals = [decayFit405Left, decayFit470Left, decayFit405Right, decayFit470Right]
+        csvNames = ['Left405Decay.csv', 'Left470Decay.csv', 'Right405Decay.csv', 'Right470Decay.csv']
+        for x in csvNames:
+            csvPath = Path(x)
+            if csvPath.exists():
+                pass
+            elif not csvPath.exists():
+                with open(x, 'w') as csvfile:
+                    blankwriter = csv.writer(csvfile)
+                    match x:
+                        case 'Left405Decay.csv':
+                            headers = ["Experiment"]
+                            headers.extend(["Trace %i"%(y+1) for y in range(0, len(decayFit405Left))])
+                            blankwriter.writerow(headers)
+                        case 'Left470Decay.csv':
+                            headers = ["Experiment"]
+                            headers.extend(["Trace %i"%(y+1) for y in range(0, len(decayFit470Left))])
+                            blankwriter.writerow(headers)
+                        case 'Right405Decay.csv':
+                            headers = ["Experiment"]
+                            headers.extend(["Trace %i"%(y+1) for y in range(0, len(decayFit405Right))])
+                            blankwriter.writerow(headers)
+                        case 'Right470Decay.csv':
+                            headers = ["Experiment"]
+                            headers.extend(["Trace %i"%(y+1) for y in range(0, len(decayFit470Right))])
+                            blankwriter.writerow(headers)
+        j = 0
+        # decayFit405Left, decayFit470Left, decayFit405Right, decayFit470Right = pd.DataFrame(decayFit405Left), pd.DataFrame(decayFit470Left), pd.DataFrame(decayFit405Right), pd.DataFrame(decayFit470Right)
+        for x in [decayFit405Left, decayFit470Left, decayFit405Right, decayFit470Right]:
+            headers = ["Experiment"]
+            headers.extend(["Trace %i"%(y+1) for y in range(0, len(x))])
+            containsCheck = True
+            inDecayCheck = pd.read_csv(csvNames[j])
+            if inDecayCheck.empty:
+                containsCheck = False
+                if j <= 1:
+                    labelledFrame = pd.DataFrame({'Experiment':["%s Rat %s"%(experimentDate.strftime("%Y-%m-%d"), ratNameLeft)]})
+                    unlabelledFrame = pd.DataFrame([[g for g in x]], columns=headers[1:])
+                    concatFrame = pd.concat([labelledFrame, unlabelledFrame], axis=1)
+                elif j > 1:
+                    labelledFrame = pd.DataFrame({'Experiment':["%s Rat %s"%(experimentDate.strftime("%Y-%m-%d"), ratNameRight)]})
+                    unlabelledFrame = pd.DataFrame([[g for g in x]], columns=headers[1:])
+                    concatFrame = pd.concat([labelledFrame, pd.DataFrame([[g for g in x]], columns=headers[1:])], axis=1)
+            else:
+                if j <= 1 and "%s Rat %s"%(experimentDate.strftime("%Y-%m-%d"), ratNameLeft) not in inDecayCheck.index:
+                    containsCheck = False
+                    labelledFrame = pd.DataFrame({'Experiment':["%s Rat %s"%(experimentDate.strftime("%Y-%m-%d"), ratNameLeft)]})
+                    unlabelledFrame = pd.DataFrame([[g for g in x]], columns=headers[1:])
+                    concatFrame = pd.concat([labelledFrame, unlabelledFrame], axis=1)
+                elif j > 1 and "%s Rat %s"%(experimentDate.strftime("%Y-%m-%d"), ratNameRight) not in inDecayCheck.index:
+                    containsCheck = False
+                    labelledFrame = pd.DataFrame({'Experiment':["%s Rat %s"%(experimentDate.strftime("%Y-%m-%d"), ratNameRight)]})
+                    unlabelledFrame = pd.DataFrame([[g for g in x]], columns=headers[1:])
+                    concatFrame = pd.concat([labelledFrame, pd.DataFrame([[g for g in x]], columns=headers[1:])], axis=1)
+            if not containsCheck:
+                if len(concatFrame.columns) < len(inDecayCheck.columns):
+                    commaNum = len(inDecayCheck.columns) - len(concatFrame.columns)
+                    paddedComma = pd.DataFrame([[np.NaN * commaNum]])
+                    headers.extend(["Trace %i"%(y+1) for y in range(len(concatFrame.columns), len(concatFrame.columns)+commaNum)])
+                    appendedFrame = pd.concat([concatFrame, paddedComma], ignore_index=True, axis=1)
+                    appendedFrame = pd.concat([inDecayCheck, concatFrame], ignore_index=True)
+                else:
+                    appendedFrame = pd.concat([inDecayCheck, concatFrame], ignore_index=True)
+                appendedFrame = appendedFrame.set_index("Experiment", drop=True).rename_axis(None)                    
+                print(appendedFrame)
+                appendedFrame.to_csv(csvNames[j], header=headers[1:], index_label=headers[0])
+            elif containsCheck:
+                continue
+            j += 1  
+    elif salineStatus == 0:
+        decayFit405Left, decayFit470Left, decayFit405Right, decayFit470Right = averageCSV(ratNameLeft, ratNameRight)
         unbleached405Left, unbleached405Right = unbleachSignal(filtered405Left, decayFit405Left), unbleachSignal(filtered405Right, decayFit405Right)
         unbleached470Left, unbleached470Right = unbleachSignal(filtered470Left, decayFit470Left), unbleachSignal(filtered470Right, decayFit470Right)
-        signalLeft, signalRight = isoLinReg(unbleached405Left, unbleached470Left), isoLinReg(unbleached405Right, unbleached470Right)
-    unbleachedSignals = np.array[unbleached405Left.mean(axis=1), unbleached470Left.mean(axis=1), unbleached405Right.mean(axis=1), unbleached470Right.mean(axis=1)]
-    signalLeft, signalRight = isoLinReg(unbleached405Left, unbleached470Left), isoLinReg(unbleached405Right, unbleached470Right)
+        unbleachedSignals = [decayFit405Left, decayFit470Left, decayFit405Right, decayFit470Right]
+    else:
+        raise ValueError(":(")
     
-
+    signalLeft, signalRight = isoLinReg(unbleached405Left, unbleached470Left), isoLinReg(unbleached405Right, unbleached470Right)
     finalLeft, finalRight = np.zeros((len(signalLeft), len(signalLeft[0]))), np.zeros((len(signalRight), len(signalRight[0])))
     for i, x in enumerate(signalLeft):
         finalLeft[i] = x
