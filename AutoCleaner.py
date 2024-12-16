@@ -12,6 +12,8 @@ import csv
 import pandas as pd
 from pathlib import Path
 
+pd.options.display.float_format = "{:,.10f}".format
+
 # Gets baseline information from 1 min-long recording data taken after trial from the "left" side of the room - channels 1 and 2
 def BaselineGet(FileName):
     abf = pyabf.ABF(FileName)
@@ -41,9 +43,9 @@ def baselineSubtractor(fileName, baseline470, baseline405, channelsToSubtract):
     return sweepArray470, sweepArray405
 
 def wholeTraceMedFilt(signalToFilter):
-    sweepArray = np.zeros((len(signalToFilter), len(signalToFilter[0])))
+    sweepArray = np.zeros((len(signalToFilter), len(signalToFilter[0][1000:-1250])))
     for i, x in enumerate(signalToFilter):
-        medFilteredSweep = sig.medfilt(x, kernel_size=5)
+        medFilteredSweep = sig.medfilt(x[1000:-1250], kernel_size=5)
         sweepArray[i] = medFilteredSweep
     return sweepArray
 
@@ -64,16 +66,16 @@ def ratio470405(signal470, signal405):
 
 # PRELIM: Linear Regression with no plot, across an entire trace
 def isoLinReg(signal405, signal470):
-    yArray = np.zeros((len(signal405), len(signal405[0][1000:-1250])))
-    bumper470 = np.zeros((len(signal470), len(signal470[0][1000:-1250])))
-    motionCorrectedSignal = np.zeros((len(signal470), len(signal470[0][1000:-1250])))
+    yArray = np.zeros((len(signal405), len(signal405[0])))
+    bumper470 = np.zeros((len(signal470), len(signal470[0])))
+    motionCorrectedSignal = np.zeros((len(signal470), len(signal470[0])))
     for i, x in enumerate(signal405):
-        yArray[i] = x[1000:-1250]
+        yArray[i] = x
     flatY = yArray.reshape(-1)
     xArray = np.arange(len(flatY))
     line = sciStat.linregress(x=xArray, y=flatY)
     for i, x in enumerate(signal470):
-        bumper470[i] = x[1000:-1250]
+        bumper470[i] = x
     convert1d = 0
     for i, x in np.ndenumerate(bumper470):
         motionCorrectedSignal[i[0]][i[1]] = x - (line.intercept + line.slope*xArray[convert1d])
@@ -110,7 +112,7 @@ def doubleExpDecayFit(filteredSignal):
     flatSignal = filteredSignal.reshape(-1)
     xDecay = np.arange(0, len(flatSignal))
     yDecay = [i for i in flatSignal]
-    p0 = (max(yDecay), -1, max(yDecay), -1, min(yDecay))
+    p0 = (max(yDecay), -1, max(yDecay)/2, -1, min(yDecay))
     popt, _ = opt.curve_fit(lambda t, a, b, c, d, e: (a * np.exp(b * t)) + (c * np.exp(d * t)) + e, xDecay, yDecay, p0=p0, 
                                                 bounds=opt.Bounds(lb=[0, -np.inf, 0, -np.inf, min(yDecay)], 
                                                                 ub=[np.inf, 0, np.inf, 0, np.inf]),
@@ -121,6 +123,11 @@ def doubleExpDecayFit(filteredSignal):
     rSquared = 1 - (np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean))
     xDecFinal = np.linspace(np.min(xDecay), np.max(xDecay), len(filteredSignal))
     yDecFinal = (a * np.exp(b * xDecFinal)) + (c * np.exp(d * xDecFinal)) + e
+    # decayFig = plt.figure()
+    # fig = decayFig.add_subplot()
+    # fig.plot(xDecFinal, yDecFinal)
+    # fig.plot(xDecay, yDecay)
+    # plt.show()
     return yDecFinal, rSquared
 
 def unbleachSignal(filteredSignal, decayFactor):
@@ -200,14 +207,14 @@ def newCompleteProcessor(experimentFileName, baselineFileName, salineStatus, rat
     filtered405Left, filtered405Right = wholeTraceGauss(wholeTraceMedFilt(subtract405Left)), wholeTraceGauss(wholeTraceMedFilt(subtract405Right))
     filtered470Left, filtered470Right = wholeTraceGauss(wholeTraceMedFilt(subtract470Left)), wholeTraceGauss(wholeTraceMedFilt(subtract470Right))
     if salineStatus == 1:
-        decayFit405Left, _ = doubleExpDecayFit(filtered405Left)
-        decayFit470Left, _ = doubleExpDecayFit(filtered470Left)
-        decayFit405Right, _ = doubleExpDecayFit(filtered405Right)
-        decayFit470Right, _ = doubleExpDecayFit(filtered470Right)
+        decayFit405Left, r405Left = doubleExpDecayFit(filtered405Left)
+        decayFit470Left, r470Left = doubleExpDecayFit(filtered470Left)
+        decayFit405Right, r405Right = doubleExpDecayFit(filtered405Right)
+        decayFit470Right, r470Right = doubleExpDecayFit(filtered470Right)
         unbleached405Left, unbleached405Right = unbleachSignal(filtered405Left, decayFit405Left), unbleachSignal(filtered405Right, decayFit405Right)
         unbleached470Left, unbleached470Right = unbleachSignal(filtered470Left, decayFit470Left), unbleachSignal(filtered470Right, decayFit470Right)
-        # signalLeft, signalRight = isoLinReg(unbleached405Left, unbleached470Left), isoLinReg(unbleached405Right, unbleached470Right)
         unbleachedSignals = [decayFit405Left, decayFit470Left, decayFit405Right, decayFit470Right]
+        rSquaredDecay = [r405Left, r470Left, r405Right, r470Right]
         csvNames = ['Left405Decay.csv', 'Left470Decay.csv', 'Right405Decay.csv', 'Right470Decay.csv']
         for x in csvNames:
             csvPath = Path(x)
@@ -234,7 +241,6 @@ def newCompleteProcessor(experimentFileName, baselineFileName, salineStatus, rat
                             headers.extend(["Trace %i"%(y+1) for y in range(0, len(decayFit470Right))])
                             blankwriter.writerow(headers)
         j = 0
-        # decayFit405Left, decayFit470Left, decayFit405Right, decayFit470Right = pd.DataFrame(decayFit405Left), pd.DataFrame(decayFit470Left), pd.DataFrame(decayFit405Right), pd.DataFrame(decayFit470Right)
         for x in [decayFit405Left, decayFit470Left, decayFit405Right, decayFit470Right]:
             headers = ["Experiment"]
             headers.extend(["Trace %i"%(y+1) for y in range(0, len(x))])
@@ -244,23 +250,49 @@ def newCompleteProcessor(experimentFileName, baselineFileName, salineStatus, rat
                 containsCheck = False
                 if j <= 1:
                     labelledFrame = pd.DataFrame({'Experiment':["%s Rat %s"%(experimentDate.strftime("%Y-%m-%d"), ratNameLeft)]})
-                    unlabelledFrame = pd.DataFrame([[g for g in x]], columns=headers[1:])
-                    concatFrame = pd.concat([labelledFrame, unlabelledFrame], axis=1)
+                    unlabelledFrame, storageFrame = pd.DataFrame(), pd.DataFrame()
+                    dictOfDecay = {}
+                    for index, entry in enumerate(x):
+                        dictOfDecay["Trace %i"%(index+1)] = [entry]
+                        # unlabelledFrame["Trace %i"%(index+1)] = entry
+                        # unlabelledFrame.insert(-1, "Trace %i"%(index+1), entry)
+                        print(dictOfDecay["Trace %i"%(index+1)])
+                    storageFrame = unlabelledFrame.assign(**dictOfDecay)
+                    print(storageFrame)
+                    concatFrame = pd.concat([labelledFrame, storageFrame], axis=1)
                 elif j > 1:
                     labelledFrame = pd.DataFrame({'Experiment':["%s Rat %s"%(experimentDate.strftime("%Y-%m-%d"), ratNameRight)]})
-                    unlabelledFrame = pd.DataFrame([[g for g in x]], columns=headers[1:])
-                    concatFrame = pd.concat([labelledFrame, pd.DataFrame([[g for g in x]], columns=headers[1:])], axis=1)
+                    unlabelledFrame, storageFrame = pd.DataFrame(), pd.DataFrame()
+                    dictOfDecay = {}
+                    for index, entry in enumerate(x):
+                        dictOfDecay["Trace %i"%(index+1)] = [entry]
+                        # unlabelledFrame["Trace %i"%(index+1)] = entry
+                        # unlabelledFrame.insert(-1, "Trace %i"%(index+1), entry)
+                    storageFrame = unlabelledFrame.assign(**dictOfDecay)
+                    concatFrame = pd.concat([labelledFrame, storageFrame], axis=1)
             else:
                 if j <= 1 and "%s Rat %s"%(experimentDate.strftime("%Y-%m-%d"), ratNameLeft) not in inDecayCheck.index:
                     containsCheck = False
                     labelledFrame = pd.DataFrame({'Experiment':["%s Rat %s"%(experimentDate.strftime("%Y-%m-%d"), ratNameLeft)]})
-                    unlabelledFrame = pd.DataFrame([[g for g in x]], columns=headers[1:])
-                    concatFrame = pd.concat([labelledFrame, unlabelledFrame], axis=1)
+                    unlabelledFrame, storageFrame = pd.DataFrame(), pd.DataFrame()
+                    dictOfDecay = {}
+                    for index, entry in enumerate(x):
+                        dictOfDecay["Trace %i"%(index+1)] = [entry]
+                        # unlabelledFrame["Trace %i"%(index+1)] = entry
+                        # unlabelledFrame.insert(-1, "Trace %i"%(index+1), entry)
+                    storageFrame = unlabelledFrame.assign(**dictOfDecay)
+                    concatFrame = pd.concat([labelledFrame, storageFrame], axis=1)
                 elif j > 1 and "%s Rat %s"%(experimentDate.strftime("%Y-%m-%d"), ratNameRight) not in inDecayCheck.index:
                     containsCheck = False
                     labelledFrame = pd.DataFrame({'Experiment':["%s Rat %s"%(experimentDate.strftime("%Y-%m-%d"), ratNameRight)]})
-                    unlabelledFrame = pd.DataFrame([[g for g in x]], columns=headers[1:])
-                    concatFrame = pd.concat([labelledFrame, pd.DataFrame([[g for g in x]], columns=headers[1:])], axis=1)
+                    unlabelledFrame, storageFrame = pd.DataFrame(), pd.DataFrame()
+                    dictOfDecay = {}
+                    for index, entry in enumerate(x):
+                        dictOfDecay["Trace %i"%(index+1)] = [entry]
+                        # unlabelledFrame["Trace %i"%(index+1)] = entry
+                        # unlabelledFrame.insert(-1, "Trace %i"%(index+1), entry)
+                    storageFrame = unlabelledFrame.assign(**dictOfDecay)
+                    concatFrame = pd.concat([labelledFrame, storageFrame], axis=1)
             if not containsCheck:
                 if len(concatFrame.columns) < len(inDecayCheck.columns):
                     commaNum = len(inDecayCheck.columns) - len(concatFrame.columns)
@@ -271,7 +303,6 @@ def newCompleteProcessor(experimentFileName, baselineFileName, salineStatus, rat
                 else:
                     appendedFrame = pd.concat([inDecayCheck, concatFrame], ignore_index=True)
                 appendedFrame = appendedFrame.set_index("Experiment", drop=True).rename_axis(None)                    
-                print(appendedFrame)
                 appendedFrame.to_csv(csvNames[j], header=headers[1:], index_label=headers[0])
             elif containsCheck:
                 continue
@@ -281,6 +312,7 @@ def newCompleteProcessor(experimentFileName, baselineFileName, salineStatus, rat
         unbleached405Left, unbleached405Right = unbleachSignal(filtered405Left, decayFit405Left), unbleachSignal(filtered405Right, decayFit405Right)
         unbleached470Left, unbleached470Right = unbleachSignal(filtered470Left, decayFit470Left), unbleachSignal(filtered470Right, decayFit470Right)
         unbleachedSignals = [decayFit405Left, decayFit470Left, decayFit405Right, decayFit470Right]
+        rSquaredDecay = 0
     else:
         raise ValueError(":(")
     
@@ -290,4 +322,4 @@ def newCompleteProcessor(experimentFileName, baselineFileName, salineStatus, rat
         finalLeft[i] = x
     for i, x in enumerate(signalRight):
         finalRight[i] = x
-    return finalLeft, finalRight, unbleachedSignals
+    return finalLeft, finalRight, unbleachedSignals, rSquaredDecay

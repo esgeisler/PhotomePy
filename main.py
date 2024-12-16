@@ -187,7 +187,7 @@ class Main(tk.Frame):
         def dataProcessorReal():
             try:
                 finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
-                newFinalSignalLeft, newFinalSignalRight, traceDecayFunction = acl.newCompleteProcessor(self.experimentFileName, self.baselinefileName, self.controlStatus.get(), self.ratNameLeft, self.ratNameRight, self.abfDate)  
+                newFinalSignalLeft, newFinalSignalRight, traceDecayFunction, decayRSquared = acl.newCompleteProcessor(self.experimentFileName, self.baselinefileName, self.controlStatus.get(), self.ratNameLeft, self.ratNameRight, self.abfDate)  
             except FileNotFoundError as e:
                 match str(e):
                     case "main":
@@ -286,10 +286,17 @@ class Main(tk.Frame):
                         ratData.to_excel(writer, index= False, sheet_name="Overview")
                         if self.controlStatus.get() == 1:
                             if rats == leftOverviewWriter:
-                                bleachY = traceDecayFunction[1] - traceDecayFunction[0]
+                                bleach405 = traceDecayFunction[0]
+                                bleach470 = traceDecayFunction[1]
+                                rsquared405 = decayRSquared[0]
+                                rsquared470 = decayRSquared[1]
                             elif rats == rightOverviewWriter:
-                                bleachY  = traceDecayFunction[3] - traceDecayFunction[2]
-                            bleachFit = pd.DataFrame({"Trace Number:": range(1, len(bleachY) + 1), "Bleaching Correction:": bleachY, "Goodness of fit(R^2):": 0})
+                                bleach405 = traceDecayFunction[2]
+                                bleach470 = traceDecayFunction[3]
+                                rsquared405 = decayRSquared[2]
+                                rsquared470 = decayRSquared[3]
+                            bleachFit = pd.DataFrame({"Trace Number:": range(1, len(bleach405) + 1), 
+                                                      "Bleaching Correction (405):": bleach405, "Goodness of fit(R^2):": rsquared405, "Bleaching Correction (470):": bleach470, "Goodness of fit(R^2):": rsquared470})
                             bleachFit.to_excel(writer, index=False, sheet_name="Bleaching Correction")
                 self.mainStatus = True
             #TODO fix FutureWarning caused by concat being empty by default.
