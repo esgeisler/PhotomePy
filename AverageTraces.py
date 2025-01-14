@@ -6,8 +6,8 @@ def traceAverage(processedSignal):
     meanSignal = np.zeros(len(processedSignal))
     medianSignal = np.zeros(len(processedSignal))
     for i, x in enumerate(processedSignal):
-        meanSignal[i] = stat.mean(x[1000:-1250])
-        medianSignal[i] = stat.median(x[100:-1250])
+        meanSignal[i] = stat.mean(x)
+        medianSignal[i] = stat.median(x)
     return meanSignal, medianSignal
 
 # Averages the sweeps before a certain time point to create a "Pre-Injection Average" of fluorescence
@@ -19,7 +19,7 @@ def preInjectionAverage(processedSignal, injectionTrace):
     else:
         preInjArray = np.zeros(injectionTrace)
         for x in range(0, injectionTrace):
-            preInjArray[x] = stat.mean(processedSignal[x][1000:-1250])
+            preInjArray[x] = stat.mean(processedSignal[x])
         preInjAvg = stat.mean(preInjArray)
         preInjStdDev = stat.stdev(preInjArray)
         return preInjAvg, preInjStdDev
