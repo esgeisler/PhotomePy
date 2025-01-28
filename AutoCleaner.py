@@ -134,8 +134,11 @@ def unbleachSignal(filteredSignal, decayFactor):
     unbleachedArray = np.zeros((len(filteredSignal), len(filteredSignal[0])))
     convert1d = 0
     for i, y in enumerate(filteredSignal):
-        unbleachedArray[i] = y - decayFactor[convert1d]
-        convert1d += 1
+        try:
+            unbleachedArray[i] = y - decayFactor[convert1d]
+            convert1d += 1
+        except IndexError:
+            pass
     return unbleachedArray
 
 # Reads a CSV file containing all previous data for decay values and averages them, creating an array of average decay
