@@ -163,10 +163,10 @@ def wholeTracePeaks(processedSignalArray, mainFile):
                                 riseTauList[z][i[0][0]] = abs(1/popt[1])
                 except RuntimeError as e:
                     if str(e) == "Optimal parameters not found: The maximum number of function evaluations is exceeded.":
-                        riseTauList[z][i[0][0]] = 0 
+                        riseTauList[z][i[0][0]] = np.NaN 
                 except ValueError as e:
                     if str(e) == "'x0' is infeasible":
-                        riseTauList[z][i[0][0]] = 0 
+                        riseTauList[z][i[0][0]] = np.NaN 
         peakTable.Rise_Tau_exp = pd.Series(riseTauList[z])
         for _, u in enumerate(sortedDegreeDecay):
             i = np.where(x == u)
@@ -183,7 +183,8 @@ def wholeTracePeaks(processedSignalArray, mainFile):
                         case 0:
                             popt, _ = opt.curve_fit(lambda t, a, b, c: a * np.exp(b * t) + c, decArray/samplingFreqSec, adjustedDecayTau, p0=p0, 
                                                     bounds=opt.Bounds(lb=[0, -np.inf, processedSignalArray[z][int(width90Array[z][3][i[0][0]])]], 
-                                                                    ub=[processedSignalArray[z][int(width10Array[z][3][i[0][0]])], 0, np.inf]))
+                                                                    ub=[processedSignalArray[z][int(width10Array[z][3][i[0][0]])], 0, np.inf]),
+                                                                    maxfev=1000)
                             squaredDiffs = np.square(adjustedDecayTau - (popt[0] * np.exp(popt[1] * ((decArray/samplingFreqSec))) + popt[2]))
                             squaredDiffsFromMean = np.square(adjustedDecayTau - np.mean(adjustedDecayTau))
                             rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
@@ -206,7 +207,8 @@ def wholeTracePeaks(processedSignalArray, mainFile):
                             decArray = np.array(list(range(0, decWidth)))
                             popt, _ = opt.curve_fit(lambda t, a, b, c: a * np.exp((b * t)) + c, decArray/samplingFreqSec, adjustedDecayTau, p0=p0, 
                                                     bounds=opt.Bounds(lb=[0, -np.inf, processedSignalArray[z][int(widthHalfArray[z][3][i[0][0]])]], 
-                                                                    ub=[processedSignalArray[z][int(width10Array[z][3][i[0][0]])], 0, np.inf]))
+                                                                    ub=[processedSignalArray[z][int(width10Array[z][3][i[0][0]])], 0, np.inf]), 
+                                                                    maxfev=1000)
                             squaredDiffs = np.square(adjustedDecayTau - (popt[0] * np.exp(popt[1] * ((decArray/samplingFreqSec))) + popt[2]))
                             squaredDiffsFromMean = np.square(adjustedDecayTau - np.mean(adjustedDecayTau))
                             rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
@@ -216,10 +218,10 @@ def wholeTracePeaks(processedSignalArray, mainFile):
                                 decayTauList[z][i[0][0]] = abs(1/popt[1])
                 except RuntimeError as e:
                     if str(e) == "Optimal parameters not found: The maximum number of function evaluations is exceeded.":
-                        decayTauList[z][i[0][0]] = 0
+                        decayTauList[z][i[0][0]] = np.NaN
                 except ValueError as e:
                     if str(e) == "'x0' is infeasible":
-                        riseTauList[z][i[0][0]] = 0 
+                        riseTauList[z][i[0][0]] = np.NaN 
         peakTable.Decay_Tau_exp = pd.Series(decayTauList[z])
         match np.size(x): # Determines frequency and total area of a sweep
             case 0:
@@ -251,7 +253,7 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
     samplingFreqSec = samplingFreqMSec * 1000
     seconds = np.arange(0, 47750, samplingFreqSec)
     decayNPeaks, riseNPeaks = {}, {}
-    peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.04, wlen= 20000)
+    peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, wlen= 20000)
     overlapRise, overlapDecay = [0 for _ in range(len(peaks))], [0 for _ in range(len(peaks))]
     widthBottom = sci.peak_widths(processedSignalArray, peaks, rel_height=1, prominence_data=(peaksDict['prominences'], 
                                                                                              peaksDict["left_bases"], peaksDict["right_bases"]), wlen=20000)
@@ -354,6 +356,9 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
             except RuntimeError as e:
                 if str(e) == "Optimal parameters not found: The maximum number of function evaluations is exceeded.":
                     continue 
+            except ValueError as e:
+                if str(e) == "'x0' is infeasible":
+                    continue 
     for _, u in enumerate(sortedDegreeDecay): #Generates and plots expoential decay functions for peaks
         i = np.where(peaks == u)
         peaksInDecay = overlapDecay[i[0][0]]
@@ -417,6 +422,9 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
             except RuntimeError as e:
                 if str(e) == "Optimal parameters not found: The maximum number of function evaluations is exceeded.":
                     continue
+            except ValueError as e:
+                if str(e) == "'x0' is infeasible":
+                    continue 
 
     
     peakFig.hlines(*widthHalf[1:], color="C6")
