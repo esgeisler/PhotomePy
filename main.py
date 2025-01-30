@@ -364,8 +364,14 @@ class Main(tk.Frame):
                         riseColumn.to_excel(writer, sheet_name="Rise Tau")
                         decayColumn.to_excel(writer, sheet_name="Decay Tau")
                 self.traceStatus = True
-                acl.tExport(newFinalSignalLeft, self.ratNameLeft, self.abfDate) #Left
-                acl.tExport(newFinalSignalRight, self.ratNameRight, self.abfDate) #Right
+                #Old Method
+                acl.tExport(finalSignalLeft, self.ratNameLeft, self.abfDate) #Left
+                acl.tExport(finalSignalRight, self.ratNameRight, self.abfDate) #Right
+                #New Method
+                acl.tExportNew(newFinalSignalLeft, self.ratNameLeft, self.abfDate) #Left
+                acl.tExportNew(newFinalSignalRight, self.ratNameRight, self.abfDate) #Right
+
+                
                 
 
         # Analyzes the peak decay, amplitude, and frequency of a single trace chosen by the user.
