@@ -179,6 +179,10 @@ def averageCSV(ratNameLeft, ratNameRight):
 def tExport(processedTrace, ratName, experimentDate):
     abfWriter.writeABF1(sweepData= processedTrace, filename= os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Processed Data.abf"%(experimentDate.strftime("%Y-%m-%d"), ratName)), units="V", sampleRateHz= 3333.33)
 
+def tExportNew(processedTrace, ratName, experimentDate):
+    abfWriter.writeABF1(sweepData= processedTrace, filename= os.path.join(os.getcwd(), "Processed Data", "%s Rat %s NEW Processed Data.abf"%(experimentDate.strftime("%Y-%m-%d"), ratName)), units="V", sampleRateHz= 3333.33)
+
+
 # Compilation of the other functions in this file
 # Gets a baseline, subtracts it from a main signal, gaussian filters the 405 channel, then takes the ratio of the 470/405 channels. Finally, filters the ratio signal
 def completeProcessor(experimentFileName, baselineFileName):
