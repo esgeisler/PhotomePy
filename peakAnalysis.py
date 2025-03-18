@@ -18,8 +18,8 @@ def peakMax(processedSignalArray):
     return int(longestPeak)
 
 # Exponential decay equation for plotting the changes in fluorescence after a dopamine event
-def tauFit(tau, a, b):
-    return a*np.exp(-b * tau)
+# def tauFit(tau, a, b):
+#     return a*np.exp(-b * tau)
 
 # Finds peaks in a signal and provides their widths, amplitudes, avg. frequencies, and areas across an entire .abf file
 def wholeTracePeaks(processedSignalArray, mainFile):
@@ -64,10 +64,14 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         for i in peaksDict[index]:
            paddedEntry = np.pad(peaksDict[index][i], pad_width= (0, longPeak - len(peaksDict[index][i])), mode= 'constant', constant_values= 0)
            peaksDict[index][i] = paddedEntry
-    for k, checkPeak in np.ndenumerate(peaksArray): # Finds peaks that have overlap with one another
+    # Finds overlapping events by checking if the maxima of a peak is contained within the left and right slopes of another peak
+    for k, checkPeak in np.ndenumerate(peaksArray):
             overlapPeaks[k[0]][k[1]] = np.array([y for y in peaksArray[k[0]] if ((widthBottomArray[k[0]][2][k[1]] < y < widthBottomArray[k[0]][3][k[1]]) and y != checkPeak)])
             overlapRise[k[0]][k[1]] = np.array([y for y in peaksArray[k[0]] if ((widthBottomArray[k[0]][2][k[1]] < y < checkPeak) and y != checkPeak)])
             overlapDecay[k[0]][k[1]] = np.array([y for y in peaksArray[k[0]] if ((checkPeak < y < widthBottomArray[k[0]][3][k[1]]) and y != checkPeak)])
+    # Declares the dataframe where peak information will be stored
+    # Following that, retrieves the simplest-to-calculate metadata: 
+    # Event number, Event index and its loc. in seconds, the leftmost and rightmost end of the peak, the amplitude, and the width @ 50% of a peak's prominence.
     for z, x in enumerate(peaksArray):
         degreeNPeaks, decayNPeaks, riseNPeaks = {}, {}, {}
         peakTable = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 'Peak_Time_Sec', 
@@ -86,7 +90,9 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         peakTable.Off_Time_ms = ((peaksDict[z]['right_bases'] - x)/(samplingFreqMSec)).round(2)
         peakTable.Width_at50_ms = (peaksDict[z]['widths']/(samplingFreqMSec)).round(2)
         
-        for i, peakOfDegree in enumerate(x): # Determines the "degree" of a peak; how many peaks overlap with it
+        # Determines the "degree" of a peak by counting the amount of peaks found above in the checkpeak for loop for either the rise or decay.
+        # Following this, sorts the peaks in order.
+        for i, peakOfDegree in enumerate(x): 
             if len(processedSignalArray[z][int(widthBottomArray[z][2][i]):int(widthBottomArray[z][3][i])]) == 0:
                  continue
             degreeNPeaks[peakOfDegree] = len(overlapPeaks[z][i])
@@ -95,7 +101,9 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         sortedDegreeNPeaks = dict(sorted(degreeNPeaks.items(), key=lambda item: item[1]))
         sortedDegreeRise = dict(sorted(riseNPeaks.items(), key=lambda item: item[1]))
         sortedDegreeDecay = dict(sorted(decayNPeaks.items(), key=lambda item: item[1]))
-        for _, u in enumerate(sortedDegreeNPeaks): # Generates event area
+        # Generates the event area for each peak via the Simpson's approximation of the definite integral.
+        # After this, corrects these event areas by subtracting the area of all of the smaller peaks that overlap with that event.
+        for _, u in enumerate(sortedDegreeNPeaks):
             i = np.where(x == u)
             if len(processedSignalArray[z][int(widthBottomArray[z][2][i[0][0]]):int(widthBottomArray[z][3][i[0][0]])]) == 0:
                  continue
@@ -111,7 +119,15 @@ def wholeTracePeaks(processedSignalArray, mainFile):
                         peakArea -= adjustedArea[z][j[0][0]]
                     adjustedArea[z][i[0][0]] = peakArea.round(2)
         peakTable.Avg_Area = pd.Series(adjustedArea[z])
-        for _, u in enumerate(sortedDegreeRise): #Generates adjusted rise time constants (tau)
+
+        # Generates adjusted rise time constants (tau)
+        # For non-overlapping peaks, they are fit with opt.curve_fit according to the exponential rise equation, with a range from 10-90% of a peak's relative height
+        # By taking the reciprocal of the X value, the time constant (tau) is reported.
+        # For peaks with overlap in their left slope, these are fit from the right-most base of an overlapping peak to 90% of a peak's height to reduce variability.
+        # Any peaks with an R^2 value < 0.8 (80% correlation) are excluded from final reports.
+        # If the initial guesses are invalid, or the fit takes >1000 samples, that peak is not calculated and excluded.
+        # TODO: Implement changes from PeakDisplay; Update calculations to be  90-10 instead of 100-10
+        for _, u in enumerate(sortedDegreeRise): 
             i = np.where(x == u)
             if len(processedSignalArray[z][int(widthBottomArray[z][2][i[0][0]]):int(widthBottomArray[z][3][i[0][0]])]) == 0:
                 continue
@@ -168,6 +184,10 @@ def wholeTracePeaks(processedSignalArray, mainFile):
                     if str(e) == "'x0' is infeasible":
                         riseTauList[z][i[0][0]] = np.NaN 
         peakTable.Rise_Tau_exp = pd.Series(riseTauList[z])
+        # Generated the adjusted decay time constants (tau)
+        # This is calculated the same as the rise time, except that the equation is inverted and the curve fit to the right slope of an event.
+        # Exclusions are the same as the rise calculations
+        # TODO: Implement changes from PeakDisplay; Update calculations to be  90-10 instead of 100-10 
         for _, u in enumerate(sortedDegreeDecay):
             i = np.where(x == u)
             peaksInDecay = overlapDecay[z][i[0][0]]
@@ -223,7 +243,10 @@ def wholeTracePeaks(processedSignalArray, mainFile):
                     if str(e) == "'x0' is infeasible":
                         riseTauList[z][i[0][0]] = np.NaN 
         peakTable.Decay_Tau_exp = pd.Series(decayTauList[z])
-        match np.size(x): # Determines frequency and total area of a sweep
+        # Determines frequency and total area of a sweep
+        # Frequency is calculated by taking the # of sweeps in a trace and dividing that by the length of the trace in seconds.
+        # Total Area is a sum of all of the (already-adjusted for overlapping smaller peaks) events in a given trace.
+        match np.size(x): #
             case 0:
                 peakTable.Frequency = 0
                 peakTable.Total_Area = 0
@@ -235,7 +258,7 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         finalDict[z] = peakTable
     return finalDict
 
-#TODO fix FutureWarning caused by pre- and postOverview being empty by default.
+# Appends all of the trace data together into one pandas DataFrame.
 def traceProcessor(processedSignal):
     injectionDF = {}
     traceList = []
@@ -246,7 +269,6 @@ def traceProcessor(processedSignal):
     return injectionDF, overview
 
 #Retrieves the peaks of a signal and their properties, then plots them on a graph of the chosen trace
-#TODO Remove overlapping peaks from consideration of plotting the line
 def peakDisplay(processedSignalArray, mainFile, ratSide):
     abf = pyabf.ABF(mainFile)
     samplingFreqMSec = abf.dataPointsPerMs + (1/3)
@@ -322,7 +344,7 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
                         y_rise = a * np.exp(b * (x_rise/samplingFreqSec)) + c
                         peakFig.plot(x_rise+width90[2][i], y_rise, color="C8")
                         print("Tau (Rise):", abs(1/popt[1]))
-                    case _:
+                    case _: #Handles the rest of the peaks
                         ji = np.where(peaks == peaksInRise[0])
                         adjustedRiseTau = np.array(processedSignalArray[int(widthBottom[3][ji[0][0]]):int(width10[2][i[0][0]])])
                         p0 = (processedSignalArray[int(widthBottom[3][ji[0][0]])], 1, processedSignalArray[int(width10[2][i[0][0]])])
@@ -332,10 +354,8 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
                             o = np.where(adjustedRiseTau == processedSignalArray[int(width90[3][j[0][0]])])
                             if len(r[0]) == 0 or len(o[0]) == 0:
                                 continue
-                            # averageFloor = np.linspace(int(widthBottom[2][j[0][0]]), int(widthBottom[3][j[0][0]]), len(processedSignalArray[int(widthBottom[2][j[0][0]]):int(widthBottom[3][j[0][0]])]))
                             for y, _ in enumerate(adjustedRiseTau[int(r[0][0]):int(o[0][0])]):
                                 adjustedRiseTau[y+r[0][0]] = width90[1][j[0][0]]
-                            # peakFig.plot(averageFloor, adjustedRiseTau[int(r[0][0]):int(o[0][0])], color="C11")
                         riseWidth = int(len(adjustedRiseTau))
                         riseArray = np.array(list(range(0, riseWidth)))
                         popt, _ = opt.curve_fit(lambda t, a, b, c: a * np.exp((b * t)) + c, riseArray/samplingFreqSec, adjustedRiseTau, p0=p0, 
@@ -372,7 +392,7 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
         else:
             try:
                 match decayNPeaks[u]:
-                    case 0:
+                    case 0: #Handles peaks with no overlap in their decay slope
                         popt, _ = opt.curve_fit(lambda t, a, b, c: a * np.exp(b * t) + c, decArray/samplingFreqSec, adjustedDecayTau, p0=p0, 
                                                 bounds=opt.Bounds(lb=[0, -np.inf, processedSignalArray[int(width90[3][i[0][0]])]], 
                                                                 ub=[processedSignalArray[int(width10[3][i[0][0]])], 0, np.inf]),
@@ -389,7 +409,7 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
                         print(f"R² = {rSquared}", "decay")
                         peakFig.plot(x_dec+int(width10[3][i[0][0]]), y_dec, color="C9")
                         print("Tau (Decay):", abs(1/popt[1]))
-                    case _:
+                    case _: #Handles the rest
                         ji = np.where(peaks == peaksInDecay[0])
                         adjustedDecayTau = np.array(processedSignalArray[int(width10[3][i[0][0]]):int(width90[2][ji[0][0]])])
                         p0 = (processedSignalArray[int(width10[3][i[0][0]])], -1, processedSignalArray[int(width90[2][ji[0][0]])])
@@ -399,10 +419,8 @@ def peakDisplay(processedSignalArray, mainFile, ratSide):
                             o = np.where(adjustedDecayTau == processedSignalArray[int(width90[3][j[0][0]])])
                             if len(r[0]) == 0 or len(o[0]) == 0:
                                 continue
-                            # averageFloor = np.linspace(int(width90[2][j[0][0]]), int(width90[3][j[0][0]]), len(processedSignalArray[int(width90[2][j[0][0]]):int(width90[3][j[0][0]])]))
                             for y, _ in enumerate(adjustedDecayTau[int(r[0][0]):int(o[0][0])]):
                                 adjustedDecayTau[y+r[0][0]] = width90[1][j[0][0]]
-                            # peakFig.plot(averageFloor, adjustedDecayTau[int(r[0][0]):int(o[0][0])], color="C11")
                         decWidth = int(len(adjustedDecayTau))
                         decArray = np.array(list(range(0, decWidth)))
                         popt, _ = opt.curve_fit(lambda t, a, b, c: a * np.exp((b * t)) + c, decArray/samplingFreqSec, adjustedDecayTau, p0=p0, 
