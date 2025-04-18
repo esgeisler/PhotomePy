@@ -82,27 +82,23 @@ def isoLinReg(signal405, signal470):
         convert1d +=1
     return motionCorrectedSignal
 
-# PRELIMINARY: Creates a linear regression of the 405 signal to create a predicted signal for motion (to subtract from the 470 signal)
-def isoLinRegPlot(fileName, isosbesticChannel, chosenTrace, ratSide):
+#PRELIM: Estimates the correlation between the 405/470 channels to determine the amount of signal due to movement.
+def isoLinRegPlot(fileName, isosbesticChannel, activeChannel, chosenTrace, ratSide):
     abf = pyabf.ABF(fileName)
-    abf.setSweep(chosenTrace)
-    yArray, xArray = np.zeros((len(abf.sweepList), len(abf.sweepX))), np.zeros((len(abf.sweepList), len(abf.sweepX)))
-    for i in abf.sweepList:
-        abf.setSweep(i, channel=isosbesticChannel)
-        yArray[i] = abf.sweepY
-        xArray[i] = abf.sweepX
-    samplingFreqMSec = abf.dataPointsPerMs + (1/3)
-    samplingFreqSec = samplingFreqMSec * 1000
-    seconds = np.arange(0, 47750, samplingFreqSec)
-    line = sciStat.linregress(x=xArray[chosenTrace][1000:-1250], y=yArray[chosenTrace][1000:-1250])
+    abf.setSweep(chosenTrace, channel=isosbesticChannel)
+    isosbesticY = abf.sweepY[1000:-1250]
+    abf.setSweep(chosenTrace, activeChannel)
+    activeY = abf.sweepY[1000:-1250]
+
+    line = sciStat.linregress(x=isosbesticY, y=activeY)
     fig = plt.figure()
     motionFig = fig.add_subplot()
-    motionFig.plot(yArray[chosenTrace][1000:-1250], 'c.', label="Raw Data")
-    motionFig.plot(line.intercept + line.slope*xArray[chosenTrace][1000:-1250], 'k', label=f"Line of Best Fit (R²): {line.rvalue**2:.3f}")
+    motionFig.scatter(isosbesticY, activeY)
+    motionFig.plot(isosbesticY, line.intercept + line.slope*isosbesticY, 'k', label=f"Line of Best Fit (R²): {line.rvalue**2:.3f}")
     motionFig.set_title(ratSide)
-    plt.xticks(ticks=seconds, labels=range(len(seconds)))
-    plt.xlabel("Time (s)")
-    plt.ylabel("Fluorescence (AU)")
+    #plt.xticks(ticks=seconds, labels=range(len(seconds)))
+    plt.xlabel("Isosbestic Signal (V)")
+    plt.ylabel("Active Signal (V)")
     plt.legend()
     plt.minorticks_on()
     plt.show()
@@ -212,11 +208,12 @@ def stepwiseProcessor(experimentFileName, baselineFileName):
     channelsLeft, channelsRight = [0,1], [4,5]
     subtract470Left, subtract405Left = baselineSubtractor(experimentFileName, baseline470Left, baseline405Left, channelsLeft)
     subtract470Right, subtract405Right = baselineSubtractor(experimentFileName, baseline470Right, baseline405Right, channelsRight)
-    filteredLeft, filteredRight = wholeTraceGauss(subtract405Left), wholeTraceGauss(subtract405Right)
-    ratioSignalLeft, ratioSignalRight = ratio470405(subtract470Left, filteredLeft), ratio470405(subtract470Right, filteredRight)
+    filtered405Left, filtered405Right = wholeTraceGauss(wholeTraceMedFilt(subtract405Left)), wholeTraceGauss(wholeTraceMedFilt(subtract405Right))
+    filtered470Left, filtered470Right = wholeTraceMedFilt(subtract470Left), wholeTraceMedFilt(subtract470Right)
+    ratioSignalLeft, ratioSignalRight = ratio470405(filtered470Left, filtered405Left), ratio470405(filtered470Right, filtered405Right)
     signalLeft, signalRight = wholeTraceGauss(ratioSignalLeft), wholeTraceGauss(ratioSignalRight)
 
-    return signalLeft, signalRight, 
+    return (subtract470Left, subtract405Left), (subtract470Right, subtract405Right), (filtered470Left, filtered405Left), (filtered470Right, filtered405Right), ratioSignalLeft, ratioSignalRight, signalLeft, signalRight
     
 
 def newCompleteProcessor(experimentFileName, baselineFileName, salineStatus, ratNameLeft, ratNameRight, experimentDate):
@@ -225,7 +222,7 @@ def newCompleteProcessor(experimentFileName, baselineFileName, salineStatus, rat
     subtract470Left, subtract405Left = baselineSubtractor(experimentFileName, baseline470Left, baseline405Left, channelsLeft)
     subtract470Right, subtract405Right = baselineSubtractor(experimentFileName, baseline470Right, baseline405Right, channelsRight)
     filtered405Left, filtered405Right = wholeTraceGauss(wholeTraceMedFilt(subtract405Left)), wholeTraceGauss(wholeTraceMedFilt(subtract405Right))
-    filtered470Left, filtered470Right = wholeTraceGauss(wholeTraceMedFilt(subtract470Left)), wholeTraceGauss(wholeTraceMedFilt(subtract470Right))
+    filtered470Left, filtered470Right = wholeTraceMedFilt(subtract470Left), wholeTraceMedFilt(subtract470Right)
     if salineStatus == 1:
         decayFit405Left, r405Left = doubleExpDecayFit(filtered405Left)
         decayFit470Left, r470Left = doubleExpDecayFit(filtered470Left)
