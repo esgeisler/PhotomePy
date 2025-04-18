@@ -369,15 +369,13 @@ class Main(tk.Frame):
                 acl.tExport(finalSignalRight, self.ratNameRight, self.abfDate) #Right
                 #New Method
                 acl.tExportNew(newFinalSignalLeft, self.ratNameLeft, self.abfDate) #Left
-                acl.tExportNew(newFinalSignalRight, self.ratNameRight, self.abfDate) #Right
-
-                
-                
+                acl.tExportNew(newFinalSignalRight, self.ratNameRight, self.abfDate) #Right        
 
         # Analyzes the peak decay, amplitude, and frequency of a single trace chosen by the user.
         def singleTracePeaks():
             try:
                 finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
+                #finalSignalLeft, finalSignalRight, _, _ = acl.newCompleteProcessor(self.experimentFileName, self.baselinefileName, self.controlStatus.get(), "21", "22", self.abfDate)
                 acl.isoLinRegPlot(self.experimentFileName, 1, self.trace, "Left Rat Motion Correlation")
                 pas.peakDisplay(finalSignalLeft[self.trace], self.experimentFileName, "Left Rat")
                 acl.isoLinRegPlot(self.experimentFileName, 5, self.trace, "Right Rat Motion Correlation")
