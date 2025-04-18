@@ -7,6 +7,7 @@ import peakAnalysis as pas
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import pandas as pd
+import matplotlib.pyplot as plt
 import cProfile
 
 class Main(tk.Frame):
@@ -376,9 +377,9 @@ class Main(tk.Frame):
             try:
                 finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
                 #finalSignalLeft, finalSignalRight, _, _ = acl.newCompleteProcessor(self.experimentFileName, self.baselinefileName, self.controlStatus.get(), "21", "22", self.abfDate)
-                acl.isoLinRegPlot(self.experimentFileName, 1, self.trace, "Left Rat Motion Correlation")
+                acl.isoLinRegPlot(self.experimentFileName, 1, 0, self.trace, "Left Rat Motion Correlation")
                 pas.peakDisplay(finalSignalLeft[self.trace], self.experimentFileName, "Left Rat")
-                acl.isoLinRegPlot(self.experimentFileName, 5, self.trace, "Right Rat Motion Correlation")
+                acl.isoLinRegPlot(self.experimentFileName, 5, 4, self.trace, "Right Rat Motion Correlation")
                 pas.peakDisplay(finalSignalRight[self.trace], self.experimentFileName, "Right Rat")
             except FileNotFoundError as e:
                 match str(e):
@@ -405,12 +406,95 @@ class Main(tk.Frame):
                     case _:
                         raise  
 
+        def stepPrinterSingleTrace():
+            try:
+                leftNoBaseline, rightNoBaseline, leftFiltered, rightFiltered, combinedLeft, combinedRight, finalLeft, finalRight = acl.stepwiseProcessor(self.experimentFileName, self.baselinefileName)
+                fig = plt.figure()
+                peakFig = fig.add_subplot()
+                peakFig.plot(leftNoBaseline[0][self.trace], "g")
+                peakFig.plot(leftNoBaseline[1][self.trace], "b")
+                peakFig.set_title("Raw Left Rat")
+                plt.show()
+
+                fig = plt.figure()
+                peakFig = fig.add_subplot()
+                peakFig.plot(rightNoBaseline[0][self.trace], "g")
+                peakFig.plot(rightNoBaseline[1][self.trace], "b")
+                peakFig.set_title("Raw Right Rat")
+                plt.show()
+
+                fig = plt.figure()
+                peakFig = fig.add_subplot()
+                peakFig.plot(leftFiltered[0][self.trace], "g")
+                peakFig.plot(leftFiltered[1][self.trace], "b")
+                peakFig.set_title("Left Rat (Filtered)")
+                plt.show()
+
+                fig = plt.figure()
+                peakFig = fig.add_subplot()
+                peakFig.plot(rightFiltered[0][self.trace], "g")
+                peakFig.plot(rightFiltered[1][self.trace], "b")
+                peakFig.set_title("Right Rat (Filtered)")
+                plt.show()
+
+                fig = plt.figure()
+                peakFig = fig.add_subplot()
+                peakFig.plot(combinedLeft[self.trace], "b")
+                peakFig.set_title("Left Rat (dF/F)")
+                plt.show()
+
+                fig = plt.figure()
+                peakFig = fig.add_subplot()
+                peakFig.plot(combinedRight[self.trace], "b")
+                peakFig.set_title("Right Rat (dF/F)")
+                plt.show()       
+
+                fig = plt.figure()
+                peakFig = fig.add_subplot()
+                peakFig.plot(finalLeft[self.trace], "b")
+                peakFig.set_title("Left Rat (dF/F Filtered)")
+                plt.show()
+
+                fig = plt.figure()
+                peakFig = fig.add_subplot()
+                peakFig.plot(finalRight[self.trace], "b")
+                peakFig.set_title("Right Rat (dF/F Filtered)")
+                plt.show()  
+            except FileNotFoundError as e:
+                match str(e):
+                    case "main":
+                        answer = messagebox.askretrycancel(title="Python Error", message="No main file found. Would you like to select a new file?", icon="error")
+                        if answer:
+                            self.experimentFileName = ""
+                            chosenFileTextUpdate()
+                            self.errorStatus = True
+                            return
+                        elif not answer:
+                            self.destroy()
+                            sys.exit(0)
+                    case "baseline":
+                        answer = messagebox.askretrycancel(title="Python Error", message="No baseline file found. Would you like to select a new file?", icon="error")
+                        if answer:
+                            self.baselinefileName = ""
+                            baselineFileTextUpdate()
+                            self.errorStatus = True
+                            return
+                        elif not answer:
+                            self.destroy()
+                            sys.exit(0)
+                    case _:
+                        raise  
+            
+
         runFileButton = ttk.Button(self, text="Process a File", command= dataProcessorPop)
         runFileButton.grid(row= 3, column= 1)
         baselineGetterButton = ttk.Button(self, text="Get the Baselines", command= baselineFinder)
         baselineGetterButton.grid(row= 3, column= 2)
         testerButton = ttk.Button(self, text="Event analysis on a single trace", command= singleTracePeaks)
         testerButton.grid(row=4, column=1)
+        correctionTroubleshootButton = ttk.Button(self, text="Troubleshoot Corrections", command= stepPrinterSingleTrace)
+        correctionTroubleshootButton.grid(row=5, column=1)
+
         
 
 def main():
