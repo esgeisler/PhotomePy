@@ -17,10 +17,6 @@ def peakMax(processedSignalArray):
     longestPeak = np.max(peakArray)
     return int(longestPeak)
 
-# Exponential decay equation for plotting the changes in fluorescence after a dopamine event
-# def tauFit(tau, a, b):
-#     return a*np.exp(-b * tau)
-
 # Finds peaks in a signal and provides their widths, amplitudes, avg. frequencies, and areas across an entire .abf file
 def wholeTracePeaks(processedSignalArray, mainFile):
     longPeak = peakMax(processedSignalArray)
