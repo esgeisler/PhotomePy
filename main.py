@@ -406,21 +406,44 @@ class Main(tk.Frame):
                     case _:
                         raise  
 
+        #TODO: Adjust the xlim and ylim parameters to be dynamic in relation to the shape of the trace, rather than hard-coded.
         def stepPrinterSingleTrace():
             try:
                 leftNoBaseline, rightNoBaseline, leftFiltered, rightFiltered, combinedLeft, combinedRight, finalLeft, finalRight = acl.stepwiseProcessor(self.experimentFileName, self.baselinefileName)
-                fig = plt.figure()
-                peakFig = fig.add_subplot()
-                peakFig.plot(leftNoBaseline[0][self.trace], "g")
-                peakFig.plot(leftNoBaseline[1][self.trace], "b")
-                peakFig.set_title("Raw Left Rat")
+                # Shows the left rat's raw traces, with no corrections and without subtracting baseline autofluorescence. Currently hardcoded.
+                peakFig, ax1 = plt.subplots()
+
+                ax1.set_ylim([2, 4.5])
+                ax1.set_xlim([0, 47750])
+                ax1.set_xlabel("Time (s)")
+                ax1.set_ylabel("Active Signal (V)", color="g")
+                ax1.autoscale(False)
+                ax1.plot(leftNoBaseline[0][self.trace], "g")
+                
+                ax2 = ax1.twinx()
+                ax2.set_ylabel("Isosobestic Signal (V)", color = "b")
+                ax2.autoscale(False)
+                ax2.set_ylim([3.5, 6])
+                ax2.plot(leftNoBaseline[1][self.trace], "b")
+                
+                peakFig.suptitle("Raw Left Rat")
                 plt.show()
 
-                fig = plt.figure()
-                peakFig = fig.add_subplot()
-                peakFig.plot(rightNoBaseline[0][self.trace], "g")
-                peakFig.plot(rightNoBaseline[1][self.trace], "b")
-                peakFig.set_title("Raw Right Rat")
+                # Shows the right rat's raw traces, with no corrections and without subtracting baseline autofluorescence. Currently hardcoded.
+                peakFig, ax1 = plt.subplots()
+                ax1.autoscale(False)
+                ax1.set_ylim([2, 4.5])
+                ax1.set_xlim([0, 47750])
+                ax1.set_xlabel("Time (s)")
+                ax1.set_ylabel("Active Signal (V)", color="g")
+                ax1.plot(rightNoBaseline[0][self.trace], "g")
+
+                ax2 = ax1.twinx()
+                ax2.set_ylabel("Isosobestic Signal (V)", color = "b")
+                ax2.autoscale(False)
+                ax2.set_ylim([3.5, 6])
+                ax2.plot(rightNoBaseline[1][self.trace], "b")
+                peakFig.suptitle("Raw Right Rat")
                 plt.show()
 
                 fig = plt.figure()
