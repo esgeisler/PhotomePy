@@ -8,6 +8,13 @@ import pyabf
 import sys
 np.set_printoptions(threshold=sys.maxsize)
 
+def secondsCalculator(filename):
+    abf = pyabf.ABF(filename)
+    samplingFreqMSec = abf.dataPointsPerMs + (1/3)
+    samplingFreqSec = samplingFreqMSec * 1000
+    seconds = np.arange(0, 47750, samplingFreqSec)
+    return seconds, samplingFreqMSec, samplingFreqSec
+
 # Returns the number of peaks in the trace with the most peaks
 def peakMax(processedSignalArray):
     peakArray = np.zeros(np.size(processedSignalArray, 0))
@@ -22,8 +29,7 @@ def wholeTracePeaks(processedSignalArray, mainFile):
     longPeak = peakMax(processedSignalArray)
     abf = pyabf.ABF(mainFile)
     traceLen = len(abf.sweepList)
-    samplingFreqMSec = abf.dataPointsPerMs + (1/3)
-    samplingFreqSec = samplingFreqMSec * 1000
+    _, samplingFreqMSec, samplingFreqSec = secondsCalculator(mainFile)
     peaksDict, finalDict = {}, {}
     peaksArray, adjustedArea, riseTauList, decayTauList = (np.zeros((traceLen, longPeak)) for i in range(4))
     widthBottomArray = np.zeros((traceLen, 4, longPeak))
@@ -266,10 +272,7 @@ def traceProcessor(processedSignal):
 
 #Retrieves the peaks of a signal and their properties, then plots them on a graph of the chosen trace
 def peakDisplay(processedSignalArray, mainFile, ratSide):
-    abf = pyabf.ABF(mainFile)
-    samplingFreqMSec = abf.dataPointsPerMs + (1/3)
-    samplingFreqSec = samplingFreqMSec * 1000
-    seconds = np.arange(0, 47750, samplingFreqSec)
+    seconds, _, samplingFreqSec = secondsCalculator(mainFile)
     decayNPeaks, riseNPeaks = {}, {}
     peaks, peaksDict = sci.find_peaks(processedSignalArray, prominence= 0.05, width= 150, wlen= 20000)
     overlapRise, overlapDecay = [0 for _ in range(len(peaks))], [0 for _ in range(len(peaks))]
