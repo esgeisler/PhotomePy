@@ -416,19 +416,21 @@ class Main(tk.Frame):
 
                 ax1.set_ylim([leftNoBaseline[0][self.trace][0] - 2, leftNoBaseline[0][self.trace][0] + 1])
                 ax1.set_xlim([0, 47750])
-                ax1.set_xlabel("Time (s)")
+                ax1.set_xlabel("Time (s)", fontsize="large")
                 ax1.set_xticks(ticks=seconds, labels=range(len(seconds)))
-                ax1.set_ylabel("Active Signal (V)", color="g")
+                ax1.set_ylabel("Active Signal (V)", color="g", fontsize="large")
                 ax1.autoscale(False)
                 ax1.plot(leftNoBaseline[0][self.trace], "g")
                 
                 ax2 = ax1.twinx()
-                ax2.set_ylabel("Isosobestic Signal (V)", color = "b")
+                ax2.set_ylabel("Isosobestic Signal (V)", color = "b", fontsize="large")
                 ax2.autoscale(False)
                 ax2.set_ylim([leftNoBaseline[1][self.trace][0] - 1, leftNoBaseline[1][self.trace][0] + 2])
                 ax2.plot(leftNoBaseline[1][self.trace], "b")
                 
-                peakFig.suptitle("Raw Left Rat")
+                peakFig.suptitle("Raw Left Rat", fontsize="large")
+                peakFig.tight_layout()
+                peakFig.set_size_inches(9,3)
                 plt.show()
 
                 # Shows the right rat's raw traces, with no corrections and after subtracting baseline autofluorescence.
@@ -436,17 +438,19 @@ class Main(tk.Frame):
                 ax1.autoscale(False)
                 ax1.set_ylim([rightNoBaseline[0][self.trace][0] - 2, rightNoBaseline[0][self.trace][0] + 1])
                 ax1.set_xlim([0, 47750])
-                ax1.set_xlabel("Time (s)")
+                ax1.set_xlabel("Time (s)", fontsize="large")
                 ax1.set_xticks(ticks=seconds, labels=range(len(seconds)))
-                ax1.set_ylabel("Active Signal (V)", color="g")
+                ax1.set_ylabel("Active Signal (V)", color="g", fontsize="large")
                 ax1.plot(rightNoBaseline[0][self.trace], "g")
 
                 ax2 = ax1.twinx()
-                ax2.set_ylabel("Isosobestic Signal (V)", color = "b")
+                ax2.set_ylabel("Isosobestic Signal (V)", color = "b", fontsize="large")
                 ax2.autoscale(False)
                 ax2.set_ylim([rightNoBaseline[1][self.trace][0] - 1, rightNoBaseline[1][self.trace][0] + 2])
                 ax2.plot(rightNoBaseline[1][self.trace], "b")
-                peakFig.suptitle("Raw Right Rat")
+                peakFig.suptitle("Raw Right Rat", fontsize="large")
+                peakFig.tight_layout()
+                peakFig.set_size_inches(9,3)
                 plt.show()
 
                 # Shows the left rat's traces after filtering
@@ -454,9 +458,9 @@ class Main(tk.Frame):
                 ax1.autoscale(False)
                 ax1.set_ylim([leftFiltered[0][self.trace][0] - 2, leftFiltered[0][self.trace][0] + 1])
                 ax1.set_xlim([0, 47750])
-                ax1.set_xlabel("Time (s)")
+                ax1.set_xlabel("Time (s)", fontsize="large")
                 ax1.set_xticks(ticks=seconds, labels=range(len(seconds)))
-                ax1.set_ylabel("Active Signal (V)", color="g")
+                ax1.set_ylabel("Active Signal (V)", color="g", fontsize="large")
                 ax1.plot(leftFiltered[0][self.trace], "g")
 
                 ax2 = ax1.twinx()
@@ -464,7 +468,9 @@ class Main(tk.Frame):
                 ax2.autoscale(False)
                 ax2.set_ylim(leftFiltered[1][self.trace][0] - 1, leftFiltered[1][self.trace][0] + 2)
                 ax2.plot(leftFiltered[1][self.trace], "b")
-                peakFig.suptitle("Left Rat (Filtered)")
+                peakFig.suptitle("Left Rat (Filtered)", fontsize="large")
+                peakFig.tight_layout()
+                peakFig.set_size_inches(9,3)
                 plt.show()
 
                 # Shows the right rat's traces after filtering
@@ -478,11 +484,13 @@ class Main(tk.Frame):
                 ax1.plot(rightFiltered[0][self.trace], "g")
 
                 ax2 = ax1.twinx()
-                ax2.set_ylabel("Isosobestic Signal (V)", color = "b")
+                ax2.set_ylabel("Isosobestic Signal (V)", color = "b", fontsize="large")
                 ax2.autoscale(False)
                 ax2.set_ylim(rightFiltered[1][self.trace][0] - 1, rightFiltered[1][self.trace][0] + 2)
                 ax2.plot(rightFiltered[1][self.trace], "b")
-                peakFig.suptitle("Right Rat (Filtered)")
+                peakFig.suptitle("Right Rat (Filtered)", fontsize="large")
+                peakFig.tight_layout()
+                peakFig.set_size_inches(9,3)
                 plt.show()
 
                 # Shows the combined traces of the left rat
@@ -490,11 +498,13 @@ class Main(tk.Frame):
                 ax1.autoscale(False)
                 ax1.set_ylim([combinedLeft[self.trace][0] - 0.5, combinedLeft[self.trace][0] + 0.5])
                 ax1.set_xlim([0, 47750])
-                ax1.set_ylabel("Normalized Fluorescence (dF/F)")
-                ax1.set_xlabel("Time (s)")
+                ax1.set_ylabel("Normalized Fluorescence (dF/F)", fontsize="large")
+                ax1.set_xlabel("Time (s)", fontsize="large")
                 ax1.set_xticks(ticks=seconds, labels=range(len(seconds)))
                 ax1.plot(combinedLeft[self.trace], "b")
-                peakFig.suptitle("Left Rat (dF/F)")
+                peakFig.suptitle("Left Rat (dF/F)", fontsize="large")
+                peakFig.tight_layout()
+                peakFig.set_size_inches(9,3)
                 plt.show()
 
                 # Shows the combined traces of the right rat
@@ -502,11 +512,13 @@ class Main(tk.Frame):
                 ax1.autoscale(False)
                 ax1.set_ylim([combinedRight[self.trace][0] - 0.5, combinedRight[self.trace][0] + 0.5])
                 ax1.set_xlim([0, 47750])
-                ax1.set_ylabel("Normalized Fluorescence (dF/F)")
-                ax1.set_xlabel("Time (s)")
+                ax1.set_ylabel("Normalized Fluorescence (dF/F)", fontsize="large")
+                ax1.set_xlabel("Time (s)", fontsize="large")
                 ax1.set_xticks(ticks=seconds, labels=range(len(seconds)))
                 ax1.plot(combinedRight[self.trace], "b")
-                peakFig.suptitle("Right Rat (dF/F)")
+                peakFig.suptitle("Right Rat (dF/F)", fontsize="large")
+                peakFig.tight_layout()
+                peakFig.set_size_inches(9,3)
                 plt.show()      
 
                 # Shows the final signal of the left rat
@@ -514,11 +526,13 @@ class Main(tk.Frame):
                 ax1.autoscale(False)
                 ax1.set_ylim([finalLeft[self.trace][0] - 0.5, finalLeft[self.trace][0] + 0.5])
                 ax1.set_xlim([0, 47750])
-                ax1.set_ylabel("Normalized Fluorescence (dF/F)")
-                ax1.set_xlabel("Time (s)")
+                ax1.set_ylabel("Normalized Fluorescence (dF/F)", fontsize="large")
+                ax1.set_xlabel("Time (s)", fontsize="large")
                 ax1.set_xticks(ticks=seconds, labels=range(len(seconds)))
                 ax1.plot(finalLeft[self.trace], "b")
-                peakFig.suptitle("Left Rat Final Signal")
+                peakFig.suptitle("Left Rat Final Signal", fontsize="large")
+                peakFig.tight_layout()
+                peakFig.set_size_inches(9,3)
                 plt.show()
 
                 # Shows the final signal of the right rat
@@ -526,11 +540,13 @@ class Main(tk.Frame):
                 ax1.autoscale(False)
                 ax1.set_ylim([finalRight[self.trace][0] - 0.5, finalRight[self.trace][0] + 0.5])
                 ax1.set_xlim([0, 47750])
-                ax1.set_ylabel("Normalized Fluorescence (dF/F)")
-                ax1.set_xlabel("Time (s)")
+                ax1.set_ylabel("Normalized Fluorescence (dF/F)", fontsize="large")
+                ax1.set_xlabel("Time (s)", fontsize="large")
                 ax1.set_xticks(ticks=seconds, labels=range(len(seconds)))
                 ax1.plot(finalRight[self.trace], "b")
-                peakFig.suptitle("Right Rat Final Signal")
+                peakFig.suptitle("Right Rat Final Signal", fontsize="large")
+                peakFig.tight_layout()
+                peakFig.set_size_inches(9,3)
                 plt.show()   
             except FileNotFoundError as e:
                 match str(e):
