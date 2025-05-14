@@ -4,6 +4,7 @@ import os
 import sys
 import AverageTraces as avg
 import peakAnalysis as pas
+import processedSignal as pro
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import pandas as pd
@@ -188,7 +189,12 @@ class Main(tk.Frame):
         def dataProcessorReal():
             try:
                 finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
-                newFinalSignalLeft, newFinalSignalRight, traceDecayFunction, decayRSquared = acl.newCompleteProcessor(self.experimentFileName, self.baselinefileName, self.controlStatus.get(), self.ratNameLeft, self.ratNameRight, self.abfDate)  
+                leftSignal = pro.ProcessedTotalSignal(self.experimentFileName, finalSignalLeft, self.ratNameLeft, self.leftRatInjectionInt)
+                rightSignal = pro.ProcessedTotalSignal(self.experimentFileName, finalSignalRight, self.ratNameRight, self.rightRatInjectionInt)
+
+                newFinalSignalLeft, newFinalSignalRight, traceDecayFunction, decayRSquared = acl.newCompleteProcessor(self.experimentFileName, self.baselinefileName, self.controlStatus.get(), self.ratNameLeft, self.ratNameRight, self.abfDate)
+                newLeftSignal = pro.ProcessedTotalSignal(self.experimentFileName, newFinalSignalLeft, self.ratNameLeft, self.leftRatInjectionInt)
+                newRightSignal = pro.ProcessedTotalSignal(self.experimentFileName, newFinalSignalRight, self.ratNameRight, self.rightRatInjectionInt)
             except FileNotFoundError as e:
                 match str(e):
                     case "main":
@@ -211,21 +217,6 @@ class Main(tk.Frame):
                         elif not answer:
                             self.destroy()
                             sys.exit(0) 
-        # Averages the left and right signals
-            try:
-                averageSignalLeft, medianSignalLeft = avg.traceAverage(finalSignalLeft)
-                averageSignalRight, medianSignalRight = avg.traceAverage(finalSignalRight)
-                newAverageSignalLeft, newMedianSignalLeft = avg.traceAverage(newFinalSignalLeft)
-                newAverageSignalRight, newMedianSignalRight = avg.traceAverage(newFinalSignalRight)
-                preInjectionAverageLeft, _ = avg.preInjectionAverage(finalSignalLeft, self.leftRatInjectionInt)
-                preInjectionAverageRight, _ = avg.preInjectionAverage(finalSignalRight, self.rightRatInjectionInt)
-                newPreInjectionAverageLeft, _ = avg.preInjectionAverage(newFinalSignalLeft, self.leftRatInjectionInt)
-                newPreInjectionAverageRight, _ = avg.preInjectionAverage(newFinalSignalRight, self.rightRatInjectionInt)
-                fluorescenceLeft, fluorescenceRight = avg.deltaF(averageSignalLeft, preInjectionAverageLeft), avg.deltaF(averageSignalRight, preInjectionAverageRight)
-                zScoreLeft, zScoreRight = avg.zCalc(averageSignalLeft, finalSignalLeft, self.leftRatInjectionInt), avg.zCalc(averageSignalRight, finalSignalRight, self.rightRatInjectionInt)
-                newFluorescenceLeft, newFluorescenceRight = avg.deltaF(newAverageSignalLeft, newPreInjectionAverageLeft), avg.deltaF(newAverageSignalRight, newPreInjectionAverageRight)
-                newZScoreLeft, newZScoreRight = avg.zCalc(newAverageSignalLeft, newFinalSignalLeft, self.leftRatInjectionInt), avg.zCalc(newAverageSignalRight, newFinalSignalRight, self.rightRatInjectionInt)
-                
             except ValueError as e:
                 if str(e) == "Injection traces must be larger than 1":
                     answer = messagebox.askretrycancel(title="Python Error", message="Injection trace values must be greater than 1. Please re-enter your trace number", icon="error")
@@ -250,40 +241,49 @@ class Main(tk.Frame):
                         sys.exit(0)
                 else:
                     raise
+        # Averages the left and right signals
             else:
             # Analyzes peak decay, amplitude, and frequency across an entire signal containing X traces            
                 self.peaksLeft, self.peaksRight = pas.wholeTracePeaks(finalSignalLeft, self.experimentFileName), pas.wholeTracePeaks(finalSignalRight, self.experimentFileName)
                 injectionLeft, overviewLeft = pas.traceProcessor(self.peaksLeft)
                 injectionRight, overviewRight = pas.traceProcessor(self.peaksRight)
 
-                leftPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Peaks.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameLeft))
-                rightPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Peaks.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameRight))
+                leftPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Peaks.xlsx"%(leftSignal.date, leftSignal.ratID))
+                rightPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Peaks.xlsx"%(rightSignal.date, rightSignal.ratID))
             # Saves the averaged data to an excel file with the rat's "name"
-                filenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Temp File.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameLeft))
-                filenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Temp File.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameRight))
-                newFilenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s NEW Temp File.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameLeft))
-                newFilenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s NEW Temp File.xlsx"%(self.abfDate.strftime("%Y-%m-%d"), self.ratNameRight))
+                filenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Temp File.xlsx"%(leftSignal.date, leftSignal.ratID))
+                filenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Temp File.xlsx"%(rightSignal.date, rightSignal.ratID))
+                newFilenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s NEW Temp File.xlsx"%(newLeftSignal.date, newLeftSignal.ratID))
+                newFilenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s NEW Temp File.xlsx"%(newRightSignal.date, newRightSignal.ratID))
                 leftOverviewWriter, rightOverviewWriter = pd.ExcelWriter(filenameLeft), pd.ExcelWriter(filenameRight)
                 newLeftOverviewWriter, newRightOverviewWriter = pd.ExcelWriter(newFilenameLeft), pd.ExcelWriter(newFilenameRight)
                 leftOrRight = [leftOverviewWriter, rightOverviewWriter, newLeftOverviewWriter, newRightOverviewWriter]
                 for rats in leftOrRight:
                     with rats as writer:
                         if rats == leftOverviewWriter:
-                            ratData = pd.DataFrame({"Trace Number:": range(1, len(averageSignalLeft)+1), "Mean Fluorescence": averageSignalLeft, "Median Fluorescence": medianSignalLeft,
-                                                "Pre-Injection Average":preInjectionAverageLeft, "ΔF/F": fluorescenceLeft, "Bleaching Correction": None, "Z-Score": zScoreLeft,
-                                                })
+                            ratData = pd.DataFrame({"Trace Number:": range(1, len(leftSignal.wholeTraceAverages)+1), 
+                                                    "Mean Fluorescence": leftSignal.wholeTraceAverages, "Median Fluorescence": leftSignal.wholeTraceMedians,
+                                                    "Pre-Injection Average": leftSignal.preInjAvg, "ΔF/F": leftSignal.normFluorescence, 
+                                                    "Bleaching Correction": None, "Z-Score": leftSignal.overallZScore
+                                                    })
                         elif rats == rightOverviewWriter:
-                            ratData = pd.DataFrame({"Trace Number:": range(1, len(averageSignalRight)+1), "Average Fluorescence": averageSignalRight, "Median Fluorescence": medianSignalRight,
-                                            "Pre-Injection Average":preInjectionAverageRight, "ΔF/F": fluorescenceRight, "Bleaching Correction": None, "Z-Score": zScoreRight,
-                                            })
+                            ratData = pd.DataFrame({"Trace Number:": range(1, len(rightSignal.wholeTraceAverages)+1), 
+                                                    "Mean Fluorescence": rightSignal.wholeTraceAverages, "Median Fluorescence": rightSignal.wholeTraceMedians,
+                                                    "Pre-Injection Average": rightSignal.preInjAvg, "ΔF/F": rightSignal.normFluorescence, 
+                                                    "Bleaching Correction": None, "Z-Score": rightSignal.overallZScore
+                                                    })
                         elif rats == newLeftOverviewWriter:
-                            ratData = pd.DataFrame({"Trace Number:": range(1, len(newAverageSignalLeft)+1), "Average Fluorescence": newAverageSignalLeft, "Median Fluorescence": newMedianSignalLeft,
-                                            "Pre-Injection Average":newPreInjectionAverageLeft, "ΔF/F": newFluorescenceLeft, "Bleaching Correction": None, "Z-Score": newZScoreLeft,
-                                            })
+                            ratData = pd.DataFrame({"Trace Number:": range(1, len(newLeftSignal.wholeTraceAverages)+1), 
+                                                    "Mean Fluorescence": newLeftSignal.wholeTraceAverages, "Median Fluorescence": newLeftSignal.wholeTraceMedians,
+                                                    "Pre-Injection Average": newLeftSignal.preInjAvg, "ΔF/F": newLeftSignal.normFluorescence, 
+                                                    "Bleaching Correction": None, "Z-Score": newLeftSignal.overallZScore
+                                                    })
                         elif rats == newRightOverviewWriter:
-                            ratData = pd.DataFrame({"Trace Number:": range(1, len(newAverageSignalRight)+1), "Average Fluorescence": newAverageSignalRight, "Median Fluorescence": newMedianSignalRight,
-                                            "Pre-Injection Average":newPreInjectionAverageRight, "ΔF/F": newFluorescenceRight, "Bleaching Correction": None, "Z-Score": newZScoreRight,
-                                            })
+                            ratData = pd.DataFrame({"Trace Number:": range(1, len(newRightSignal.wholeTraceAverages)+1), 
+                                                    "Mean Fluorescence": newRightSignal.wholeTraceAverages, "Median Fluorescence": newRightSignal.wholeTraceMedians,
+                                                    "Pre-Injection Average": newRightSignal.preInjAvg, "ΔF/F": newRightSignal.normFluorescence, 
+                                                    "Bleaching Correction": None, "Z-Score": newRightSignal.overallZScore
+                                                    })
                         ratData.to_excel(writer, index= False, sheet_name="Overview")
                         if self.controlStatus.get() == 1:
                             if rats == leftOverviewWriter:
@@ -297,7 +297,9 @@ class Main(tk.Frame):
                                 rsquared405 = decayRSquared[2]
                                 rsquared470 = decayRSquared[3]
                             bleachFit = pd.DataFrame({"Trace Number:": range(1, len(bleach405) + 1), 
-                                                      "Bleaching Correction (405):": bleach405, "Goodness of fit(R^2):": rsquared405, "Bleaching Correction (470):": bleach470, "Goodness of fit(R^2):": rsquared470})
+                                                      "Bleaching Correction (405):": bleach405, "Goodness of fit(R^2):": rsquared405, 
+                                                      "Bleaching Correction (470):": bleach470, "Goodness of fit(R^2):": rsquared470
+                                                      })
                             bleachFit.to_excel(writer, index=False, sheet_name="Bleaching Correction")
                 self.mainStatus = True
             #TODO fix FutureWarning caused by concat being empty by default.
@@ -366,11 +368,11 @@ class Main(tk.Frame):
                         decayColumn.to_excel(writer, sheet_name="Decay Tau")
                 self.traceStatus = True
                 #Old Method
-                acl.tExport(finalSignalLeft, self.ratNameLeft, self.abfDate) #Left
-                acl.tExport(finalSignalRight, self.ratNameRight, self.abfDate) #Right
+                acl.tExport(leftSignal.processedSignalArray, leftSignal.ratID, leftSignal.date) #Left
+                acl.tExport(rightSignal.processedSignalArray, rightSignal.ratID, rightSignal.date) #Right
                 #New Method
-                acl.tExportNew(newFinalSignalLeft, self.ratNameLeft, self.abfDate) #Left
-                acl.tExportNew(newFinalSignalRight, self.ratNameRight, self.abfDate) #Right        
+                acl.tExportNew(newLeftSignal.processedSignalArray, newLeftSignal.ratID, newLeftSignal.date) #Left
+                acl.tExportNew(newRightSignal.processedSignalArray, newRightSignal.ratID, newRightSignal.date) #Right        
 
         # Analyzes the peak decay, amplitude, and frequency of a single trace chosen by the user.
         def singleTracePeaks():
