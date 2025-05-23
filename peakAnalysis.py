@@ -15,12 +15,12 @@ def secondsCalculator(filename):
 
 # Returns the number of peaks in the trace with the most peaks
 def peakMax(processedSignalArray):
-    peakArray = np.zeros(np.size(processedSignalArray, 0))
+    peakLenArray = np.zeros(np.size(processedSignalArray, 0))
     for i, t in enumerate(processedSignalArray):
         peaks, _ = sci.find_peaks(t, prominence= 0.05, wlen=20000)
-        peakArray[i] = np.size(peaks)
-    longestPeak = np.max(peakArray)
-    return int(longestPeak)
+        peakLenArray[i] = np.size(peaks)
+    longestPeak = np.max(peakLenArray)
+    return int(longestPeak), peakLenArray
 
 # Finds peaks in a signal and provides their widths, amplitudes, avg. frequencies, and areas across an entire .abf file
 def wholeTracePeaks(processedSignalArray, mainFile):
