@@ -24,56 +24,11 @@ def peakMax(processedSignalArray):
 
 # Finds peaks in a signal and provides their widths, amplitudes, avg. frequencies, and areas across an entire .abf file
 def wholeTracePeaks(processedSignalArray, mainFile):
-    longPeak = peakMax(processedSignalArray)
-    abf = pyabf.ABF(mainFile)
-    traceLen = len(abf.sweepList)
-    _, samplingFreqMSec, samplingFreqSec = secondsCalculator(mainFile)
-    peaksDict, finalDict = {}, {}
-    peaksArray, adjustedArea, riseTauList, decayTauList = (np.zeros((traceLen, longPeak)) for i in range(4))
-    widthBottomArray = np.zeros((traceLen, 4, longPeak))
-    width10Array = np.zeros((traceLen, 4, longPeak))
-    widthHalfArray = np.zeros((traceLen, 4, longPeak))
-    width90Array = np.zeros((traceLen, 4, longPeak))
-    overlapPeaks, overlapRise, overlapDecay = [[0]*longPeak for _ in abf.sweepList], [[0]*longPeak for _ in abf.sweepList], [[0]*longPeak for _ in abf.sweepList]
-    for index, traces in enumerate(processedSignalArray): # Finds peaks in a signal
-        peaks, peaksDict[index] = sci.find_peaks(traces, prominence= 0.05, width=0, wlen=20000, rel_height= 0.5)
-        bottomWidth = sci.peak_widths(traces, peaks, rel_height=1, prominence_data=(peaksDict[index]['prominences'], peaksDict[index]["left_bases"], 
-                                                                                     peaksDict[index]["right_bases"]), wlen=20000)
-        width10 = sci.peak_widths(traces, peaks, rel_height=0.1, prominence_data=(peaksDict[index]['prominences'], 
-                                                                                  peaksDict[index]["left_bases"], peaksDict[index]["right_bases"]), wlen=20000)
-        widthHalf = sci.peak_widths(traces, peaks, rel_height=0.5, prominence_data=(peaksDict[index]['prominences'], 
-                                                                                    peaksDict[index]["left_bases"], peaksDict[index]["right_bases"]), wlen=20000)
-        width90 = sci.peak_widths(traces, peaks, rel_height=0.9, prominence_data=(peaksDict[index]['prominences'], 
-                                                                                  peaksDict[index]["left_bases"], peaksDict[index]["right_bases"]), wlen=20000)
-        
-        peaks = np.pad(peaks, pad_width= (0, longPeak - len(peaks)), mode= 'constant', constant_values= 0)
-        bottomWidth, width10, width90 = np.array(bottomWidth), np.array(width10), np.array(width90)
-        peaksArray[index] = peaks
-        for i, param in enumerate(bottomWidth):
-            param = np.pad(param, pad_width= (0, longPeak - len(param)), mode= 'constant', constant_values= 0)
-            widthBottomArray[index][i] = param
-        for i, param in enumerate(width10):
-            param = np.pad(param, pad_width= (0, longPeak - len(param)), mode= 'constant', constant_values= 0)
-            width10Array[index][i] = param
-        for i, param in enumerate(widthHalf):
-            param = np.pad(param, pad_width= (0, longPeak - len(param)), mode= 'constant', constant_values= 0)
-            widthHalfArray[index][i] = param
-        for i, param in enumerate(width90):
-            param = np.pad(param, pad_width= (0, longPeak - len(param)), mode= 'constant', constant_values= 0)
-            width90Array[index][i] = param
-        for i in peaksDict[index]:
-           paddedEntry = np.pad(peaksDict[index][i], pad_width= (0, longPeak - len(peaksDict[index][i])), mode= 'constant', constant_values= 0)
-           peaksDict[index][i] = paddedEntry
-    # Finds overlapping events by checking if the maxima of a peak is contained within the left and right slopes of another peak
-    for k, checkPeak in np.ndenumerate(peaksArray):
-            overlapPeaks[k[0]][k[1]] = np.array([y for y in peaksArray[k[0]] if ((widthBottomArray[k[0]][2][k[1]] < y < widthBottomArray[k[0]][3][k[1]]) and y != checkPeak)])
-            overlapRise[k[0]][k[1]] = np.array([y for y in peaksArray[k[0]] if ((widthBottomArray[k[0]][2][k[1]] < y < checkPeak) and y != checkPeak)])
-            overlapDecay[k[0]][k[1]] = np.array([y for y in peaksArray[k[0]] if ((checkPeak < y < widthBottomArray[k[0]][3][k[1]]) and y != checkPeak)])
-    # Declares the dataframe where peak information will be stored
-    # Following that, retrieves the simplest-to-calculate metadata: 
-    # Event number, Event index and its loc. in seconds, the leftmost and rightmost end of the peak, the amplitude, and the width @ 50% of a peak's prominence.
-    for z, x in enumerate(peaksArray):
-        degreeNPeaks, decayNPeaks, riseNPeaks = {}, {}, {}
+    finalDict = {}
+    for z, _ in enumerate(processedSignalArray):
+        peaks = trace.TracePeaks(processedSignalArray, mainFile, z)
+        peaks.peakFinder(processedSignalArray[z])
+        peaks.overlapCheck(peaks.peaks)
         peakTable = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 'Peak_Time_Sec', 
                                            'Event_Window_Start', 'Event_Window_End', 
                                            'Amplitude', 
@@ -81,179 +36,29 @@ def wholeTracePeaks(processedSignalArray, mainFile):
                                            'Frequency', 
                                            'Avg_Area', 'Total_Area',
                                            'Decay_Tau_exp', 'Rise_Tau_exp'])
-        peakTable.Event_Num = [x + 1 for x, _ in enumerate(x)]
-        peakTable.Peak_Index = x
-        peakTable.Peak_Time_Sec = ((x/samplingFreqSec) + (z * 30)).round(2)
-        peakTable.Event_Window_Start = peaksDict[z]['left_ips'].round(2)
-        peakTable.Event_Window_End = peaksDict[z]['right_ips'].round(2)
-        peakTable.Amplitude = peaksDict[z]["prominences"].round(3)
-        peakTable.Off_Time_ms = ((peaksDict[z]['right_bases'] - x)/(samplingFreqMSec)).round(2)
-        peakTable.Width_at50_ms = (peaksDict[z]['widths']/(samplingFreqMSec)).round(2)
-        
-        # Determines the "degree" of a peak by counting the amount of peaks found above in the checkpeak for loop for either the rise or decay.
-        # Following this, sorts the peaks in order.
-        for i, peakOfDegree in enumerate(x): 
-            if len(processedSignalArray[z][int(widthBottomArray[z][2][i]):int(widthBottomArray[z][3][i])]) == 0:
-                 continue
-            degreeNPeaks[peakOfDegree] = len(overlapPeaks[z][i])
-            riseNPeaks[peakOfDegree] = len(overlapRise[z][i])
-            decayNPeaks[peakOfDegree] = len(overlapDecay[z][i])
-        sortedDegreeNPeaks = dict(sorted(degreeNPeaks.items(), key=lambda item: item[1]))
-        sortedDegreeRise = dict(sorted(riseNPeaks.items(), key=lambda item: item[1]))
-        sortedDegreeDecay = dict(sorted(decayNPeaks.items(), key=lambda item: item[1]))
-        # Generates the event area for each peak via the Simpson's approximation of the definite integral.
-        # After this, corrects these event areas by subtracting the area of all of the smaller peaks that overlap with that event.
-        for _, u in enumerate(sortedDegreeNPeaks):
-            i = np.where(x == u)
-            if len(processedSignalArray[z][int(widthBottomArray[z][2][i[0][0]]):int(widthBottomArray[z][3][i[0][0]])]) == 0:
-                 continue
-            peaksInArea = overlapPeaks[z][i[0][0]]
-            peakArea = inte.simpson(y=processedSignalArray[z][int(widthBottomArray[z][2][i[0][0]]):int(widthBottomArray[z][3][i[0][0]])], 
-                                    x=np.arange(int(widthBottomArray[z][2][i[0][0]]), int(widthBottomArray[z][3][i[0][0]]))/samplingFreqMSec)
-            match degreeNPeaks[u]:
-                case 0:
-                    adjustedArea[z][i[0][0]] = peakArea.round(2)
-                case _:
-                    for l in peaksInArea:
-                        j = np.where(x == l)
-                        peakArea -= adjustedArea[z][j[0][0]]
-                    adjustedArea[z][i[0][0]] = peakArea.round(2)
-        peakTable.Avg_Area = pd.Series(adjustedArea[z])
+        peakTable.Event_Num = peaks.peakNum
+        peakTable.Peak_Index = peaks.peakIndex
+        peakTable.Peak_Time_Sec = peaks.peakLocSec
+        peakTable.Event_Window_Start = peaks.leftBounds
+        peakTable.Event_Window_End = peaks.rightBounds
+        peakTable.Amplitude = peaks.amplitude
+        peakTable.Off_Time_ms = peaks.rightTail
+        peakTable.Width_at50_ms = peaks.width
 
-        # Generates adjusted rise time constants (tau)
-        # For non-overlapping peaks, they are fit with opt.curve_fit according to the exponential rise equation, with a range from 10-90% of a peak's relative height
-        # By taking the reciprocal of the X value, the time constant (tau) is reported.
-        # For peaks with overlap in their left slope, these are fit from the right-most base of an overlapping peak to 90% of a peak's height to reduce variability.
-        # Any peaks with an R^2 value < 0.8 (80% correlation) are excluded from final reports.
-        # If the initial guesses are invalid, or the fit takes >1000 samples, that peak is not calculated and excluded.
-        # TODO: Implement changes from PeakDisplay; Update calculations to be  90-10 instead of 100-10
-        for _, u in enumerate(sortedDegreeRise): 
-            i = np.where(x == u)
-            if len(processedSignalArray[z][int(widthBottomArray[z][2][i[0][0]]):int(widthBottomArray[z][3][i[0][0]])]) == 0:
-                continue
-            peaksInRise = overlapRise[z][i[0][0]]
-            adjustedRiseTau = np.array(processedSignalArray[z][int(width90Array[z][2][i[0][0]]):int(u)])
-            riseWidth = int(len(adjustedRiseTau))
-            riseArray = np.array(list(range(0, riseWidth)))
-            p0 = (processedSignalArray[z][int(width10Array[z][2][i[0][0]])], 1, processedSignalArray[z][int(width90Array[z][2][i[0][0]])])
-            if len(adjustedRiseTau) == 0:
-                continue
-            else:
-                try:
-                    match riseNPeaks[u]:
-                        case 0: # Handles peaks with no overlap
-                            popt, _ = opt.curve_fit(lambda t, a, b, c: a * np.exp(b * t) + c, riseArray/samplingFreqSec, adjustedRiseTau, p0=p0, 
-                                                    bounds=opt.Bounds(lb=[0, 0, processedSignalArray[z][int(width90Array[z][2][i[0][0]])]], 
-                                                                    ub=[np.inf, np.inf, np.inf]),
-                                                                    maxfev=1000)
-                            squaredDiffs = np.square(adjustedRiseTau - (popt[0] * np.exp(popt[1] * ((riseArray/samplingFreqSec))) + popt[2]))
-                            squaredDiffsFromMean = np.square(adjustedRiseTau - np.mean(adjustedRiseTau))
-                            rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
-                            if rSquared < 0.8:
-                                riseTauList[z][i[0][0]] = np.NaN
-                            else:
-                                riseTauList[z][i[0][0]] = abs(1/popt[1])
-                        case _:
-                            adjustedRiseTau = np.array(processedSignalArray[z][int(widthHalfArray[z][2][i[0][0]]):int(u)])
-                            p0 = (processedSignalArray[z][int(width10Array[z][2][i[0][0]])], 1, processedSignalArray[z][int(widthHalfArray[z][2][i[0][0]])])
-                            for l in peaksInRise:
-                                j = np.where(x == l)
-                                r = np.where(adjustedRiseTau == processedSignalArray[z][int(widthBottomArray[z][2][j[0][0]])])
-                                o = np.where(adjustedRiseTau == processedSignalArray[z][int(widthBottomArray[z][3][j[0][0]])])
-                                if len(r[0]) == 0 or len(o[0]) == 0:
-                                    continue
-                                for y, _ in enumerate(adjustedRiseTau[int(r[0][0]):int(o[0][0])]):
-                                    adjustedRiseTau[y+r[0][0]] = widthBottomArray[z][1][j[0][0]]
-                            riseWidth = int(len(adjustedRiseTau))
-                            riseArray = np.array(list(range(0, riseWidth)))
-                            popt, _ = opt.curve_fit(lambda t, a, b, c: a * np.exp((b * t)) + c, riseArray/samplingFreqSec, adjustedRiseTau, p0=p0, 
-                                                    bounds=opt.Bounds(lb=[0, 0, processedSignalArray[z][int(widthHalfArray[z][2][i[0][0]])]], 
-                                                                    ub=[np.inf, np.inf, np.inf]),
-                                                                    maxfev=1000)
-                            squaredDiffs = np.square(adjustedRiseTau - (popt[0] * np.exp(popt[1] * ((riseArray/samplingFreqSec))) + popt[2]))
-                            squaredDiffsFromMean = np.square(adjustedRiseTau - np.mean(adjustedRiseTau))
-                            rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
-                            if rSquared < 0.8:
-                                riseTauList[z][i[0][0]] = np.NaN
-                            else:
-                                riseTauList[z][i[0][0]] = abs(1/popt[1])
-                except RuntimeError as e:
-                    if str(e) == "Optimal parameters not found: The maximum number of function evaluations is exceeded.":
-                        riseTauList[z][i[0][0]] = np.NaN 
-                except ValueError as e:
-                    if str(e) == "'x0' is infeasible":
-                        riseTauList[z][i[0][0]] = np.NaN 
-        peakTable.Rise_Tau_exp = pd.Series(riseTauList[z])
-        # Generated the adjusted decay time constants (tau)
-        # This is calculated the same as the rise time, except that the equation is inverted and the curve fit to the right slope of an event.
-        # Exclusions are the same as the rise calculations
-        # TODO: Implement changes from PeakDisplay; Update calculations to be  90-10 instead of 100-10 
-        for _, u in enumerate(sortedDegreeDecay):
-            i = np.where(x == u)
-            peaksInDecay = overlapDecay[z][i[0][0]]
-            adjustedDecayTau = np.array(processedSignalArray[z][int(u):int(width90Array[z][3][i[0][0]])])
-            decWidth = int(len(adjustedDecayTau))
-            decArray = np.array(list(range(0, decWidth)))
-            p0 = (processedSignalArray[z][int(width10Array[z][3][i[0][0]])], -1, processedSignalArray[z][int(width90Array[z][3][i[0][0]])])
-            if len(adjustedDecayTau) == 0:
-                continue
-            else:
-                try:
-                    match decayNPeaks[u]:
-                        case 0:
-                            popt, _ = opt.curve_fit(lambda t, a, b, c: a * np.exp(b * t) + c, decArray/samplingFreqSec, adjustedDecayTau, p0=p0, 
-                                                    bounds=opt.Bounds(lb=[0, -np.inf, processedSignalArray[z][int(width90Array[z][3][i[0][0]])]], 
-                                                                    ub=[processedSignalArray[z][int(width10Array[z][3][i[0][0]])], 0, np.inf]),
-                                                                    maxfev=1000)
-                            squaredDiffs = np.square(adjustedDecayTau - (popt[0] * np.exp(popt[1] * ((decArray/samplingFreqSec))) + popt[2]))
-                            squaredDiffsFromMean = np.square(adjustedDecayTau - np.mean(adjustedDecayTau))
-                            rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
-                            if rSquared < 0.8:
-                                decayTauList[z][i[0][0]] = np.NaN
-                            else:
-                                decayTauList[z][i[0][0]] = abs(1/popt[1])
-                        case _:
-                            adjustedDecayTau = np.array(processedSignalArray[z][int(u):int(widthHalfArray[z][3][i[0][0]])])
-                            p0 = (processedSignalArray[z][int(width10Array[z][3][i[0][0]])], -1, processedSignalArray[z][int(widthHalfArray[z][3][i[0][0]])])
-                            for l in peaksInDecay:
-                                j = np.where(x == l)
-                                r = np.where(adjustedDecayTau == processedSignalArray[z][int(widthBottomArray[z][2][j[0][0]])])
-                                o = np.where(adjustedDecayTau == processedSignalArray[z][int(widthBottomArray[z][3][j[0][0]])])
-                                if len(r[0]) == 0 or len(o[0]) == 0:
-                                    continue
-                                for y, _ in enumerate(adjustedDecayTau[int(r[0][0]):int(o[0][0])]):
-                                    adjustedDecayTau[y+r[0][0]] = widthBottomArray[z][1][j[0][0]]
-                            decWidth = int(len(adjustedDecayTau))
-                            decArray = np.array(list(range(0, decWidth)))
-                            popt, _ = opt.curve_fit(lambda t, a, b, c: a * np.exp((b * t)) + c, decArray/samplingFreqSec, adjustedDecayTau, p0=p0, 
-                                                    bounds=opt.Bounds(lb=[0, -np.inf, processedSignalArray[z][int(widthHalfArray[z][3][i[0][0]])]], 
-                                                                    ub=[processedSignalArray[z][int(width10Array[z][3][i[0][0]])], 0, np.inf]), 
-                                                                    maxfev=1000)
-                            squaredDiffs = np.square(adjustedDecayTau - (popt[0] * np.exp(popt[1] * ((decArray/samplingFreqSec))) + popt[2]))
-                            squaredDiffsFromMean = np.square(adjustedDecayTau - np.mean(adjustedDecayTau))
-                            rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
-                            if rSquared < 0.8:
-                                decayTauList[z][i[0][0]] = np.NaN
-                            else:
-                                decayTauList[z][i[0][0]] = abs(1/popt[1])
-                except RuntimeError as e:
-                    if str(e) == "Optimal parameters not found: The maximum number of function evaluations is exceeded.":
-                        decayTauList[z][i[0][0]] = np.NaN
-                except ValueError as e:
-                    if str(e) == "'x0' is infeasible":
-                        riseTauList[z][i[0][0]] = np.NaN 
-        peakTable.Decay_Tau_exp = pd.Series(decayTauList[z])
-        # Determines frequency and total area of a sweep
-        # Frequency is calculated by taking the # of sweeps in a trace and dividing that by the length of the trace in seconds.
-        # Total Area is a sum of all of the (already-adjusted for overlapping smaller peaks) events in a given trace.
-        match np.size(x): #
-            case 0:
-                peakTable.Frequency = 0
-                peakTable.Total_Area = 0
-            case _:
-                peakTable.Frequency.iat[0] = round(np.count_nonzero(x)/((len(processedSignalArray[z]) + 2250)/samplingFreqSec), 2) #Peaks/second (15 second trace)
-                peakTable.Total_Area.iat[0] = sum(adjustedArea[z])
-        peakTable.drop(peakTable[peakTable.Peak_Index == 0].index, inplace= True)
+        peaks.freqSet()
+        peaks.areaSet()
+        peaks.riseSet()
+        peaks.decaySet()
+        peakTable.Avg_Area = peaks.meanArea
+        peakTable.Rise_Tau_exp = pd.Series(peaks.riseRate)
+        peakTable.Decay_Tau_exp = pd.Series(peaks.decayRate)
+        if np.size(peaks.peaks) == 0:
+            peakTable.Frequency = 0
+            peakTable.Total_Area = 0
+        else:
+            peakTable.Frequency.iat[0] = peaks.frequency
+            peakTable.Total_Area.iat[0] = peaks.totArea
+        # peakTable.drop(peakTable[peakTable.Peak_Index == 0].index, inplace= True)
         print("Trace #%i done!"%(z+1))
         finalDict[z] = peakTable
     return finalDict
