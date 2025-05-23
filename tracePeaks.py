@@ -33,9 +33,16 @@ class TracePeaks(top.TotalPeaks):
         self.frequency = 0
         self.meanArea = np.zeros(self.mostPeaksInTrace)
         self.totArea = 0
-        self.riseRate = np.zeros(self.mostPeaksInTrace, dtype=np.float64)
-        self.decayRate = np.zeros(self.mostPeaksInTrace, dtype=np.float64)
+        self.risePlot = np.zeros((self.numTracePeaks, 2, 1000), dtype=np.float64)
+        self.riseRate = np.zeros(self.numTracePeaks, dtype=np.float64)
+        self.decayPlot = np.zeros((self.numTracePeaks, 2, 1000), dtype=np.float64)
+        self.decayRate = np.zeros(self.numTracePeaks, dtype=np.float64)
 
+    def rSquaredGet(self, adjustedTau, slopeArray, a, b, c):
+        squaredDiffs = np.square(adjustedTau - (a * np.exp(b * ((slopeArray/self.samplingFreqSec))) + c))
+        squaredDiffsFromMean = np.square(adjustedTau - np.mean(adjustedTau))
+        rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
+        return rSquared
 
     def peakFinder(self, singleTrace):
         peaks, traceDict = sci.find_peaks(singleTrace, prominence= 0.05, width=0, wlen=20000, rel_height= 0.5)
@@ -137,9 +144,10 @@ class TracePeaks(top.TotalPeaks):
                                                 bounds=opt.Bounds(lb=[0, 0, self.fullTraceArray[int(self.trace90Widths[0][i[0][0]])]], 
                                                                 ub=[np.inf, np.inf, np.inf]),
                                                                 maxfev=1000)
-                        squaredDiffs = np.square(adjustedRiseTau - (popt[0] * np.exp(popt[1] * ((riseArray/self.samplingFreqSec))) + popt[2]))
-                        squaredDiffsFromMean = np.square(adjustedRiseTau - np.mean(adjustedRiseTau))
-                        rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
+                        rSquared = self.rSquaredGet(adjustedRiseTau, riseArray, popt[0], popt[1], popt[2])   
+                        # print(rSquared)                   
+                        y_rise = popt[0] * np.exp(popt[1] * (x_rise/self.samplingFreqSec)) + popt[2]
+                        
                         if rSquared < 0.8:
                             riseTauList[i[0][0]] = np.NaN
                         else:
@@ -204,9 +212,8 @@ class TracePeaks(top.TotalPeaks):
                                                 bounds=opt.Bounds(lb=[0, -np.inf, self.fullTraceArray[int(self.trace90Widths[1][i[0][0]])]], 
                                                                 ub=[self.fullTraceArray[int(self.trace10Widths[1][i[0][0]])], 0, np.inf]),
                                                                 maxfev=1000)
-                        squaredDiffs = np.square(adjustedDecayTau - (popt[0] * np.exp(popt[1] * ((decArray/self.samplingFreqSec))) + popt[2]))
-                        squaredDiffsFromMean = np.square(adjustedDecayTau - np.mean(adjustedDecayTau))
-                        rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
+                        rSquared = self.rSquaredGet(adjustedDecayTau, decArray, popt[0], popt[1], popt[2])
+                        y_dec = popt[0] * np.exp(popt[1] * (x_dec/self.samplingFreqSec)) + popt[2]
                         if rSquared < 0.8:
                             decayTauList[i[0][0]] = np.NaN
                         else:
