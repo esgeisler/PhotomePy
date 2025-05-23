@@ -1,6 +1,4 @@
 import scipy.signal as sci
-import scipy.integrate as inte
-import scipy.optimize as opt
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
