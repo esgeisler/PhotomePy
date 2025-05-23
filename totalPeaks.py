@@ -14,11 +14,10 @@ class TotalPeaks():
         self.samplingFreqSec = self.samplingFreqMSec * 1000
         self.seconds = np.arange(0, 47750, self.samplingFreqSec)
 
-        self.mostPeaksInTrace = pas.peakMax(self.processedSignalArray)
+        self.mostPeaksInTrace, self.numPeaksArray = pas.peakMax(self.processedSignalArray)
         self.peaksArray, self.peaksDict = np.zeros((self.numTraces, self.mostPeaksInTrace)), {}
         self.widthBottomArray, self.width10Array, self.width90Array = (np.zeros((self.numTraces, 2, self.mostPeaksInTrace)) for _ in range(3))
 
-        # self.degreeNPeaks, self.decayNPeaks, self.riseNPeaks = {}, {}, {}
         self.overlapPeaks, self.overlapRise, self.overlapDecay = [[0]*self.mostPeaksInTrace for _ in range(self.numTraces)], [[0]*self.mostPeaksInTrace for _ in range(self.numTraces)], [[0]*self.mostPeaksInTrace for _ in range(self.numTraces)]
 
     def peakMax(self):
