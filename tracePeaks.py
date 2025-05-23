@@ -103,7 +103,7 @@ class TracePeaks(top.TotalPeaks):
             self.frequency = round(np.count_nonzero(self.peaks)/((len(self.fullTraceArray) + 2250)/self.samplingFreqSec), 2) #Peaks/second (15 second trace)
 
     def areaSet(self):
-        adjustedArea = np.zeros_like(self.peaks)
+        adjustedArea = np.zeros(self.numTracePeaks)
         for _, u in enumerate(self.degreeNPeaks):
             i = np.where(self.peaks == u)
             if len(self.fullTraceArray[int(self.traceBottomWidths[0][i[0][0]]):int(self.traceBottomWidths[1][i[0][0]])]) == 0:
