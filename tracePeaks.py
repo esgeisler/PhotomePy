@@ -118,15 +118,15 @@ class TracePeaks(top.TotalPeaks):
             self.totArea = sum(adjustedArea)    
 
     def riseSet(self):
-        riseTauList = np.zeros(self.mostPeaksInTrace)
+        riseTauList = np.zeros(self.numTracePeaks)
         for _, u in enumerate(self.degreeRise): 
             i = np.where(self.peaks == u)
             if len(self.fullTraceArray[int(self.traceBottomWidths[0][i[0][0]]):int(self.traceBottomWidths[1][i[0][0]])]) == 0:
                 continue
-            # peaksInRise = self.overlapRise[self.traceIndex][i[0][0]]
             adjustedRiseTau = np.array(self.fullTraceArray[int(self.trace90Widths[0][i[0][0]]):int(u)])
             riseWidth = int(len(adjustedRiseTau))
             riseArray = np.arange(0, riseWidth)
+            x_rise = np.linspace(np.min(riseArray), np.max(riseArray), 1000)
             p0 = (self.fullTraceArray[int(self.trace10Widths[0][i[0][0]])], 1, self.fullTraceArray[int(self.trace90Widths[0][i[0][0]])])
             if len(adjustedRiseTau) == 0:
                 continue
@@ -144,6 +144,9 @@ class TracePeaks(top.TotalPeaks):
                             riseTauList[i[0][0]] = np.NaN
                         else:
                             riseTauList[i[0][0]] = abs(1/popt[1])
+                            self.risePlot[i, 0] = x_rise+int(self.trace90Widths[0][i])
+                            self.risePlot[i, 1] = y_rise
+                            
                     else:
                         # adjustedRiseTau = np.array(self.fullTraceArray[int(self.traceHalfWidths[0][i[0][0]]):int(u)])
                         # p0 = (self.fullTraceArray[int(self.trace10Widths[0][i[0][0]])], 1, self.fullTraceArray[int(self.traceHalfWidths[0][i[0][0]])])
@@ -168,23 +171,29 @@ class TracePeaks(top.TotalPeaks):
                         #     riseTauList[i[0][0]] = np.NaN
                         # else:
                         #     riseTauList[i[0][0]] = abs(1/popt[1])
+                        print("what's wrong?")
                         riseTauList[i[0][0]] = np.NaN
+
                 except RuntimeError as e:
                     if str(e) == "Optimal parameters not found: The maximum number of function evaluations is exceeded.":
                         riseTauList[i[0][0]] = np.NaN 
+                    else:
+                        raise
                 except ValueError as e:
                     if str(e) == "'x0' is infeasible":
-                        riseTauList[i[0][0]] = np.NaN 
+                        riseTauList[i[0][0]] = np.NaN
+                    else:
+                        raise
         self.riseRate = riseTauList
-    
+
     def decaySet(self):
-        decayTauList = np.zeros(self.mostPeaksInTrace)
+        decayTauList = np.zeros(self.numTracePeaks)
         for _, u in enumerate(self.degreeDecay):
             i = np.where(self.peaks == u)
-            # peaksInDecay = self.overlapDecay[self.traceIndex][i[0][0]]
             adjustedDecayTau = np.array(self.fullTraceArray[int(u):int(self.trace90Widths[1][i[0][0]])])
             decWidth = int(len(adjustedDecayTau))
             decArray = np.arange(0, decWidth)
+            x_dec = np.linspace(np.min(decArray), np.max(decArray), 1000)
             p0 = (self.fullTraceArray[int(self.trace10Widths[1][i[0][0]])], -1, self.fullTraceArray[int(self.trace90Widths[1][i[0][0]])])
             if len(adjustedDecayTau) == 0:
                 continue
@@ -202,6 +211,8 @@ class TracePeaks(top.TotalPeaks):
                             decayTauList[i[0][0]] = np.NaN
                         else:
                             decayTauList[i[0][0]] = abs(1/popt[1])
+                            self.decayPlot[i, 0] = x_dec+int(self.trace10Widths[1][i])
+                            self.decayPlot[i, 1] = y_dec
                     else:
                         # adjustedDecayTau = np.array(self.fullTraceArray[int(u):int(self.traceHalfWidths[1][i[0][0]])])
                         # p0 = (self.fullTraceArray[int(self.trace10Widths[1][i[0][0]])], -1, self.fullTraceArray[int(self.traceHalfWidths[1][i[0][0]])])
