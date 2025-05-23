@@ -12,26 +12,26 @@ class TracePeaks(top.TotalPeaks):
         self.filename = mainFile
         self.traceIndex = traceIndex
 
+        self.numTracePeaks = int(self.numPeaksArray[traceIndex])
         self.fullTraceArray = processedSignalArray[self.traceIndex]
-        self.peaks = np.zeros(self.mostPeaksInTrace)
+        self.peaks = self.numPeaksArray[traceIndex]
         self.traceDict = {}
         self.traceBottomWidths = np.zeros((2, self.mostPeaksInTrace))
         self.trace90Widths = np.zeros((2, self.mostPeaksInTrace))
         self.trace10Widths = np.zeros((2, self.mostPeaksInTrace))
         self.degreeNPeaks, self.decayNPeaks, self.riseNPeaks = {}, {}, {}
 
-        self.peakNum = np.arange(1, len(self.peaks) + 1)
+        self.peakNum = np.arange(1, self.numTracePeaks + 1)
         self.peakIndex = self.peaks
-        self.peakLocSec = np.zeros(self.mostPeaksInTrace)
-        self.leftBounds = np.zeros(self.mostPeaksInTrace)
-        self.rightBounds = np.zeros(self.mostPeaksInTrace)
-        self.amplitude = np.zeros(self.mostPeaksInTrace)
+        self.peakLocSec = np.zeros(self.numTracePeaks)
+        self.leftBounds, self.rightBounds = np.zeros(self.numTracePeaks), np.zeros(self.numTracePeaks)
+        self.amplitude = np.zeros(self.numTracePeaks)
         self.absoluteAmp = 0 #TODO: Create this
-        self.width = np.zeros(self.mostPeaksInTrace)
-        self.rightTail = np.zeros(self.mostPeaksInTrace)
-        self.leftTail = np.zeros(self.mostPeaksInTrace)
+        self.width = np.zeros(self.numTracePeaks)
+        self.rightTail = np.zeros(self.numTracePeaks)
+        self.leftTail = np.zeros(self.numTracePeaks)
         self.frequency = 0
-        self.meanArea = np.zeros(self.mostPeaksInTrace)
+        self.meanArea = np.zeros(self.numTracePeaks)
         self.totArea = 0
         self.risePlot = np.zeros((self.numTracePeaks, 2, 1000), dtype=np.float64)
         self.riseRate = np.zeros(self.numTracePeaks, dtype=np.float64)
