@@ -46,29 +46,36 @@ class TracePeaks(top.TotalPeaks):
         return rSquared
 
     def peakFinder(self, singleTrace):
-        peaks, traceDict = sci.find_peaks(singleTrace, prominence= 0.05, width=0, wlen=20000, rel_height= 0.5)
-        bottomWidth = np.array(sci.peak_widths(singleTrace, peaks, rel_height=1, wlen=20000,
+        self.peaks, traceDict = sci.find_peaks(singleTrace, prominence= 0.05, width=0, wlen=20000, rel_height= 0.5)
+        bottomWidth = np.array(sci.peak_widths(singleTrace, self.peaks, rel_height=1, wlen=20000,
                                       prominence_data=(traceDict['prominences'], traceDict["left_bases"], 
                                                        traceDict["right_bases"])))
-        width10 = np.array(sci.peak_widths(singleTrace, peaks, rel_height=0.1, wlen=20000,
+        width10 = np.array(sci.peak_widths(singleTrace, self.peaks, rel_height=0.1, wlen=20000,
                                   prominence_data=(traceDict['prominences'], 
                                                    traceDict["left_bases"], traceDict["right_bases"])))
-        width90 = np.array(sci.peak_widths(singleTrace, peaks, rel_height=0.9, wlen=20000,
+        widthHalf = np.array(sci.peak_widths(singleTrace, self.peaks, rel_height=0.5, wlen=20000,
                                   prominence_data=(traceDict['prominences'], 
                                                    traceDict["left_bases"], traceDict["right_bases"])))
-        self.peaks = np.pad(peaks, pad_width= (0, self.mostPeaksInTrace - len(peaks)), mode= 'constant', constant_values= 0)
+        width90 = np.array(sci.peak_widths(singleTrace, self.peaks, rel_height=0.9, wlen=20000,
+                                  prominence_data=(traceDict['prominences'], 
+                                                   traceDict["left_bases"], traceDict["right_bases"])))
+        # self.peaks = np.pad(peaks, pad_width= (0, self.mostPeaksInTrace - len(peaks)), mode= 'constant', constant_values= 0)
         for i, param in enumerate(bottomWidth[2:]):
-            param = np.pad(param, pad_width= (0, self.mostPeaksInTrace - len(param)), mode= 'constant', constant_values= 0)
+            # param = np.pad(param, pad_width= (0, self.mostPeaksInTrace - len(param)), mode= 'constant', constant_values= 0)
             self.traceBottomWidths[i] = param
         for i, param in enumerate(width10[2:]):
-            param = np.pad(param, pad_width= (0, self.mostPeaksInTrace - len(param)), mode= 'constant', constant_values= 0)
+            # param = np.pad(param, pad_width= (0, self.mostPeaksInTrace - len(param)), mode= 'constant', constant_values= 0)
             self.trace10Widths[i] = param
+        for i, param in enumerate(widthHalf[2:]):
+            # param = np.pad(param, pad_width= (0, self.mostPeaksInTrace - len(param)), mode= 'constant', constant_values= 0)
+            self.traceHalfWidths[i] = param
         for i, param in enumerate(width90[2:]):
-            param = np.pad(param, pad_width= (0, self.mostPeaksInTrace - len(param)), mode= 'constant', constant_values= 0)
+            # param = np.pad(param, pad_width= (0, self.mostPeaksInTrace - len(param)), mode= 'constant', constant_values= 0)
             self.trace90Widths[i] = param
-        for i in traceDict:
-            paddedEntry = np.pad(traceDict[i], pad_width= (0, self.mostPeaksInTrace - len(traceDict[i])), mode= 'constant', constant_values= 0)
-            self.traceDict[i] = paddedEntry
+        # for i in traceDict:
+        #     # paddedEntry = np.pad(traceDict[i], pad_width= (0, self.mostPeaksInTrace - len(traceDict[i])), mode= 'constant', constant_values= 0)
+        #     self.traceDict[i] = paddedEntry
+        self.traceDict = traceDict
 
         self.peakNum = np.arange(1, len(self.peaks) + 1)
         self.peakIndex = self.peaks
