@@ -2,14 +2,12 @@ import AutoCleaner as acl
 import pyabf
 import os
 import sys
-import AverageTraces as avg
 import peakAnalysis as pas
 import processedSignal as pro
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import pandas as pd
 import matplotlib.pyplot as plt
-import cProfile
 
 class Main(tk.Frame):
     def __init__(self, master= None, **kwargs):
@@ -380,9 +378,9 @@ class Main(tk.Frame):
                 finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
                 #finalSignalLeft, finalSignalRight, _, _ = acl.newCompleteProcessor(self.experimentFileName, self.baselinefileName, self.controlStatus.get(), "21", "22", self.abfDate)
                 acl.isoLinRegPlot(self.experimentFileName, 1, 0, self.trace, "Left Rat Motion Correlation")
-                pas.peakDisplay(finalSignalLeft[self.trace], self.experimentFileName, "Left Rat")
+                pas.peakDisplay(finalSignalLeft, self.experimentFileName, "Left Rat", self.trace)
                 acl.isoLinRegPlot(self.experimentFileName, 5, 4, self.trace, "Right Rat Motion Correlation")
-                pas.peakDisplay(finalSignalRight[self.trace], self.experimentFileName, "Right Rat")
+                pas.peakDisplay(finalSignalRight, self.experimentFileName, "Right Rat", self.trace)
             except FileNotFoundError as e:
                 match str(e):
                     case "main":
