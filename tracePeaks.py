@@ -16,9 +16,10 @@ class TracePeaks(top.TotalPeaks):
         self.fullTraceArray = processedSignalArray[self.traceIndex]
         self.peaks = self.numPeaksArray[traceIndex]
         self.traceDict = {}
-        self.traceBottomWidths = np.zeros((2, self.mostPeaksInTrace))
-        self.trace90Widths = np.zeros((2, self.mostPeaksInTrace))
-        self.trace10Widths = np.zeros((2, self.mostPeaksInTrace))
+        self.traceBottomWidths = np.zeros((2, self.numTracePeaks))
+        self.trace90Widths = np.zeros((2, self.numTracePeaks))
+        self.traceHalfWidths = np.zeros((2, self.numTracePeaks))
+        self.trace10Widths = np.zeros((2, self.numTracePeaks))
         self.degreeNPeaks, self.decayNPeaks, self.riseNPeaks = {}, {}, {}
 
         self.peakNum = np.arange(1, self.numTracePeaks + 1)
