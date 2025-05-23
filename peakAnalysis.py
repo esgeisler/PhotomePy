@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import pyabf
 import sys
+import tracePeaks as trace
 np.set_printoptions(threshold=sys.maxsize)
 
 def secondsCalculator(filename):
