@@ -21,6 +21,7 @@ class TracePeaks(top.TotalPeaks):
         self.traceHalfWidths = np.zeros((2, self.numTracePeaks))
         self.trace10Widths = np.zeros((2, self.numTracePeaks))
         self.degreeNPeaks, self.decayNPeaks, self.riseNPeaks = {}, {}, {}
+        self.overlapPeaks, self.overlapRise, self.overlapDecay = {}, {}, {}
 
         self.peakNum = np.arange(1, self.numTracePeaks + 1)
         self.peakIndex = self.peaks
@@ -90,16 +91,15 @@ class TracePeaks(top.TotalPeaks):
         
     def overlapCheck(self, peaksArray):
         # Finds overlapping events by checking if the maxima of a peak is contained within the left and right slopes of another peak
-        for k, checkPeak in enumerate(peaksArray):
-            self.overlapPeaks[k] = np.array([y for y in peaksArray if ((self.traceBottomWidths[0][k] < y < self.traceBottomWidths[1][k]) and y != checkPeak)])
-            self.overlapRise[k] = np.array([y for y in peaksArray if ((self.traceBottomWidths[0][k] < y < checkPeak) and y != checkPeak)])
-            self.overlapDecay[k] = np.array([y for y in peaksArray if ((checkPeak < y < self.traceBottomWidths[1][k]) and y != checkPeak)])
-        for i, peakOfDegree in enumerate(peaksArray):
+        for i, peak in enumerate(peaksArray):
             if len(self.fullTraceArray[int(self.traceBottomWidths[0][i]):int(self.traceBottomWidths[1][i])]) == 0:
                     continue
-            self.degreeNPeaks[peakOfDegree] = len(self.overlapPeaks[i])
-            self.riseNPeaks[peakOfDegree] = len(self.overlapRise[i])
-            self.decayNPeaks[peakOfDegree] = len(self.overlapDecay[i])
+            self.overlapPeaks[i] = [y for y in peaksArray if ((self.traceBottomWidths[0][i] < y < self.traceBottomWidths[1][i]) and y != peak)]
+            self.overlapRise[i] = [y for y in peaksArray if ((self.traceBottomWidths[0][i] < y < peak) and y != peak)]
+            self.overlapDecay[i] = [y for y in peaksArray if ((peak < y < self.traceBottomWidths[1][i]) and y != peak)]
+            self.degreeNPeaks[peak] = len(self.overlapPeaks[i])
+            self.riseNPeaks[peak] = len(self.overlapRise[i])
+            self.decayNPeaks[peak] = len(self.overlapDecay[i])
         self.degreeNPeaks = dict(sorted(self.degreeNPeaks.items(), key=lambda item: item[1]))
         self.degreeRise = dict(sorted(self.riseNPeaks.items(), key=lambda item: item[1]))
         self.degreeDecay = dict(sorted(self.decayNPeaks.items(), key=lambda item: item[1]))
