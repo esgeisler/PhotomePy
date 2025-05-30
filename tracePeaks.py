@@ -134,15 +134,15 @@ class TracePeaks(top.TotalPeaks):
         else:
             self.frequency = round(np.count_nonzero(self.peaks)/((len(self.fullTraceArray) + 2250)/self.samplingFreqSec), 2) #Peaks/second (15 second trace)
 
-    def areaSet(self):
+    def areaSet(self): 
         adjustedArea = np.zeros(self.numTracePeaks)
         for _, u in enumerate(self.degreeNPeaks):
             i = np.where(self.peaks == u)
-            if len(self.fullTraceArray[int(self.traceBottomWidths[0][i[0][0]]):int(self.traceBottomWidths[1][i[0][0]])]) == 0:
-                 continue
-            peaksInArea = self.overlapPeaks[i[0][0]]
-            peakArea = inte.simpson(y=self.fullTraceArray[int(self.traceBottomWidths[0][i[0][0]]):int(self.traceBottomWidths[1][i[0][0]])], 
-                                    x=np.arange(int(self.traceBottomWidths[0][i[0][0]]), int(self.traceBottomWidths[1][i[0][0]]))/self.samplingFreqMSec)
+            if len(self.fullTraceArray[int(self.trace90Widths[0][i[0][0]]):int(self.trace90Widths[1][i[0][0]])]) == 0:
+                continue
+            peaksInArea = self.overlapPeaks[u] #TODO: Check if updated format of self.overlapPeaks alters the values here
+            peakArea = inte.simpson(y=self.fullTraceArray[int(self.trace90Widths[0][i[0][0]]):int(self.trace90Widths[1][i[0][0]])], 
+                                    x=np.arange(int(self.trace90Widths[0][i[0][0]]), int(self.trace90Widths[1][i[0][0]]))/self.samplingFreqMSec)
             if self.degreeNPeaks[u] == 0:
                 adjustedArea[i[0][0]] = peakArea.round(2)
             else:
@@ -160,7 +160,7 @@ class TracePeaks(top.TotalPeaks):
         riseTauList = np.zeros(self.numTracePeaks)
         for _, u in enumerate(self.degreeRise): 
             i = np.where(self.peaks == u)
-            if len(self.fullTraceArray[int(self.traceBottomWidths[0][i[0][0]]):int(self.traceBottomWidths[1][i[0][0]])]) == 0:
+            if len(self.fullTraceArray[int(self.trace90Widths[0][i[0][0]]):int(self.trace90Widths[1][i[0][0]])]) == 0:
                 continue
             adjustedRiseTau = np.array(self.fullTraceArray[int(self.trace90Widths[0][i[0][0]]):int(u)])
             riseWidth = int(len(adjustedRiseTau))
@@ -177,7 +177,6 @@ class TracePeaks(top.TotalPeaks):
                                                                 ub=[np.inf, np.inf, np.inf]),
                                                                 maxfev=1000)
                         rSquared = self.rSquaredGet(adjustedRiseTau, riseArray, popt[0], popt[1], popt[2])   
-                        # print(rSquared)                   
                         y_rise = popt[0] * np.exp(popt[1] * (x_rise/self.samplingFreqSec)) + popt[2]
                         
                         if rSquared < 0.8:
@@ -211,7 +210,6 @@ class TracePeaks(top.TotalPeaks):
                         #     riseTauList[i[0][0]] = np.NaN
                         # else:
                         #     riseTauList[i[0][0]] = abs(1/popt[1])
-                        print("what's wrong?")
                         riseTauList[i[0][0]] = np.NaN
 
                 except RuntimeError as e:
