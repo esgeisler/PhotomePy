@@ -91,14 +91,15 @@ class TracePeaks(top.TotalPeaks):
     def overlapCheck(self, peaksArray):
         # Finds overlapping events by checking if the maxima of a peak is contained within the left and right slopes of another peak
         for i, peak in enumerate(peaksArray):
-            if len(self.fullTraceArray[int(self.traceBottomWidths[0][i]):int(self.traceBottomWidths[1][i])]) == 0:
+            if len(self.fullTraceArray[int(self.trace90Widths[0][i]):int(self.trace90Widths[1][i])]) == 0:
                     continue
-            self.overlapPeaks[i] = [y for y in peaksArray if ((self.traceBottomWidths[0][i] < y < self.traceBottomWidths[1][i]) and y != peak)]
-            self.overlapRise[i] = [y for y in peaksArray if ((self.traceBottomWidths[0][i] < y < peak) and y != peak)]
-            self.overlapDecay[i] = [y for y in peaksArray if ((peak < y < self.traceBottomWidths[1][i]) and y != peak)]
-            self.degreeNPeaks[peak] = len(self.overlapPeaks[i])
-            self.riseNPeaks[peak] = len(self.overlapRise[i])
-            self.decayNPeaks[peak] = len(self.overlapDecay[i])
+            self.overlapPeaks[peak] = [y for y in peaksArray if ((self.trace90Widths[0][i] < y < self.trace90Widths[1][i]) and y != peak)]
+            self.overlapRise[peak] = [y for y in peaksArray if ((self.trace90Widths[0][i] < y < peak) and y != peak)]
+            self.overlapDecay[peak] = [y for y in peaksArray if ((peak < y < self.trace90Widths[1][i]) and y != peak)]
+            self.degreeNPeaks[peak] = len(self.overlapPeaks[peak])
+            self.riseNPeaks[peak] = len(self.overlapRise[peak])
+            self.decayNPeaks[peak] = len(self.overlapDecay[peak])
+        # print(self.overlapPeaks)
         self.degreeNPeaks = dict(sorted(self.degreeNPeaks.items(), key=lambda item: item[1]))
         self.degreeRise = dict(sorted(self.riseNPeaks.items(), key=lambda item: item[1]))
         self.degreeDecay = dict(sorted(self.decayNPeaks.items(), key=lambda item: item[1]))
