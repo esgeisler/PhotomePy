@@ -30,29 +30,30 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         peaks = trace.TracePeaks(processedSignalArray, mainFile, z)
         peaks.peakFinder(processedSignalArray[z])
         peaks.overlapCheck(peaks.peaks)
+        peaks.freqSet()
+        peaks.areaSet()
+        peaks.riseSet()
+        peaks.decaySet()
+        peaks.overlapAmplitude()
         peakTable = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 'Peak_Time_Sec', 
                                            'Event_Window_Start', 'Event_Window_End', 
-                                           'Amplitude', 
+                                           'Amplitude', 'Abs_Amplitude',
                                            'Off_Time_ms', 'Width_at50_ms',
                                            'Frequency', 
                                            'Avg_Area', 'Total_Area',
-                                           'Decay_Tau_exp', 'Rise_Tau_exp'])
+                                           'Rise_Tau', 'Decay_Tau'])
         peakTable.Event_Num = peaks.peakNum
         peakTable.Peak_Index = peaks.peakIndex
         peakTable.Peak_Time_Sec = peaks.peakLocSec
         peakTable.Event_Window_Start = peaks.leftBounds
         peakTable.Event_Window_End = peaks.rightBounds
         peakTable.Amplitude = peaks.amplitude
+        peakTable.Abs_Amplitude = peaks.absoluteAmp
         peakTable.Off_Time_ms = peaks.rightTail
         peakTable.Width_at50_ms = peaks.width
-
-        peaks.freqSet()
-        peaks.areaSet()
-        peaks.riseSet()
-        peaks.decaySet()
         peakTable.Avg_Area = peaks.meanArea
-        peakTable.Rise_Tau_exp = pd.Series(peaks.riseRate)
-        peakTable.Decay_Tau_exp = pd.Series(peaks.decayRate)
+        peakTable.Rise_Tau = pd.Series(peaks.riseRate)
+        peakTable.Decay_Tau = pd.Series(peaks.decayRate)
         if np.size(peaks.peaks) == 0:
             peakTable.Frequency = 0
             peakTable.Total_Area = 0
@@ -81,6 +82,7 @@ def peakDisplay(processedSignalArray, mainFile, ratSide, currentTrace):
     peaks.overlapCheck(peaks.peaks)
     peaks.riseSet()
     peaks.decaySet()
+    peaks.overlapAmplitude()
     peakFig, ax = plt.subplots()
     ax.plot(peaks.fullTraceArray)
     ax.plot(peaks.peaks, peaks.fullTraceArray[peaks.peaks], "r.")
@@ -95,7 +97,7 @@ def peakDisplay(processedSignalArray, mainFile, ratSide, currentTrace):
                          xy = (x, peaks.fullTraceArray[x]))
         ax.fill_between(x=np.arange(int(peaks.trace90Widths[0][i]), int(peaks.trace90Widths[1][i])), 
                         y1=peaks.fullTraceArray[int(peaks.trace90Widths[0][i]):int(peaks.trace90Widths[1][i])], 
-                        y2=peaks.fullTraceArray[peaks.peaks][i] - peaks.traceDict["prominences"][i] + (0.1 * peaks.traceDict["prominences"][i]),
+                        y2=peaks.fullTraceArray[peaks.peaks][i] - peaks.amplitude[i],
                         color="C1", alpha=0.3)
         if np.all(peaks.risePlot[i, 0]):
             ax.plot(peaks.risePlot[i, 0, :], peaks.risePlot[i, 1, :], color="C8")
@@ -107,8 +109,10 @@ def peakDisplay(processedSignalArray, mainFile, ratSide, currentTrace):
             continue
 
     ax.hlines(y=peaks.traceDict["width_heights"], xmin=peaks.traceDict["left_ips"], xmax=peaks.traceDict["right_ips"], color="C6")
-    ax.vlines(x=peaks.peaks, ymin=peaks.fullTraceArray[peaks.peaks] - peaks.traceDict["prominences"] + (0.1 * peaks.traceDict["prominences"]), 
-              ymax=peaks.fullTraceArray[peaks.peaks], color="C5")
+    ax.vlines(x=peaks.peaks, ymin=peaks.fullTraceArray[peaks.peaks] - peaks.amplitude, ymax=peaks.fullTraceArray[peaks.peaks], 
+              color="C5")
+    ax.vlines(x=peaks.peaks, ymin=peaks.fullTraceArray[peaks.peaks] - peaks.absoluteAmp, ymax=peaks.fullTraceArray[peaks.peaks], 
+              linestyles="dotted", color="C4")
     peakFig.suptitle("Individual Trace")
     peakFig.set_size_inches(9, 4.5)
     ax.axis([0, 47750, 0, 2])

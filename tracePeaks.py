@@ -28,7 +28,7 @@ class TracePeaks(top.TotalPeaks):
         self.peakLocSec = np.zeros(self.numTracePeaks)
         self.leftBounds, self.rightBounds = np.zeros(self.numTracePeaks), np.zeros(self.numTracePeaks)
         self.amplitude = np.zeros(self.numTracePeaks)
-        self.absoluteAmp = 0 #TODO: Create this
+        self.absoluteAmp = np.zeros(self.numTracePeaks)
         self.width = np.zeros(self.numTracePeaks)
         self.rightTail = np.zeros(self.numTracePeaks)
         self.leftTail = np.zeros(self.numTracePeaks)
@@ -83,8 +83,7 @@ class TracePeaks(top.TotalPeaks):
         self.peakLocSec = ((self.peaks/self.samplingFreqSec) + (self.traceIndex * 30)).round(2)
         self.leftBounds = self.traceDict['left_ips'].round(2)
         self.rightBounds = self.traceDict['right_ips'].round(2)
-        self.amplitude = self.traceDict['prominences'].round(3)
-        self.absoluteAmp = 0 #TODO: Create this
+        self.amplitude = (self.traceDict['prominences'] - (0.1 * self.traceDict["prominences"])).round(3)
         self.width = (self.traceDict['widths']/(self.samplingFreqMSec)).round(2)
         self.rightTail = ((self.traceDict['right_bases'] - self.peaks)/(self.samplingFreqMSec)).round(2)
         self.leftTail = ((self.peaks - self.traceDict['left_bases'])/(self.samplingFreqMSec)).round(2)
@@ -103,7 +102,31 @@ class TracePeaks(top.TotalPeaks):
         self.degreeNPeaks = dict(sorted(self.degreeNPeaks.items(), key=lambda item: item[1]))
         self.degreeRise = dict(sorted(self.riseNPeaks.items(), key=lambda item: item[1]))
         self.degreeDecay = dict(sorted(self.decayNPeaks.items(), key=lambda item: item[1]))
-    
+
+    def overlapAmplitude(self):
+        adjustedAmp = np.zeros(self.numTracePeaks)
+        sortedOverlapPeaks = dict(sorted(self.overlapPeaks.items(), key=lambda item: item[1]))
+        for i in sortedOverlapPeaks:
+            j = np.where(self.peaks == i)
+            if not self.overlapPeaks[i]:
+                adjustedAmp[j[0][0]] = self.amplitude[j[0][0]].round(3)
+            else:
+                adjustedAmp[j[0][0]] = self.amplitude[j[0][0]].round(3)
+                for x in self.overlapPeaks[i]:
+                    h = np.where(self.peaks == x)
+                    parentPeak, parentProminence  = self.fullTraceArray[self.peaks][j[0][0]], self.traceDict["prominences"][j[0][0]]
+                    parentBase = parentPeak - parentProminence + (0.1 * parentProminence)
+
+                    childPeak, childProminence = self.fullTraceArray[self.peaks][h[0][0]], self.traceDict["prominences"][h[0][0]]
+                    childBase = childPeak - childProminence + (0.1 * childProminence)
+
+                    ampAdjustmentFactor = childBase - parentBase
+                    adjustedAmp[h[0][0]] = (childProminence + ampAdjustmentFactor - (0.1 * self.traceDict["prominences"][h[0][0]])).round(3)
+                    # print("No correction", (childProminence + ampAdjustmentFactor).round(3))
+                    # print("Display", (self.fullTraceArray[self.peaks][h[0][0]] - self.fullTraceArray[self.peaks][h[0][0]] - adjustedAmp[h[0][0]]))
+                    # print("Display w corrections", (self.fullTraceArray[self.peaks][h[0][0]] - self.fullTraceArray[self.peaks][h[0][0]] - adjustedAmp[h[0][0]] + (0.1 * self.traceDict["prominences"][h[0][0]])))
+        self.absoluteAmp = adjustedAmp
+            
     def freqSet(self):
         if np.size(self.peaks) == 0:
             self.frequency = 0

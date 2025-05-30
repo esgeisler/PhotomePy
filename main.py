@@ -307,8 +307,8 @@ class Main(tk.Frame):
                 peakWriters = [leftWriter, rightWriter]
                 for rats in peakWriters:
                     with rats as writer:
-                        ampColumn, offTimeColumn, widthColumn, freqColumn, areaColumn, totAreaColumn, riseColumn, decayColumn = (pd.DataFrame() for i in range(8))
-                        ampList, offTimeList, widthList, freqList, areaList, totAreaList, riseList, decayList = ([] for i in range(8))
+                        ampColumn, absAmpColumn, offTimeColumn, widthColumn, freqColumn, areaColumn, totAreaColumn, riseColumn, decayColumn = (pd.DataFrame() for _ in range(9))
+                        ampList, absAmpList, offTimeList, widthList, freqList, areaList, totAreaList, riseList, decayList = ([] for _ in range(9))
                         z = 1
                         if rats == leftWriter:
                             # Overview Sheet
@@ -316,7 +316,8 @@ class Main(tk.Frame):
                             # Bins of Three
                             for groups in leftGroupThree:
                                 concat = pd.concat(groups, ignore_index=True)
-                                ampList.append(pd.DataFrame(concat["Amplitude"].rename("Amplitude %i-%i"%(z, z+2)))) 
+                                ampList.append(pd.DataFrame(concat["Amplitude"].rename("Amplitude %i-%i"%(z, z+2))))
+                                absAmpList.append(pd.DataFrame(concat["Abs_Amplitude"].rename("Absolute Amplitude %i-%i"%(z, z+2))))
                                 offTimeList.append(pd.DataFrame(concat["Off_Time_ms"].rename("Off Time %i-%i"%(z, z+2))))
                                 widthList.append(pd.DataFrame(concat["Width_at50_ms"].rename("Width %i-%i"%(z, z+2))))
                                 droppedFreq = pd.DataFrame(concat["Frequency"].rename("Frequency %i-%i"%(z, z+2))).dropna()
@@ -324,8 +325,8 @@ class Main(tk.Frame):
                                 areaList.append(pd.DataFrame(concat["Avg_Area"].rename("Area %i-%i"%(z, z+2))))
                                 droppedArea = pd.DataFrame(concat["Total_Area"].rename("Total Area %i-%i"%(z, z+2))).dropna()
                                 totAreaList.append(droppedArea.reset_index(drop=True))
-                                riseList.append(pd.DataFrame(concat["Rise_Tau_exp"].rename("Rise Tau %i-%i"%(z, z+2))))
-                                decayList.append(pd.DataFrame(concat["Decay_Tau_exp"].rename("Decay Tau %i-%i"%(z, z+2))))
+                                riseList.append(pd.DataFrame(concat["Rise_Tau"].rename("Rise Tau %i-%i"%(z, z+2))))
+                                decayList.append(pd.DataFrame(concat["Decay_Tau"].rename("Decay Tau %i-%i"%(z, z+2))))
                                 concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
                                 z += 3
                         elif rats == rightWriter:
@@ -335,6 +336,7 @@ class Main(tk.Frame):
                             for groups in rightGroupThree:
                                 concat = pd.concat(groups, ignore_index=True)
                                 ampList.append(pd.DataFrame(concat["Amplitude"].rename("Amplitude %i-%i"%(z, z+2))))
+                                absAmpList.append(pd.DataFrame(concat["Abs_Amplitude"].rename("Absolute Amplitude %i-%i"%(z, z+2))))
                                 offTimeList.append(pd.DataFrame(concat["Off_Time_ms"].rename("Off Time %i-%i"%(z, z+2))))
                                 widthList.append(pd.DataFrame(concat["Width_at50_ms"].rename("Width %i-%i"%(z, z+2))))
                                 droppedFreq = pd.DataFrame(concat["Frequency"].rename("Frequency %i-%i"%(z, z+2))).dropna()
@@ -342,28 +344,38 @@ class Main(tk.Frame):
                                 areaList.append(pd.DataFrame(concat["Avg_Area"].rename("Mean Area %i-%i"%(z, z+2))))
                                 droppedArea = pd.DataFrame(concat["Total_Area"].rename("Total Area %i-%i"%(z, z+2))).dropna()
                                 totAreaList.append(droppedArea.reset_index(drop=True))
-                                riseList.append(pd.DataFrame(concat["Rise_Tau_exp"].rename("Rise Tau %i-%i"%(z, z+2))))
-                                decayList.append(pd.DataFrame(concat["Decay_Tau_exp"].rename("Decay Tau %i-%i"%(z, z+2))))
+                                riseList.append(pd.DataFrame(concat["Rise_Tau"].rename("Rise Tau %i-%i"%(z, z+2))))
+                                decayList.append(pd.DataFrame(concat["Decay_Tau"].rename("Decay Tau %i-%i"%(z, z+2))))
                                 concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
                                 z += 3
                         
                         ampColumn = pd.concat(ampList, axis="columns")
-                        offTimeColumn = pd.concat(offTimeList, axis="columns")
-                        widthColumn = pd.concat(widthList, axis="columns")
-                        freqColumn = pd.concat(freqList, axis="columns", ignore_index=True)
-                        areaColumn = pd.concat(areaList, axis="columns")
-                        totAreaColumn = pd.concat(totAreaList, axis="columns", ignore_index=True)
-                        riseColumn = pd.concat(riseList, axis="columns")
-                        decayColumn = pd.concat(decayList, axis="columns")
-
                         ampColumn.to_excel(writer, sheet_name="Amplitude")
+
+                        absAmpColumn = pd.concat(absAmpList, axis="columns")
+                        absAmpColumn.to_excel(writer, sheet_name="Abs. Amplitude")
+
+                        offTimeColumn = pd.concat(offTimeList, axis="columns")
                         offTimeColumn.to_excel(writer, sheet_name="Off Time")
+
+                        widthColumn = pd.concat(widthList, axis="columns")
                         widthColumn.to_excel(writer, sheet_name="Width")
+
+                        freqColumn = pd.concat(freqList, axis="columns", ignore_index=True)
                         freqColumn.to_excel(writer, sheet_name="Frequency")
-                        areaColumn.to_excel(writer, sheet_name="Peak AUC")
+
+                        areaColumn = pd.concat(areaList, axis="columns")
+                        areaColumn.to_excel(writer, sheet_name="Mean Area")
+
+                        totAreaColumn = pd.concat(totAreaList, axis="columns", ignore_index=True)
                         totAreaColumn.to_excel(writer, sheet_name="Total Area")
+
+                        riseColumn = pd.concat(riseList, axis="columns")
                         riseColumn.to_excel(writer, sheet_name="Rise Tau")
+
+                        decayColumn = pd.concat(decayList, axis="columns")
                         decayColumn.to_excel(writer, sheet_name="Decay Tau")
+            
                 self.traceStatus = True
                 #Old Method
                 acl.tExport(leftSignal.processedSignalArray, leftSignal.ratID, leftSignal.date) #Left
