@@ -17,9 +17,9 @@ class TracePeaks(top.TotalPeaks):
         self.peaks = self.numPeaksArray[traceIndex]
         self.traceDict = {}
         self.traceBottomWidths = np.zeros((2, self.numTracePeaks))
-        self.trace90Widths = np.zeros((2, self.numTracePeaks))
+        self.trace90Widths = np.zeros((2, self.numTracePeaks)) # Height at 90% of the relative height (bottom of the peak)
         self.traceHalfWidths = np.zeros((2, self.numTracePeaks))
-        self.trace10Widths = np.zeros((2, self.numTracePeaks))
+        self.trace10Widths = np.zeros((2, self.numTracePeaks)) # Height at 10% of the relative height (top of the peak)
         self.degreeNPeaks, self.decayNPeaks, self.riseNPeaks = {}, {}, {}
         self.overlapPeaks, self.overlapRise, self.overlapDecay = {}, {}, {}
 
