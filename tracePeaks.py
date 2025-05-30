@@ -278,7 +278,11 @@ class TracePeaks(top.TotalPeaks):
                 except RuntimeError as e:
                     if str(e) == "Optimal parameters not found: The maximum number of function evaluations is exceeded.":
                         decayTauList[i[0][0]] = np.NaN
+                    else:
+                        raise
                 except ValueError as e:
                     if str(e) == "'x0' is infeasible":
                         decayTauList[i[0][0]] = np.NaN 
+                    else:
+                        raise
         self.decayRate = decayTauList
