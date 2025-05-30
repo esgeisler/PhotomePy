@@ -1,7 +1,4 @@
 import pyabf
-import numpy as np
-import scipy.signal as sci
-import peakAnalysis as pas
 import AverageTraces as avg
 
 #TODO: Add Z-Score functionality for the individual traces.
