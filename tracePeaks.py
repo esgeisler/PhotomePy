@@ -195,12 +195,14 @@ class TracePeaks(top.TotalPeaks):
                                                                 maxfev=1000)
                         rSquared = self.rSquaredGet(adjustedRiseTau, riseArray, popt[0], popt[1], popt[2])   
                         y_rise = popt[0] * np.exp(popt[1] * (x_rise/self.samplingFreqSec)) + popt[2]
+                        riseTauList[i] = np.NaN
                         if rSquared < 0.8:
                             riseTauList[h] = np.NaN
                         else:
                             riseTauList[h] = abs(1/popt[1])
                             self.risePlot[h, 0] = x_rise+int(self.trace90Widths[0][i])
                             self.risePlot[h, 1] = y_rise
+                        
                     else:
                         riseTauList[i] = np.NaN
                 except RuntimeError as e:
@@ -254,6 +256,7 @@ class TracePeaks(top.TotalPeaks):
                                                                 maxfev=1000)
                         rSquared = self.rSquaredGet(adjustedDecayTau, decArray, popt[0], popt[1], popt[2])
                         y_dec = popt[0] * np.exp(popt[1] * (x_dec/self.samplingFreqSec)) + popt[2]
+                        decayTauList[i] = np.NaN
                         if rSquared < 0.8:
                             decayTauList[h] = np.NaN
                         else:
