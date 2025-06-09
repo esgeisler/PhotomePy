@@ -176,7 +176,7 @@ def tExport(processedTrace, ratName, experimentDate):
     abfWriter.writeABF1(sweepData= processedTrace, filename= os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Processed Data.abf"%(experimentDate, ratName)), units="V", sampleRateHz= 3333.33)
 
 def tExportNew(processedTrace, ratName, experimentDate):
-    abfWriter.writeABF1(sweepData= processedTrace, filename= os.path.join(os.getcwd(), "Processed Data", "%s Rat %s NEW Processed Data.abf"%(experimentDate, ratName)), units="V", sampleRateHz= 3333.33)
+    abfWriter.writeABF1(sweepData= processedTrace, filename= os.path.join(os.getcwd(), "Processed Data", "%s Rat %s WIP Processed Data.abf"%(experimentDate, ratName)), units="V", sampleRateHz= 3333.33)
 
 
 # Compilation of the other functions in this file
