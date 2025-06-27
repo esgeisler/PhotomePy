@@ -1,0 +1,16 @@
+GENERAL:
+  normalization: SBR #'SBR' (Default) or 'z-score'
+  # SBR (or ∆F/F) converts values into the number of fold changes from baseline, according to SBR = (F - F0)/F0 where F is the current data point in the active signal, and F0 is the corresponding data point in the isosbestic or control signal.
+  # Z-score converts values into standard deviations from the mean (which is 0) according to Z = (x - μ)/σ where x is the current data point, μ is the sample mean, and σ is the sample standard deviation
+  bleach_correction: normal #'normal' or 'biexp'
+  export_abf: True #'True' (Default) or 'False' (Choose whether to export an ABF file that corresponds to the normalized and corrected data for convenient viewing)
+  left_rat_channels: [0, 1]
+  right_rat_channels: [4, 5]
+
+EVENT_HANDLING:
+  peak_id_method: prom #'prom' or 'elev' (Choose if peaks are identified based on prominence or a specific elevation cutoff)
+  peak_detection_threshold: 0.05 #Minimum prominence value for a peak to be automatically identified. If 'elev' is selected for peak_id_method, instead the height from 0 to identify a peak. DEFAULT 0.05 (prom) and (elev)
+  peak_window: 20000 #Maximum allowable width a peak, centered on the maxima. Half of this value extends from the maxima to the left and right. Peaks will be cutoff at this value, even if they have not fully decayed or risen. (DEFAULT: 20000)
+  peak_top: 0.10 #Portion peak's height from its maxima to use for fitting curves and calculating area. (DEFAULT: 0.1, converts to 10%)
+  peak_bottom: 0.90 #Portion peak's height from its base to use for fitting curves and calculating area.(DEFAULT: 0.9, converts to 90%)
+  
