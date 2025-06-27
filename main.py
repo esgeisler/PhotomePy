@@ -249,10 +249,10 @@ class Main(tk.Frame):
                 leftPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Peaks.xlsx"%(leftSignal.date, leftSignal.ratID))
                 rightPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Peaks.xlsx"%(rightSignal.date, rightSignal.ratID))
             # Saves the averaged data to an excel file with the rat's "name"
-                filenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Temp File.xlsx"%(leftSignal.date, leftSignal.ratID))
-                filenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Temp File.xlsx"%(rightSignal.date, rightSignal.ratID))
-                newFilenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s NEW Temp File.xlsx"%(newLeftSignal.date, newLeftSignal.ratID))
-                newFilenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s NEW Temp File.xlsx"%(newRightSignal.date, newRightSignal.ratID))
+                filenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Overall Fluorescence.xlsx"%(leftSignal.date, leftSignal.ratID))
+                filenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Overall Fluorescence.xlsx"%(rightSignal.date, rightSignal.ratID))
+                newFilenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s WIP Overall Fluorescence.xlsx"%(newLeftSignal.date, newLeftSignal.ratID))
+                newFilenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s WIP Overall Fluorescence.xlsx"%(newRightSignal.date, newRightSignal.ratID))
                 leftOverviewWriter, rightOverviewWriter = pd.ExcelWriter(filenameLeft), pd.ExcelWriter(filenameRight)
                 newLeftOverviewWriter, newRightOverviewWriter = pd.ExcelWriter(newFilenameLeft), pd.ExcelWriter(newFilenameRight)
                 leftOrRight = [leftOverviewWriter, rightOverviewWriter, newLeftOverviewWriter, newRightOverviewWriter]
@@ -586,11 +586,11 @@ class Main(tk.Frame):
                         raise  
             
 
-        runFileButton = ttk.Button(self, text="Process a File", command= dataProcessorPop)
+        runFileButton = ttk.Button(self, text="Process all Traces", command= dataProcessorPop)
         runFileButton.grid(row= 3, column= 1)
-        baselineGetterButton = ttk.Button(self, text="Get the Baselines", command= baselineFinder)
+        baselineGetterButton = ttk.Button(self, text="Get Baseline Autofluorescence", command= baselineFinder)
         baselineGetterButton.grid(row= 3, column= 2)
-        testerButton = ttk.Button(self, text="Event analysis on a single trace", command= singleTracePeaks)
+        testerButton = ttk.Button(self, text="Process a Single Trace", command= singleTracePeaks)
         testerButton.grid(row=4, column=1)
         correctionTroubleshootButton = ttk.Button(self, text="Troubleshoot Corrections", command= stepPrinterSingleTrace)
         correctionTroubleshootButton.grid(row=5, column=1)
