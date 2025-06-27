@@ -160,6 +160,8 @@ class TracePeaks(top.TotalPeaks):
             if len(self.fullTraceArray[int(self.trace90Widths[0][i]):int(self.trace90Widths[1][i])]) == 0:
                 continue
             adjustedRiseTau = np.array(self.fullTraceArray[int(self.trace90Widths[0][i]):int(self.trace10Widths[0][i])])
+            if len(adjustedRiseTau) == 0:
+                continue
             riseWidth = int(len(adjustedRiseTau))
             riseArray = np.arange(0, riseWidth)
             x_rise = np.linspace(np.min(riseArray), np.max(riseArray), 1000)
@@ -213,8 +215,6 @@ class TracePeaks(top.TotalPeaks):
                 except ValueError as e:
                     if str(e) == "'x0' is infeasible.":
                         riseTauList[i] = np.NaN
-                    else:
-                        raise
         self.riseRate = riseTauList
 
     def decaySet(self):
@@ -222,6 +222,8 @@ class TracePeaks(top.TotalPeaks):
         for _, u in enumerate(self.degreeDecay):
             i = np.where(self.peaks == u)[0][0]
             adjustedDecayTau = np.array(self.fullTraceArray[int(self.trace10Widths[1][i]):int(self.trace90Widths[1][i])])
+            if len(adjustedDecayTau) == 0:
+                continue
             decWidth = int(len(adjustedDecayTau))
             decArray = np.arange(0, decWidth)
             x_dec = np.linspace(np.min(decArray), np.max(decArray), 1000)
@@ -273,6 +275,4 @@ class TracePeaks(top.TotalPeaks):
                 except ValueError as e:
                     if str(e) == "'x0' is infeasible.":
                         decayTauList[i] = np.NaN 
-                    else:
-                        raise
         self.decayRate = decayTauList
