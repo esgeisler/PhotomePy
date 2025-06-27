@@ -3,6 +3,7 @@ import numpy as np
 import scipy.integrate as inte
 import scipy.optimize as opt
 import scipy.signal as sci
+import yaml
 
 class TracePeaks(top.TotalPeaks):
     def __init__(self, processedSignalArray, mainFile, traceIndex):
@@ -41,6 +42,15 @@ class TracePeaks(top.TotalPeaks):
         self.decayPlot = np.zeros((self.numTracePeaks, 2, 1000), dtype=np.float64)
         self.decayRate = np.zeros(self.numTracePeaks, dtype=np.float64)
 
+        with open("config.yaml") as c:
+            userConfig = yaml.safe_load(c)
+        self.norm_method = userConfig["normalization"]
+        self.peakMethod = userConfig["peak_id_method"]
+        self.peakThreshold = userConfig["peak_detection_threshold"]
+        self.peakWindow = userConfig["peak_window"]
+        self.peakTop = userConfig["peak_top"]
+        self.peakBase = userConfig["peak_bottom"]
+
     def rSquaredGet(self, adjustedTau, slopeArray, a, b, c):
         squaredDiffs = np.square(adjustedTau - (a * np.exp(b * ((slopeArray/self.samplingFreqSec))) + c))
         squaredDiffsFromMean = np.square(adjustedTau - np.mean(adjustedTau))
@@ -48,23 +58,23 @@ class TracePeaks(top.TotalPeaks):
         return rSquared
 
     def peakFinder(self, singleTrace):
-        self.peaks, traceDict = sci.find_peaks(singleTrace, prominence= 0.05, width=0, wlen=20000, rel_height= 0.5)
-        bottomWidth = np.array(sci.peak_widths(singleTrace, self.peaks, rel_height=1, wlen=20000,
-                                      prominence_data=(traceDict['prominences'], traceDict["left_bases"], 
-                                                       traceDict["right_bases"])))
-        width10 = np.array(sci.peak_widths(singleTrace, self.peaks, rel_height=0.1, wlen=20000,
+        self.peaks, traceDict = sci.find_peaks(singleTrace, prominence=self.peakThreshold, width=0, wlen=self.peakWindow, rel_height= 0.5)
+        # bottomWidth = np.array(sci.peak_widths(singleTrace, self.peaks, rel_height=1, wlen=20000,
+        #                               prominence_data=(traceDict['prominences'], traceDict["left_bases"], 
+        #                                                traceDict["right_bases"])))
+        width10 = np.array(sci.peak_widths(singleTrace, self.peaks, rel_height=self.peakTop, wlen=self.peakWindow,
                                   prominence_data=(traceDict['prominences'], 
                                                    traceDict["left_bases"], traceDict["right_bases"])))
-        widthHalf = np.array(sci.peak_widths(singleTrace, self.peaks, rel_height=0.5, wlen=20000,
+        widthHalf = np.array(sci.peak_widths(singleTrace, self.peaks, rel_height=0.5, wlen=self.peakWindow,
                                   prominence_data=(traceDict['prominences'], 
                                                    traceDict["left_bases"], traceDict["right_bases"])))
-        width90 = np.array(sci.peak_widths(singleTrace, self.peaks, rel_height=0.9, wlen=20000,
+        width90 = np.array(sci.peak_widths(singleTrace, self.peaks, rel_height=self.peakBase, wlen=self.peakWindow,
                                   prominence_data=(traceDict['prominences'], 
                                                    traceDict["left_bases"], traceDict["right_bases"])))
         # self.peaks = np.pad(peaks, pad_width= (0, self.mostPeaksInTrace - len(peaks)), mode= 'constant', constant_values= 0)
-        for i, param in enumerate(bottomWidth[2:]):
+        # for i, param in enumerate(bottomWidth[2:]):
             # param = np.pad(param, pad_width= (0, self.mostPeaksInTrace - len(param)), mode= 'constant', constant_values= 0)
-            self.traceBottomWidths[i] = param
+            # self.traceBottomWidths[i] = param
         for i, param in enumerate(width10[2:]):
             # param = np.pad(param, pad_width= (0, self.mostPeaksInTrace - len(param)), mode= 'constant', constant_values= 0)
             self.trace10Widths[i] = param
@@ -84,7 +94,7 @@ class TracePeaks(top.TotalPeaks):
         self.peakLocSec = ((self.peaks/self.samplingFreqSec) + (self.traceIndex * 30)).round(2)
         self.leftBounds = self.traceDict['left_ips'].round(2)
         self.rightBounds = self.traceDict['right_ips'].round(2)
-        self.amplitude = (self.traceDict['prominences'] - (0.1 * self.traceDict["prominences"])).round(3)
+        self.amplitude = (self.traceDict['prominences'] - (self.peakTop * self.traceDict["prominences"])).round(3)
         self.width = (self.traceDict['widths']/(self.samplingFreqMSec)).round(2)
         self.rightTail = ((self.traceDict['right_bases'] - self.peaks)/(self.samplingFreqMSec)).round(2)
         self.leftTail = ((self.peaks - self.traceDict['left_bases'])/(self.samplingFreqMSec)).round(2)
@@ -116,13 +126,13 @@ class TracePeaks(top.TotalPeaks):
                 for x in self.overlapPeaks[i]:
                     h = np.where(self.peaks == x)
                     parentPeak, parentProminence  = self.fullTraceArray[self.peaks][j[0][0]], self.traceDict["prominences"][j[0][0]]
-                    parentBase = parentPeak - parentProminence + (0.1 * parentProminence)
+                    parentBase = parentPeak - parentProminence + (self.peakTop * parentProminence)
 
                     childPeak, childProminence = self.fullTraceArray[self.peaks][h[0][0]], self.traceDict["prominences"][h[0][0]]
-                    childBase = childPeak - childProminence + (0.1 * childProminence)
+                    childBase = childPeak - childProminence + (self.peakTop * childProminence)
 
                     ampAdjustmentFactor = childBase - parentBase
-                    adjustedAmp[h[0][0]] = (childProminence + ampAdjustmentFactor - (0.1 * self.traceDict["prominences"][h[0][0]])).round(3)
+                    adjustedAmp[h[0][0]] = (childProminence + ampAdjustmentFactor - (self.peakTop * self.traceDict["prominences"][h[0][0]])).round(3)
         self.absoluteAmp = adjustedAmp
             
     def freqSet(self):

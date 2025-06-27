@@ -8,10 +8,25 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import pandas as pd
 import matplotlib.pyplot as plt
+import yaml
 
 class Main(tk.Frame):
     def __init__(self, master= None, **kwargs):
         super().__init__(master, **kwargs)
+
+    # Initializes the user configuration from config.yaml
+        with open("config.yaml") as c:
+            userConfig = yaml.safe_load(c)
+        self.norm_method = userConfig["normalization"]
+        self.bleach_correct = userConfig["bleach_correction"]
+        self.exportStatus = userConfig["export_abf"]
+        self.leftChannels = userConfig["left_rat_channels"]
+        self.rightChannels = userConfig["right_rat_channels"]
+        self.peakMethod = userConfig["peak_id_method"]
+        self.peakThreshold = userConfig["peak_detection_threshold"]
+        self.peakWindow = userConfig["peak_window"]
+        self.peakMax = userConfig["peak_top"]
+        self.peakMin = userConfig["peak_bottom"]
 
     # Initialize all of the necessary variables for the GUI
         self.experimentFileName = ""
@@ -186,13 +201,13 @@ class Main(tk.Frame):
     # Averages the fluorescence of all of the traces, compiles them into an excel sheet with their trace numbers, and calculates the ΔF/F
         def dataProcessorReal():
             try:
-                finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
+                match self.bleach_correct:
+                    case "normal":
+                        finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
+                    case "biexp": 
+                        finalSignalLeft, finalSignalRight, traceDecayFunction, decayRSquared = acl.newCompleteProcessor(self.experimentFileName, self.baselinefileName, self.controlStatus.get(), self.ratNameLeft, self.ratNameRight, self.abfDate)
                 leftSignal = pro.ProcessedTotalSignal(self.experimentFileName, finalSignalLeft, self.ratNameLeft, self.leftRatInjectionInt)
                 rightSignal = pro.ProcessedTotalSignal(self.experimentFileName, finalSignalRight, self.ratNameRight, self.rightRatInjectionInt)
-
-                newFinalSignalLeft, newFinalSignalRight, traceDecayFunction, decayRSquared = acl.newCompleteProcessor(self.experimentFileName, self.baselinefileName, self.controlStatus.get(), self.ratNameLeft, self.ratNameRight, self.abfDate)
-                newLeftSignal = pro.ProcessedTotalSignal(self.experimentFileName, newFinalSignalLeft, self.ratNameLeft, self.leftRatInjectionInt)
-                newRightSignal = pro.ProcessedTotalSignal(self.experimentFileName, newFinalSignalRight, self.ratNameRight, self.rightRatInjectionInt)
             except FileNotFoundError as e:
                 match str(e):
                     case "main":
@@ -239,150 +254,140 @@ class Main(tk.Frame):
                         sys.exit(0)
                 else:
                     raise
-        # Averages the left and right signals
-            else:
-            # Analyzes peak decay, amplitude, and frequency across an entire signal containing X traces            
-                self.peaksLeft, self.peaksRight = pas.wholeTracePeaks(finalSignalLeft, self.experimentFileName), pas.wholeTracePeaks(finalSignalRight, self.experimentFileName)
-                injectionLeft, overviewLeft = pas.traceProcessor(self.peaksLeft)
-                injectionRight, overviewRight = pas.traceProcessor(self.peaksRight)
+        # Analyzes peak decay, amplitude, and frequency across an entire signal containing X traces           
+            self.peaksLeft, self.peaksRight = pas.wholeTracePeaks(finalSignalLeft, self.experimentFileName), pas.wholeTracePeaks(finalSignalRight, self.experimentFileName)
+            injectionLeft, overviewLeft = pas.traceProcessor(self.peaksLeft)
+            injectionRight, overviewRight = pas.traceProcessor(self.peaksRight)
 
-                leftPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Peaks.xlsx"%(leftSignal.date, leftSignal.ratID))
-                rightPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Peaks.xlsx"%(rightSignal.date, rightSignal.ratID))
-            # Saves the averaged data to an excel file with the rat's "name"
-                filenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Overall Fluorescence.xlsx"%(leftSignal.date, leftSignal.ratID))
-                filenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Overall Fluorescence.xlsx"%(rightSignal.date, rightSignal.ratID))
-                newFilenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s WIP Overall Fluorescence.xlsx"%(newLeftSignal.date, newLeftSignal.ratID))
-                newFilenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s WIP Overall Fluorescence.xlsx"%(newRightSignal.date, newRightSignal.ratID))
-                leftOverviewWriter, rightOverviewWriter = pd.ExcelWriter(filenameLeft), pd.ExcelWriter(filenameRight)
-                newLeftOverviewWriter, newRightOverviewWriter = pd.ExcelWriter(newFilenameLeft), pd.ExcelWriter(newFilenameRight)
-                leftOrRight = [leftOverviewWriter, rightOverviewWriter, newLeftOverviewWriter, newRightOverviewWriter]
-                for rats in leftOrRight:
-                    with rats as writer:
+            leftPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Peaks.xlsx"%(leftSignal.date, leftSignal.ratID))
+            rightPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Peaks.xlsx"%(rightSignal.date, rightSignal.ratID))
+        # Saves the averaged data to an excel file with the rat's "name"
+            match self.bleach_correct:
+                case "normal":
+                    filenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Overall Fluorescence.xlsx"%(leftSignal.date, leftSignal.ratID))
+                    filenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Overall Fluorescence.xlsx"%(rightSignal.date, rightSignal.ratID))
+                case "biexp":
+                    filenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s WIP Overall Fluorescence.xlsx"%(leftSignal.date, leftSignal.ratID))
+                    filenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s WIP Overall Fluorescence.xlsx"%(rightSignal.date, rightSignal.ratID))
+            leftOverviewWriter, rightOverviewWriter = pd.ExcelWriter(filenameLeft), pd.ExcelWriter(filenameRight)
+            leftOrRight = [leftOverviewWriter, rightOverviewWriter]
+            for rats in leftOrRight:
+                with rats as writer:
+                    if rats == leftOverviewWriter:
+                        ratData = pd.DataFrame({"Trace Number:": range(1, len(leftSignal.wholeTraceAverages)+1), 
+                                                "Mean Fluorescence": leftSignal.wholeTraceAverages, "Median Fluorescence": leftSignal.wholeTraceMedians,
+                                                "Pre-Injection Average": leftSignal.preInjAvg, "ΔF/F": leftSignal.normFluorescence, 
+                                                "Bleaching Correction": None, "Z-Score": leftSignal.overallZScore
+                                                })
+                    elif rats == rightOverviewWriter:
+                        ratData = pd.DataFrame({"Trace Number:": range(1, len(rightSignal.wholeTraceAverages)+1), 
+                                                "Mean Fluorescence": rightSignal.wholeTraceAverages, "Median Fluorescence": rightSignal.wholeTraceMedians,
+                                                "Pre-Injection Average": rightSignal.preInjAvg, "ΔF/F": rightSignal.normFluorescence, 
+                                                "Bleaching Correction": None, "Z-Score": rightSignal.overallZScore
+                                                })
+                    ratData.to_excel(writer, index= False, sheet_name="Overview")
+                    if self.controlStatus.get() == 1:
                         if rats == leftOverviewWriter:
-                            ratData = pd.DataFrame({"Trace Number:": range(1, len(leftSignal.wholeTraceAverages)+1), 
-                                                    "Mean Fluorescence": leftSignal.wholeTraceAverages, "Median Fluorescence": leftSignal.wholeTraceMedians,
-                                                    "Pre-Injection Average": leftSignal.preInjAvg, "ΔF/F": leftSignal.normFluorescence, 
-                                                    "Bleaching Correction": None, "Z-Score": leftSignal.overallZScore
-                                                    })
+                            bleach405 = traceDecayFunction[0]
+                            bleach470 = traceDecayFunction[1]
+                            rsquared405 = decayRSquared[0]
+                            rsquared470 = decayRSquared[1]
                         elif rats == rightOverviewWriter:
-                            ratData = pd.DataFrame({"Trace Number:": range(1, len(rightSignal.wholeTraceAverages)+1), 
-                                                    "Mean Fluorescence": rightSignal.wholeTraceAverages, "Median Fluorescence": rightSignal.wholeTraceMedians,
-                                                    "Pre-Injection Average": rightSignal.preInjAvg, "ΔF/F": rightSignal.normFluorescence, 
-                                                    "Bleaching Correction": None, "Z-Score": rightSignal.overallZScore
+                            bleach405 = traceDecayFunction[2]
+                            bleach470 = traceDecayFunction[3]
+                            rsquared405 = decayRSquared[2]
+                            rsquared470 = decayRSquared[3]
+                        bleachFit = pd.DataFrame({"Trace Number:": range(1, len(bleach405) + 1), 
+                                                    "Bleaching Correction (405):": bleach405, "Goodness of fit(R^2):": rsquared405, 
+                                                    "Bleaching Correction (470):": bleach470, "Goodness of fit(R^2):": rsquared470
                                                     })
-                        elif rats == newLeftOverviewWriter:
-                            ratData = pd.DataFrame({"Trace Number:": range(1, len(newLeftSignal.wholeTraceAverages)+1), 
-                                                    "Mean Fluorescence": newLeftSignal.wholeTraceAverages, "Median Fluorescence": newLeftSignal.wholeTraceMedians,
-                                                    "Pre-Injection Average": newLeftSignal.preInjAvg, "ΔF/F": newLeftSignal.normFluorescence, 
-                                                    "Bleaching Correction": None, "Z-Score": newLeftSignal.overallZScore
-                                                    })
-                        elif rats == newRightOverviewWriter:
-                            ratData = pd.DataFrame({"Trace Number:": range(1, len(newRightSignal.wholeTraceAverages)+1), 
-                                                    "Mean Fluorescence": newRightSignal.wholeTraceAverages, "Median Fluorescence": newRightSignal.wholeTraceMedians,
-                                                    "Pre-Injection Average": newRightSignal.preInjAvg, "ΔF/F": newRightSignal.normFluorescence, 
-                                                    "Bleaching Correction": None, "Z-Score": newRightSignal.overallZScore
-                                                    })
-                        ratData.to_excel(writer, index= False, sheet_name="Overview")
-                        if self.controlStatus.get() == 1:
-                            if rats == leftOverviewWriter:
-                                bleach405 = traceDecayFunction[0]
-                                bleach470 = traceDecayFunction[1]
-                                rsquared405 = decayRSquared[0]
-                                rsquared470 = decayRSquared[1]
-                            elif rats == rightOverviewWriter:
-                                bleach405 = traceDecayFunction[2]
-                                bleach470 = traceDecayFunction[3]
-                                rsquared405 = decayRSquared[2]
-                                rsquared470 = decayRSquared[3]
-                            bleachFit = pd.DataFrame({"Trace Number:": range(1, len(bleach405) + 1), 
-                                                      "Bleaching Correction (405):": bleach405, "Goodness of fit(R^2):": rsquared405, 
-                                                      "Bleaching Correction (470):": bleach470, "Goodness of fit(R^2):": rsquared470
-                                                      })
-                            bleachFit.to_excel(writer, index=False, sheet_name="Bleaching Correction")
-                self.mainStatus = True
-            #TODO fix FutureWarning caused by concat being empty by default.
-            # Writes trace data to 2 excel files: left and right
-                leftWriter, rightWriter = pd.ExcelWriter(leftPath), pd.ExcelWriter(rightPath)
-                leftGroupThree, rightGroupThree = [list(injectionLeft.values())[i:i+3] for i in range(0, len(injectionLeft), 3)], [list(injectionRight.values())[i:i+3] for i in range(0, len(injectionRight), 3)]
-                peakWriters = [leftWriter, rightWriter]
-                for rats in peakWriters:
-                    with rats as writer:
-                        ampColumn, absAmpColumn, offTimeColumn, widthColumn, freqColumn, areaColumn, totAreaColumn, riseColumn, decayColumn = (pd.DataFrame() for _ in range(9))
-                        ampList, absAmpList, offTimeList, widthList, freqList, areaList, totAreaList, riseList, decayList = ([] for _ in range(9))
-                        z = 1
-                        if rats == leftWriter:
-                            # Overview Sheet
-                            overviewLeft.to_excel(writer, sheet_name= "All Traces")
-                            # Bins of Three
-                            for groups in leftGroupThree:
-                                concat = pd.concat(groups, ignore_index=True)
-                                ampList.append(pd.DataFrame(concat["Amplitude"].rename("Amplitude %i-%i"%(z, z+2))))
-                                absAmpList.append(pd.DataFrame(concat["Abs_Amplitude"].rename("Absolute Amplitude %i-%i"%(z, z+2))))
-                                offTimeList.append(pd.DataFrame(concat["Off_Time_ms"].rename("Off Time %i-%i"%(z, z+2))))
-                                widthList.append(pd.DataFrame(concat["Width_at50_ms"].rename("Width %i-%i"%(z, z+2))))
-                                droppedFreq = pd.DataFrame(concat["Frequency"].rename("Frequency %i-%i"%(z, z+2))).dropna()
-                                freqList.append(droppedFreq.reset_index(drop=True))
-                                areaList.append(pd.DataFrame(concat["Avg_Area"].rename("Area %i-%i"%(z, z+2))))
-                                droppedArea = pd.DataFrame(concat["Total_Area"].rename("Total Area %i-%i"%(z, z+2))).dropna()
-                                totAreaList.append(droppedArea.reset_index(drop=True))
-                                riseList.append(pd.DataFrame(concat["Rise_Tau"].rename("Rise Tau %i-%i"%(z, z+2))))
-                                decayList.append(pd.DataFrame(concat["Decay_Tau"].rename("Decay Tau %i-%i"%(z, z+2))))
-                                concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
-                                z += 3
-                        elif rats == rightWriter:
-                            # Overview Sheet
-                            overviewRight.to_excel(writer, sheet_name= "All Traces")
-                            # Bins of Three
-                            for groups in rightGroupThree:
-                                concat = pd.concat(groups, ignore_index=True)
-                                ampList.append(pd.DataFrame(concat["Amplitude"].rename("Amplitude %i-%i"%(z, z+2))))
-                                absAmpList.append(pd.DataFrame(concat["Abs_Amplitude"].rename("Absolute Amplitude %i-%i"%(z, z+2))))
-                                offTimeList.append(pd.DataFrame(concat["Off_Time_ms"].rename("Off Time %i-%i"%(z, z+2))))
-                                widthList.append(pd.DataFrame(concat["Width_at50_ms"].rename("Width %i-%i"%(z, z+2))))
-                                droppedFreq = pd.DataFrame(concat["Frequency"].rename("Frequency %i-%i"%(z, z+2))).dropna()
-                                freqList.append(droppedFreq.reset_index(drop=True))
-                                areaList.append(pd.DataFrame(concat["Avg_Area"].rename("Mean Area %i-%i"%(z, z+2))))
-                                droppedArea = pd.DataFrame(concat["Total_Area"].rename("Total Area %i-%i"%(z, z+2))).dropna()
-                                totAreaList.append(droppedArea.reset_index(drop=True))
-                                riseList.append(pd.DataFrame(concat["Rise_Tau"].rename("Rise Tau %i-%i"%(z, z+2))))
-                                decayList.append(pd.DataFrame(concat["Decay_Tau"].rename("Decay Tau %i-%i"%(z, z+2))))
-                                concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
-                                z += 3
-                        
-                        ampColumn = pd.concat(ampList, axis="columns")
-                        ampColumn.to_excel(writer, sheet_name="Amplitude")
+                        bleachFit.to_excel(writer, index=False, sheet_name="Bleaching Correction")
+            self.mainStatus = True
+        #TODO fix FutureWarning caused by concat being empty by default.
+        # Writes trace data to 2 excel files: left and right
+            leftWriter, rightWriter = pd.ExcelWriter(leftPath), pd.ExcelWriter(rightPath)
+            leftGroupThree, rightGroupThree = [list(injectionLeft.values())[i:i+3] for i in range(0, len(injectionLeft), 3)], [list(injectionRight.values())[i:i+3] for i in range(0, len(injectionRight), 3)]
+            peakWriters = [leftWriter, rightWriter]
+            for rats in peakWriters:
+                with rats as writer:
+                    ampColumn, absAmpColumn, offTimeColumn, widthColumn, freqColumn, areaColumn, totAreaColumn, riseColumn, decayColumn = (pd.DataFrame() for _ in range(9))
+                    ampList, absAmpList, offTimeList, widthList, freqList, areaList, totAreaList, riseList, decayList = ([] for _ in range(9))
+                    z = 1
+                    if rats == leftWriter:
+                        # Overview Sheet
+                        overviewLeft.to_excel(writer, sheet_name= "All Traces")
+                        # Bins of Three
+                        for groups in leftGroupThree:
+                            concat = pd.concat(groups, ignore_index=True)
+                            ampList.append(pd.DataFrame(concat["Amplitude"].rename("Amplitude %i-%i"%(z, z+2))))
+                            absAmpList.append(pd.DataFrame(concat["Abs_Amplitude"].rename("Absolute Amplitude %i-%i"%(z, z+2))))
+                            offTimeList.append(pd.DataFrame(concat["Off_Time_ms"].rename("Off Time %i-%i"%(z, z+2))))
+                            widthList.append(pd.DataFrame(concat["Width_at50_ms"].rename("Width %i-%i"%(z, z+2))))
+                            droppedFreq = pd.DataFrame(concat["Frequency"].rename("Frequency %i-%i"%(z, z+2))).dropna()
+                            freqList.append(droppedFreq.reset_index(drop=True))
+                            areaList.append(pd.DataFrame(concat["Avg_Area"].rename("Area %i-%i"%(z, z+2))))
+                            droppedArea = pd.DataFrame(concat["Total_Area"].rename("Total Area %i-%i"%(z, z+2))).dropna()
+                            totAreaList.append(droppedArea.reset_index(drop=True))
+                            riseList.append(pd.DataFrame(concat["Rise_Tau"].rename("Rise Tau %i-%i"%(z, z+2))))
+                            decayList.append(pd.DataFrame(concat["Decay_Tau"].rename("Decay Tau %i-%i"%(z, z+2))))
+                            concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
+                            z += 3
+                    elif rats == rightWriter:
+                        # Overview Sheet
+                        overviewRight.to_excel(writer, sheet_name= "All Traces")
+                        # Bins of Three
+                        for groups in rightGroupThree:
+                            concat = pd.concat(groups, ignore_index=True)
+                            ampList.append(pd.DataFrame(concat["Amplitude"].rename("Amplitude %i-%i"%(z, z+2))))
+                            absAmpList.append(pd.DataFrame(concat["Abs_Amplitude"].rename("Absolute Amplitude %i-%i"%(z, z+2))))
+                            offTimeList.append(pd.DataFrame(concat["Off_Time_ms"].rename("Off Time %i-%i"%(z, z+2))))
+                            widthList.append(pd.DataFrame(concat["Width_at50_ms"].rename("Width %i-%i"%(z, z+2))))
+                            droppedFreq = pd.DataFrame(concat["Frequency"].rename("Frequency %i-%i"%(z, z+2))).dropna()
+                            freqList.append(droppedFreq.reset_index(drop=True))
+                            areaList.append(pd.DataFrame(concat["Avg_Area"].rename("Mean Area %i-%i"%(z, z+2))))
+                            droppedArea = pd.DataFrame(concat["Total_Area"].rename("Total Area %i-%i"%(z, z+2))).dropna()
+                            totAreaList.append(droppedArea.reset_index(drop=True))
+                            riseList.append(pd.DataFrame(concat["Rise_Tau"].rename("Rise Tau %i-%i"%(z, z+2))))
+                            decayList.append(pd.DataFrame(concat["Decay_Tau"].rename("Decay Tau %i-%i"%(z, z+2))))
+                            concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
+                            z += 3
+                    
+                    ampColumn = pd.concat(ampList, axis="columns")
+                    ampColumn.to_excel(writer, sheet_name="Amplitude")
 
-                        absAmpColumn = pd.concat(absAmpList, axis="columns")
-                        absAmpColumn.to_excel(writer, sheet_name="Abs. Amplitude")
+                    absAmpColumn = pd.concat(absAmpList, axis="columns")
+                    absAmpColumn.to_excel(writer, sheet_name="Abs. Amplitude")
 
-                        offTimeColumn = pd.concat(offTimeList, axis="columns")
-                        offTimeColumn.to_excel(writer, sheet_name="Off Time")
+                    offTimeColumn = pd.concat(offTimeList, axis="columns")
+                    offTimeColumn.to_excel(writer, sheet_name="Off Time")
 
-                        widthColumn = pd.concat(widthList, axis="columns")
-                        widthColumn.to_excel(writer, sheet_name="Width")
+                    widthColumn = pd.concat(widthList, axis="columns")
+                    widthColumn.to_excel(writer, sheet_name="Width")
 
-                        freqColumn = pd.concat(freqList, axis="columns", ignore_index=True)
-                        freqColumn.to_excel(writer, sheet_name="Frequency")
+                    freqColumn = pd.concat(freqList, axis="columns", ignore_index=True)
+                    freqColumn.to_excel(writer, sheet_name="Frequency")
 
-                        areaColumn = pd.concat(areaList, axis="columns")
-                        areaColumn.to_excel(writer, sheet_name="Mean Area")
+                    areaColumn = pd.concat(areaList, axis="columns")
+                    areaColumn.to_excel(writer, sheet_name="Mean Area")
 
-                        totAreaColumn = pd.concat(totAreaList, axis="columns", ignore_index=True)
-                        totAreaColumn.to_excel(writer, sheet_name="Total Area")
+                    totAreaColumn = pd.concat(totAreaList, axis="columns", ignore_index=True)
+                    totAreaColumn.to_excel(writer, sheet_name="Total Area")
 
-                        riseColumn = pd.concat(riseList, axis="columns")
-                        riseColumn.to_excel(writer, sheet_name="Rise Tau")
+                    riseColumn = pd.concat(riseList, axis="columns")
+                    riseColumn.to_excel(writer, sheet_name="Rise Tau")
 
-                        decayColumn = pd.concat(decayList, axis="columns")
-                        decayColumn.to_excel(writer, sheet_name="Decay Tau")
-            
-                self.traceStatus = True
-                #Old Method
-                acl.tExport(leftSignal.processedSignalArray, leftSignal.ratID, leftSignal.date) #Left
-                acl.tExport(rightSignal.processedSignalArray, rightSignal.ratID, rightSignal.date) #Right
-                #New Method
-                acl.tExportNew(newLeftSignal.processedSignalArray, newLeftSignal.ratID, newLeftSignal.date) #Left
-                acl.tExportNew(newRightSignal.processedSignalArray, newRightSignal.ratID, newRightSignal.date) #Right        
+                    decayColumn = pd.concat(decayList, axis="columns")
+                    decayColumn.to_excel(writer, sheet_name="Decay Tau")
+        
+            self.traceStatus = True
+            if self.exportStatus:
+                match self.bleach_correct:
+                    case "normal":
+                        acl.tExport(leftSignal.processedSignalArray, leftSignal.ratID, leftSignal.date) #Left
+                        acl.tExport(rightSignal.processedSignalArray, rightSignal.ratID, rightSignal.date) #Right
+                    case "biexp":
+                        acl.tExport(leftSignal.processedSignalArray, leftSignal.ratID, leftSignal.date) #Left
+                        acl.tExport(rightSignal.processedSignalArray, rightSignal.ratID, rightSignal.date) #Right
 
         # Analyzes the peak decay, amplitude, and frequency of a single trace chosen by the user.
         def singleTracePeaks():
