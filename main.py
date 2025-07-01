@@ -17,16 +17,14 @@ class Main(tk.Frame):
     # Initializes the user configuration from config.yaml
         with open("config.yaml") as c:
             userConfig = yaml.safe_load(c)
-        self.norm_method = userConfig["normalization"]
-        self.bleach_correct = userConfig["bleach_correction"]
-        self.exportStatus = userConfig["export_abf"]
-        self.leftChannels = userConfig["left_rat_channels"]
-        self.rightChannels = userConfig["right_rat_channels"]
-        self.peakMethod = userConfig["peak_id_method"]
-        self.peakThreshold = userConfig["peak_detection_threshold"]
-        self.peakWindow = userConfig["peak_window"]
-        self.peakMax = userConfig["peak_top"]
-        self.peakMin = userConfig["peak_bottom"]
+        self.norm_method = userConfig["GENERAL"]["normalization"]
+        self.bleach_correct = userConfig["GENERAL"]["bleach_correction"]
+        self.exportStatus = userConfig["GENERAL"]["export_abf"]
+        self.peakMethod = userConfig["EVENT_HANDLING"]["peak_id_method"]
+        self.peakThreshold = userConfig["EVENT_HANDLING"]["peak_detection_threshold"]
+        self.peakWindow = userConfig["EVENT_HANDLING"]["peak_window"]
+        self.peakMax = userConfig["EVENT_HANDLING"]["peak_top"]
+        self.peakMin = userConfig["EVENT_HANDLING"]["peak_bottom"]
 
     # Initialize all of the necessary variables for the GUI
         self.experimentFileName = ""
@@ -200,60 +198,75 @@ class Main(tk.Frame):
 
     # Averages the fluorescence of all of the traces, compiles them into an excel sheet with their trace numbers, and calculates the ΔF/F
         def dataProcessorReal():
-            try:
-                match self.bleach_correct:
-                    case "normal":
-                        finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
-                    case "biexp": 
-                        finalSignalLeft, finalSignalRight, traceDecayFunction, decayRSquared = acl.newCompleteProcessor(self.experimentFileName, self.baselinefileName, self.controlStatus.get(), self.ratNameLeft, self.ratNameRight, self.abfDate)
-                leftSignal = pro.ProcessedTotalSignal(self.experimentFileName, finalSignalLeft, self.ratNameLeft, self.leftRatInjectionInt)
-                rightSignal = pro.ProcessedTotalSignal(self.experimentFileName, finalSignalRight, self.ratNameRight, self.rightRatInjectionInt)
-            except FileNotFoundError as e:
-                match str(e):
-                    case "main":
-                        answer = messagebox.askretrycancel(title="Python Error", message="No main file found. Would you like to select a new file?", icon="error")
+            while True:
+                try:
+                    match self.bleach_correct:
+                        case "isosbestic":
+                            finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
+                        case "biexp": 
+                            finalSignalLeft, finalSignalRight, traceDecayFunction, decayRSquared = acl.newCompleteProcessor(self.experimentFileName, self.baselinefileName, self.controlStatus.get(), self.ratNameLeft, self.ratNameRight, self.abfDate)
+                        case _:
+                            raise ValueError("bleach_correct error")
+                    leftSignal = pro.ProcessedTotalSignal(self.experimentFileName, finalSignalLeft, self.ratNameLeft, self.leftRatInjectionInt)
+                    rightSignal = pro.ProcessedTotalSignal(self.experimentFileName, finalSignalRight, self.ratNameRight, self.rightRatInjectionInt)
+                except FileNotFoundError as e:
+                    match str(e):
+                        case "main":
+                            answer = messagebox.askretrycancel(title="Python Error", message="No main file found. Would you like to select a new file?", icon="error")
+                            if answer:
+                                self.experimentFileName = ""
+                                chosenFileTextUpdate()
+                                self.errorStatus = True
+                                return
+                            elif not answer:
+                                self.destroy()
+                                sys.exit(0)
+                        case "baseline":
+                            answer = messagebox.askretrycancel(title="Python Error", message="No baseline file found. Would you like to select a new file?", icon="error")
+                            if answer:
+                                self.baselinefileName = ""
+                                baselineFileTextUpdate()
+                                self.errorStatus = True
+                                return
+                            elif not answer:
+                                self.destroy()
+                                sys.exit(0) 
+                except ValueError as e:
+                    match str(e):
+                        case "bleach_correct error":
+                            print("Values for bleach_correct must be either 'isosbestic' or 'biexp'.\nUsing default values.")
+                            self.bleach_correct = "isosbestic"
+                        case "Injection traces must be larger than 1":
+                            answer = messagebox.askretrycancel(title="Python Error", message="Injection trace values must be greater than 1. Please re-enter your trace number", icon="error")
+                            if answer:
+                                self.errorStatus = True
+                                dataProcessorPop()
+                                return
+                            elif not answer:
+                                self.destroy()
+                                sys.exit(0)
+                        case _:
+                            raise
+                except IndexError as e:
+                    if str(e) == "Injection traces are larger than total sweeps in signals":
+                        answer = messagebox.askretrycancel(title="Python Error", message="Injection trace values cannot be larger than the total traces in a dataset. Please re-enter your trace number", icon="error")
                         if answer:
-                            self.experimentFileName = ""
-                            chosenFileTextUpdate()
                             self.errorStatus = True
+                            dataProcessorPop()
                             return
                         elif not answer:
                             self.destroy()
                             sys.exit(0)
-                    case "baseline":
-                        answer = messagebox.askretrycancel(title="Python Error", message="No baseline file found. Would you like to select a new file?", icon="error")
-                        if answer:
-                            self.baselinefileName = ""
-                            baselineFileTextUpdate()
-                            self.errorStatus = True
-                            return
-                        elif not answer:
-                            self.destroy()
-                            sys.exit(0) 
-            except ValueError as e:
-                if str(e) == "Injection traces must be larger than 1":
-                    answer = messagebox.askretrycancel(title="Python Error", message="Injection trace values must be greater than 1. Please re-enter your trace number", icon="error")
-                    if answer:
-                        self.errorStatus = True
-                        dataProcessorPop()
-                        return
-                    elif not answer:
-                        self.destroy()
-                        sys.exit(0)
+                    else:
+                        raise
                 else:
-                    raise
-            except IndexError as e:
-                if str(e) == "Injection traces are larger than total sweeps in signals":
-                    answer = messagebox.askretrycancel(title="Python Error", message="Injection trace values cannot be larger than the total traces in a dataset. Please re-enter your trace number", icon="error")
-                    if answer:
-                        self.errorStatus = True
-                        dataProcessorPop()
-                        return
-                    elif not answer:
-                        self.destroy()
-                        sys.exit(0)
-                else:
-                    raise
+                    break
+        
+            # match self.norm_method:
+            #     case "SBR":
+                    
+            #     case "zSBR":
+
         # Analyzes peak decay, amplitude, and frequency across an entire signal containing X traces           
             self.peaksLeft, self.peaksRight = pas.wholeTracePeaks(finalSignalLeft, self.experimentFileName), pas.wholeTracePeaks(finalSignalRight, self.experimentFileName)
             injectionLeft, overviewLeft = pas.traceProcessor(self.peaksLeft)
@@ -263,7 +276,7 @@ class Main(tk.Frame):
             rightPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Peaks.xlsx"%(rightSignal.date, rightSignal.ratID))
         # Saves the averaged data to an excel file with the rat's "name"
             match self.bleach_correct:
-                case "normal":
+                case "isosbestic":
                     filenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Overall Fluorescence.xlsx"%(leftSignal.date, leftSignal.ratID))
                     filenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Overall Fluorescence.xlsx"%(rightSignal.date, rightSignal.ratID))
                 case "biexp":
@@ -382,7 +395,7 @@ class Main(tk.Frame):
             self.traceStatus = True
             if self.exportStatus:
                 match self.bleach_correct:
-                    case "normal":
+                    case "isosbestic":
                         acl.tExport(leftSignal.processedSignalArray, leftSignal.ratID, leftSignal.date) #Left
                         acl.tExport(rightSignal.processedSignalArray, rightSignal.ratID, rightSignal.date) #Right
                     case "biexp":

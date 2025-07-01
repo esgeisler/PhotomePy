@@ -11,13 +11,20 @@ import matplotlib.pyplot as plt
 import csv
 import pandas as pd
 from pathlib import Path
+import yaml
 
 pd.options.display.float_format = "{:,.10f}".format
+
+with open("config.yaml") as c:
+    userConfig = yaml.safe_load(c)
+    leftChannels = userConfig["GENERAL"]["left_rat_channels"]
+    rightChannels = userConfig["GENERAL"]["right_rat_channels"]
 
 # Gets baseline information from 1 min-long recording data taken after trial from the "left" side of the room - channels 1 and 2
 def BaselineGet(FileName):
     abf = pyabf.ABF(FileName)
-    Channel470Left, Channel405Left, Channel470Right, Channel405Right = 0, 1, 4, 5
+    Channel470Left, Channel405Left = leftChannels
+    Channel470Right, Channel405Right = rightChannels
     channels = [Channel470Left, Channel405Left, Channel470Right, Channel405Right]
     sweepArrays = {Channel470Left:0.0, Channel405Left:0.0, 
                    Channel470Right:0.0, Channel405Right:0.0}
