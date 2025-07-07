@@ -195,9 +195,8 @@ def completeProcessor(experimentFileName, baselineFileName):
         raise FileNotFoundError("baseline")
     abf = pyabf.ABF(experimentFileName)
     baseline470Left, baseline405Left, baseline470Right, baseline405Right= BaselineGet(baselineFileName)
-    channelsLeft, channelsRight = [0,1], [4,5]
-    subtract470Left, subtract405Left = baselineSubtractor(experimentFileName, baseline470Left, baseline405Left, channelsLeft)
-    subtract470Right, subtract405Right = baselineSubtractor(experimentFileName, baseline470Right, baseline405Right, channelsRight)
+    subtract470Left, subtract405Left = baselineSubtractor(experimentFileName, baseline470Left, baseline405Left, leftChannels)
+    subtract470Right, subtract405Right = baselineSubtractor(experimentFileName, baseline470Right, baseline405Right, rightChannels)
     filteredLeft, filteredRight = wholeTraceGauss(subtract405Left), wholeTraceGauss(subtract405Right)
     ratioSignalLeft, ratioSignalRight = ratio470405(subtract470Left, filteredLeft), ratio470405(subtract470Right, filteredRight)
     signalLeft, signalRight = wholeTraceGauss(ratioSignalLeft), wholeTraceGauss(ratioSignalRight)
@@ -212,9 +211,8 @@ def stepwiseProcessor(experimentFileName, baselineFileName):
         raise FileNotFoundError("baseline")
     abf = pyabf.ABF(experimentFileName)
     baseline470Left, baseline405Left, baseline470Right, baseline405Right= BaselineGet(baselineFileName)
-    channelsLeft, channelsRight = [0,1], [4,5]
-    subtract470Left, subtract405Left = baselineSubtractor(experimentFileName, baseline470Left, baseline405Left, channelsLeft)
-    subtract470Right, subtract405Right = baselineSubtractor(experimentFileName, baseline470Right, baseline405Right, channelsRight)
+    subtract470Left, subtract405Left = baselineSubtractor(experimentFileName, baseline470Left, baseline405Left, leftChannels)
+    subtract470Right, subtract405Right = baselineSubtractor(experimentFileName, baseline470Right, baseline405Right, rightChannels)
     filtered405Left, filtered405Right = wholeTraceGauss(wholeTraceMedFilt(subtract405Left)), wholeTraceGauss(wholeTraceMedFilt(subtract405Right))
     filtered470Left, filtered470Right = wholeTraceMedFilt(subtract470Left), wholeTraceMedFilt(subtract470Right)
     ratioSignalLeft, ratioSignalRight = ratio470405(filtered470Left, filtered405Left), ratio470405(filtered470Right, filtered405Right)
