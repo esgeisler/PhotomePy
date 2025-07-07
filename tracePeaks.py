@@ -21,9 +21,9 @@ class TracePeaks(top.TotalPeaks):
         self.trace90Widths = np.zeros((2, self.numTracePeaks)) # Height at 90% of the relative height (bottom of the peak)
         self.traceHalfWidths = np.zeros((2, self.numTracePeaks))
         self.trace10Widths = np.zeros((2, self.numTracePeaks)) # Height at 10% of the relative height (top of the peak)
-        self.degreeNPeaks, self.decayNPeaks, self.riseNPeaks = {}, {}, {}
-        self.overlapPeaks, self.overlapRise, self.overlapDecay = {}, {}, {}
-        self.firstTrainPeak, self.lastTrainPeak = {}, {}
+        self.degreeNPeaks, self.decayNPeaks, self.riseNPeaks = {}, {}, {} # Key-value pairs of peaks and the number of peaks contained within them, their decay slope, or their rise slope.
+        self.overlapPeaks, self.overlapRise, self.overlapDecay = {}, {}, {} # Key-value pairs of peaks and all of the peaks contained within them, their decay, or their rise.
+        self.firstTrainPeak, self.lastTrainPeak = {}, {} #Key-value pairs of the left-most or right-most peaks that overlap the rise or decay of a parent peak.
 
         self.peakNum = np.arange(1, self.numTracePeaks + 1)
         self.peakIndex = self.peaks
@@ -51,12 +51,16 @@ class TracePeaks(top.TotalPeaks):
         self.peakTop = userConfig["EVENT_HANDLING"]["peak_top"]
         self.peakBase = userConfig["EVENT_HANDLING"]["peak_bottom"]
 
+# Provides the R­­² value to determine the fit of a curve. Currently used in the rise/decay τ calculation to exclude poorly fitted exponential curves.
     def rSquaredGet(self, adjustedTau, slopeArray, a, b, c):
         squaredDiffs = np.square(adjustedTau - (a * np.exp(b * ((slopeArray/self.samplingFreqSec))) + c))
         squaredDiffsFromMean = np.square(adjustedTau - np.mean(adjustedTau))
         rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
         return rSquared
 
+# Locates peaks in a dataset based off of their prominence and the configuration in config.yaml.
+# Input: A trace of any length containing continuous photometry signals.
+# Output: Updates the tracePeaks peakNum, peakIndex, peakLocSec, leftBounds, rightBounds, amplitude, width, right tail and left tail to match the values from imported dataset.
     def peakFinder(self, singleTrace):
         self.peaks, traceDict = sci.find_peaks(singleTrace, prominence=self.peakThreshold, width=0, wlen=self.peakWindow, rel_height= 0.5)
         # bottomWidth = np.array(sci.peak_widths(singleTrace, self.peaks, rel_height=1, wlen=20000,
