@@ -102,9 +102,20 @@ class TracePeaks(top.TotalPeaks):
         self.width = (self.traceDict['widths']/(self.samplingFreqMSec)).round(2)
         self.rightTail = ((self.traceDict['right_bases'] - self.peaks)/(self.samplingFreqMSec)).round(2)
         self.leftTail = ((self.peaks - self.traceDict['left_bases'])/(self.samplingFreqMSec)).round(2)
+
+    def peaksFromZero(self, singleTrace):
+        peakCutoff = self.peakThreshold
+        for points in singleTrace:
+            aboveThresholdSignals = []
+            if points >  peakCutoff:
+                aboveThresholdSignals.append(points)
         
+        return
+
+# Finds overlapping events by checking if the maxima of a peak is contained within the left and right slopes of another peak
+# Input: An array of traces containing fiber photometry daya
+# Output: Sets values for overlapPeaks, overlapRise, overlapDecay, degreeNPeaks, riseNPeaks, decayNPeaks, degreeRise, and degreeDecay
     def overlapCheck(self, peaksArray):
-        # Finds overlapping events by checking if the maxima of a peak is contained within the left and right slopes of another peak
         for i, peak in enumerate(peaksArray):
             if len(self.fullTraceArray[int(self.trace90Widths[0][i]):int(self.trace90Widths[1][i])]) == 0:
                     continue
