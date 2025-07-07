@@ -1,7 +1,6 @@
 import pyabf
 import AverageTraces as avg
 
-#TODO: Add Z-Score functionality for the individual traces.
 class ProcessedTotalSignal():
     def __init__(self, filename, processedSignalArray, ratID, injTrace):
         self.processedSignalArray = processedSignalArray
