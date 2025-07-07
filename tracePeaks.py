@@ -44,12 +44,12 @@ class TracePeaks(top.TotalPeaks):
 
         with open("config.yaml") as c:
             userConfig = yaml.safe_load(c)
-        self.norm_method = userConfig["normalization"]
-        self.peakMethod = userConfig["peak_id_method"]
-        self.peakThreshold = userConfig["peak_detection_threshold"]
-        self.peakWindow = userConfig["peak_window"]
-        self.peakTop = userConfig["peak_top"]
-        self.peakBase = userConfig["peak_bottom"]
+        self.norm_method = userConfig["GENERAL"]["normalization"]
+        self.peakMethod = userConfig["EVENT_HANDLING"]["peak_id_method"]
+        self.peakThreshold = userConfig["EVENT_HANDLING"]["peak_detection_threshold"]
+        self.peakWindow = userConfig["EVENT_HANDLING"]["peak_window"]
+        self.peakTop = userConfig["EVENT_HANDLING"]["peak_top"]
+        self.peakBase = userConfig["EVENT_HANDLING"]["peak_bottom"]
 
     def rSquaredGet(self, adjustedTau, slopeArray, a, b, c):
         squaredDiffs = np.square(adjustedTau - (a * np.exp(b * ((slopeArray/self.samplingFreqSec))) + c))
@@ -148,8 +148,19 @@ class TracePeaks(top.TotalPeaks):
             if len(self.fullTraceArray[int(self.trace90Widths[0][i[0][0]]):int(self.trace90Widths[1][i[0][0]])]) == 0:
                 continue
             peaksInArea = self.overlapPeaks[u] #TODO: Check if updated format of self.overlapPeaks alters the values here
-            peakArea = inte.simpson(y=self.fullTraceArray[int(self.trace90Widths[0][i[0][0]]):int(self.trace90Widths[1][i[0][0]])], 
-                                    x=np.arange(int(self.trace90Widths[0][i[0][0]]), int(self.trace90Widths[1][i[0][0]]))/self.samplingFreqMSec)
+            match self.norm_method:
+                case "zSBR":
+                    peakArea = inte.simpson(y=self.fullTraceArray[int(self.trace90Widths[0][i[0][0]]):int(self.trace90Widths[1][i[0][0]])]+100, 
+                                                x=np.arange(int(self.trace90Widths[0][i[0][0]]), int(self.trace90Widths[1][i[0][0]]))/self.samplingFreqMSec)
+                    w = len(np.arange(int(self.trace90Widths[0][i[0][0]]), int(self.trace90Widths[1][i[0][0]])))/self.samplingFreqMSec
+                    L = self.fullTraceArray[self.peaks][i[0][0]] + 100 - self.amplitude[i[0][0]]
+                    peakArea -= L * w
+                case "SBR":
+                    peakArea = inte.simpson(y=self.fullTraceArray[int(self.trace90Widths[0][i[0][0]]):int(self.trace90Widths[1][i[0][0]])], 
+                                            x=np.arange(int(self.trace90Widths[0][i[0][0]]), int(self.trace90Widths[1][i[0][0]]))/self.samplingFreqMSec)
+                    w = (self.trace90Widths[1][i[0][0]] - self.trace90Widths[0][i[0][0]]) /self.samplingFreqMSec
+                    L = self.fullTraceArray[self.peaks][i[0][0]] - self.amplitude[i[0][0]]
+                    peakArea -= L * w
             if self.degreeNPeaks[u] == 0:
                 adjustedArea[i[0][0]] = peakArea.round(2)
             else:

@@ -5,7 +5,16 @@ import pandas as pd
 import pyabf
 import sys
 import tracePeaks as trace
+import yaml
 np.set_printoptions(threshold=sys.maxsize)
+
+with open("config.yaml") as c:
+    userConfig = yaml.safe_load(c)
+    peakMethod = userConfig["EVENT_HANDLING"]["peak_id_method"]
+    peakThreshold = userConfig["EVENT_HANDLING"]["peak_detection_threshold"]
+    peakWindow = userConfig["EVENT_HANDLING"]["peak_window"]
+    peakTop = userConfig["EVENT_HANDLING"]["peak_top"]
+    peakBase = userConfig["EVENT_HANDLING"]["peak_bottom"]
 
 def secondsCalculator(filename):
     abf = pyabf.ABF(filename)
@@ -18,7 +27,7 @@ def secondsCalculator(filename):
 def peakMax(processedSignalArray):
     peakLenArray = np.zeros(np.size(processedSignalArray, 0))
     for i, t in enumerate(processedSignalArray):
-        peaks, _ = sci.find_peaks(t, prominence= 0.05, wlen=20000)
+        peaks, _ = sci.find_peaks(t, prominence= peakThreshold, wlen=peakWindow)
         peakLenArray[i] = np.size(peaks)
     longestPeak = np.max(peakLenArray)
     return int(longestPeak), peakLenArray
@@ -28,13 +37,13 @@ def wholeTracePeaks(processedSignalArray, mainFile):
     finalDict = {}
     for z, _ in enumerate(processedSignalArray):
         peaks = trace.TracePeaks(processedSignalArray, mainFile, z)
-        peaks.peakFinder(processedSignalArray[z])
+        peaks.peakFinder(peaks.fullTraceArray)
         peaks.overlapCheck(peaks.peaks)
+        peaks.overlapAmplitude()
         peaks.freqSet()
         peaks.areaSet()
         peaks.riseSet()
         peaks.decaySet()
-        peaks.overlapAmplitude()
         peakTable = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 'Peak_Time_Sec', 
                                            'Event_Window_Start', 'Event_Window_End', 
                                            'Amplitude', 'Abs_Amplitude',
@@ -80,9 +89,9 @@ def peakDisplay(processedSignalArray, mainFile, ratSide, currentTrace):
     peaks = trace.TracePeaks(processedSignalArray, mainFile, currentTrace)
     peaks.peakFinder(peaks.fullTraceArray)
     peaks.overlapCheck(peaks.peaks)
+    peaks.overlapAmplitude()
     peaks.riseSet()
     peaks.decaySet()
-    peaks.overlapAmplitude()
     peakFig, ax = plt.subplots()
     ax.plot(peaks.fullTraceArray)
     ax.plot(peaks.peaks, peaks.fullTraceArray[peaks.peaks], "r.")

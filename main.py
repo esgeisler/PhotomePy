@@ -20,6 +20,7 @@ class Main(tk.Frame):
         self.norm_method = userConfig["GENERAL"]["normalization"]
         self.bleach_correct = userConfig["GENERAL"]["bleach_correction"]
         self.exportStatus = userConfig["GENERAL"]["export_abf"]
+        self.movement_corr = userConfig["GENERAL"]["movement_corr_calc"]
         self.peakMethod = userConfig["EVENT_HANDLING"]["peak_id_method"]
         self.peakThreshold = userConfig["EVENT_HANDLING"]["peak_detection_threshold"]
         self.peakWindow = userConfig["EVENT_HANDLING"]["peak_window"]
@@ -209,6 +210,15 @@ class Main(tk.Frame):
                             raise ValueError("bleach_correct error")
                     leftSignal = pro.ProcessedTotalSignal(self.experimentFileName, finalSignalLeft, self.ratNameLeft, self.leftRatInjectionInt)
                     rightSignal = pro.ProcessedTotalSignal(self.experimentFileName, finalSignalRight, self.ratNameRight, self.rightRatInjectionInt)
+                    match self.norm_method:
+                        case "SBR":
+                            break
+                        case "zSBR":
+                            leftSignal.processedSignalArray = (leftSignal.processedSignalArray - leftSignal.preInjAvg) / leftSignal.preInjStdev
+                            rightSignal.processedSignalArray = (rightSignal.processedSignalArray - rightSignal.preInjAvg) / rightSignal.preInjStdev
+                            break
+                        case _:
+                            raise ValueError("norm error")
                 except FileNotFoundError as e:
                     match str(e):
                         case "main":
@@ -230,12 +240,17 @@ class Main(tk.Frame):
                                 return
                             elif not answer:
                                 self.destroy()
-                                sys.exit(0) 
+                                sys.exit(0)
+                        case _:
+                            raise
                 except ValueError as e:
                     match str(e):
                         case "bleach_correct error":
-                            print("Values for bleach_correct must be either 'isosbestic' or 'biexp'.\nUsing default values.")
+                            print("Values for bleach_correct must be either 'isosbestic' or 'biexp'.\nUsing default value (isosbestic).")
                             self.bleach_correct = "isosbestic"
+                        case "norm error":
+                            print("Values for normalization must be either 'SBR' or 'zSBR'.\nUsing default value (SBR).")
+                            self.norm_method = "SBR"
                         case "Injection traces must be larger than 1":
                             answer = messagebox.askretrycancel(title="Python Error", message="Injection trace values must be greater than 1. Please re-enter your trace number", icon="error")
                             if answer:
@@ -259,16 +274,8 @@ class Main(tk.Frame):
                             sys.exit(0)
                     else:
                         raise
-                else:
-                    break
-        
-            # match self.norm_method:
-            #     case "SBR":
-                    
-            #     case "zSBR":
-
         # Analyzes peak decay, amplitude, and frequency across an entire signal containing X traces           
-            self.peaksLeft, self.peaksRight = pas.wholeTracePeaks(finalSignalLeft, self.experimentFileName), pas.wholeTracePeaks(finalSignalRight, self.experimentFileName)
+            self.peaksLeft, self.peaksRight = pas.wholeTracePeaks(leftSignal.processedSignalArray, self.experimentFileName), pas.wholeTracePeaks(rightSignal.processedSignalArray, self.experimentFileName)
             injectionLeft, overviewLeft = pas.traceProcessor(self.peaksLeft)
             injectionRight, overviewRight = pas.traceProcessor(self.peaksRight)
 
@@ -282,6 +289,8 @@ class Main(tk.Frame):
                 case "biexp":
                     filenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s WIP Overall Fluorescence.xlsx"%(leftSignal.date, leftSignal.ratID))
                     filenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s WIP Overall Fluorescence.xlsx"%(rightSignal.date, rightSignal.ratID))
+                case _:
+                    raise ValueError("bleach error")
             leftOverviewWriter, rightOverviewWriter = pd.ExcelWriter(filenameLeft), pd.ExcelWriter(filenameRight)
             leftOrRight = [leftOverviewWriter, rightOverviewWriter]
             for rats in leftOrRight:
@@ -406,11 +415,19 @@ class Main(tk.Frame):
         def singleTracePeaks():
             try:
                 finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
+                leftSignal = pro.ProcessedTotalSignal(self.experimentFileName, finalSignalLeft, self.ratNameLeft, 9) #TEMP INJECTION VALUE FOR TESTING ONLY
+                rightSignal = pro.ProcessedTotalSignal(self.experimentFileName, finalSignalRight, self.ratNameRight, 19) #TEMP INJECTION VALUE FOR TESTING ONLY
+                if self.norm_method == "zSBR":
+                    leftSignal.processedSignalArray = (leftSignal.processedSignalArray - leftSignal.preInjAvg) / leftSignal.preInjStdev
+                    rightSignal.processedSignalArray = (rightSignal.processedSignalArray - rightSignal.preInjAvg) / rightSignal.preInjStdev
+                else:
+                    pass
                 #finalSignalLeft, finalSignalRight, _, _ = acl.newCompleteProcessor(self.experimentFileName, self.baselinefileName, self.controlStatus.get(), "21", "22", self.abfDate)
-                acl.isoLinRegPlot(self.experimentFileName, 1, 0, self.trace, "Left Rat Motion Correlation")
-                pas.peakDisplay(finalSignalLeft, self.experimentFileName, "Left Rat", self.trace)
-                acl.isoLinRegPlot(self.experimentFileName, 5, 4, self.trace, "Right Rat Motion Correlation")
-                pas.peakDisplay(finalSignalRight, self.experimentFileName, "Right Rat", self.trace)
+                if self.movement_corr: 
+                    acl.isoLinRegPlot(self.experimentFileName, 1, 0, self.trace, "Left Rat Motion Correlation")
+                    acl.isoLinRegPlot(self.experimentFileName, 5, 4, self.trace, "Right Rat Motion Correlation")
+                pas.peakDisplay(leftSignal.processedSignalArray, self.experimentFileName, "Left Rat", self.trace)
+                pas.peakDisplay(rightSignal.processedSignalArray, self.experimentFileName, "Right Rat", self.trace)
             except FileNotFoundError as e:
                 match str(e):
                     case "main":
