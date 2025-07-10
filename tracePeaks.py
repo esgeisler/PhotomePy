@@ -55,7 +55,10 @@ class TracePeaks(top.TotalPeaks):
     def rSquaredGet(self, adjustedTau, slopeArray, a, b, c):
         squaredDiffs = np.square(adjustedTau - (a * np.exp(b * ((slopeArray/self.samplingFreqSec))) + c))
         squaredDiffsFromMean = np.square(adjustedTau - np.mean(adjustedTau))
-        rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
+        if np.sum(squaredDiffsFromMean) == 0:
+            rSquared = 0
+        else:
+            rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
         return rSquared
 
 # Locates peaks in a dataset based off of their prominence and the configuration in config.yaml.
