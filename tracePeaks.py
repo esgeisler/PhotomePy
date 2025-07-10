@@ -188,7 +188,8 @@ class TracePeaks(top.TotalPeaks):
             riseWidth = int(len(adjustedRiseTau))
             riseArray = np.arange(0, riseWidth)
             x_rise = np.linspace(np.min(riseArray), np.max(riseArray), 1000)
-            p0 = (self.fullTraceArray[int(self.trace10Widths[0][i])], 1, self.fullTraceArray[int(self.trace90Widths[0][i])])
+            heightDiff = abs(self.fullTraceArray[int(self.trace10Widths[0][i])] - self.fullTraceArray[int(self.trace90Widths[0][i])])
+            p0 = (heightDiff, 1, self.fullTraceArray[int(self.trace90Widths[0][i])])
             if len(adjustedRiseTau) == 0:
                 continue
             else:
@@ -196,7 +197,7 @@ class TracePeaks(top.TotalPeaks):
                     if self.riseNPeaks[u] == 0: # Handles peaks with no overlap
                         popt, _ = opt.curve_fit(lambda t, a, b, c: a * np.exp(b * t) + c, riseArray/self.samplingFreqSec, adjustedRiseTau, p0=p0, 
                                                 bounds=opt.Bounds(lb=[0, 0, self.fullTraceArray[int(self.trace90Widths[0][i])]], 
-                                                                ub=[np.inf, np.inf, np.inf]),
+                                                                ub=[heightDiff, np.inf, self.fullTraceArray[int(self.trace10Widths[0][i])]]),
                                                                 maxfev=1000)
                         rSquared = self.rSquaredGet(adjustedRiseTau, riseArray, popt[0], popt[1], popt[2])   
                         y_rise = popt[0] * np.exp(popt[1] * (x_rise/self.samplingFreqSec)) + popt[2]
@@ -210,13 +211,14 @@ class TracePeaks(top.TotalPeaks):
                     elif self.riseNPeaks[u] > 0: # Handles peaks with overlap, which are the first overlapping peaks
                         h = np.where(self.peaks == self.overlapRise[u][0])[0][0]
                         adjustedRiseTau = np.array(self.fullTraceArray[int(self.trace90Widths[0][i]):int(self.trace10Widths[0][h])])
-                        p0 = (self.fullTraceArray[int(self.trace10Widths[0][h])], 1, self.fullTraceArray[int(self.trace90Widths[0][i])])
+                        heightDiff = abs(self.fullTraceArray[int(self.trace10Widths[0][h])] - self.fullTraceArray[int(self.trace90Widths[0][i])])
+                        p0 = (heightDiff, 1, self.fullTraceArray[int(self.trace90Widths[0][i])])
                         riseWidth = int(len(adjustedRiseTau))
                         riseArray = np.array(list(range(0, riseWidth)))
                         x_rise = np.linspace(np.min(riseArray), np.max(riseArray), 1000)
                         popt, _ = opt.curve_fit(lambda t, a, b, c: a * np.exp((b * t)) + c, riseArray/self.samplingFreqSec, adjustedRiseTau, p0=p0, 
                                                 bounds=opt.Bounds(lb=[0, 0, self.fullTraceArray[int(self.trace90Widths[0][i])]], 
-                                                                ub=[np.inf, np.inf, np.inf]),
+                                                                ub=[heightDiff, np.inf, self.fullTraceArray[int(self.trace10Widths[0][h])]]),
                                                                 maxfev=1000)
                         rSquared = self.rSquaredGet(adjustedRiseTau, riseArray, popt[0], popt[1], popt[2])   
                         y_rise = popt[0] * np.exp(popt[1] * (x_rise/self.samplingFreqSec)) + popt[2]
@@ -236,8 +238,10 @@ class TracePeaks(top.TotalPeaks):
                     else:
                         raise
                 except ValueError as e:
-                    if str(e) == "'x0' is infeasible.":
+                    if str(e) == "`x0` is infeasible.":
                         riseTauList[i] = np.NaN
+                    else:
+                        raise
         self.riseRate = riseTauList
 
     def decaySet(self):
@@ -250,7 +254,8 @@ class TracePeaks(top.TotalPeaks):
             decWidth = int(len(adjustedDecayTau))
             decArray = np.arange(0, decWidth)
             x_dec = np.linspace(np.min(decArray), np.max(decArray), 1000)
-            p0 = (self.fullTraceArray[int(self.trace10Widths[1][i])], -1, self.fullTraceArray[int(self.trace90Widths[1][i])])
+            heightDiff = abs(self.fullTraceArray[int(self.trace10Widths[1][i])] - self.fullTraceArray[int(self.trace90Widths[1][i])])
+            p0 = (heightDiff, -1, self.fullTraceArray[int(self.trace90Widths[1][i])])
             if len(adjustedDecayTau) == 0:
                 continue
             else:
@@ -258,8 +263,8 @@ class TracePeaks(top.TotalPeaks):
                     if self.decayNPeaks[u] == 0:
                         popt, _ = opt.curve_fit(lambda t, a, b, c: a * np.exp(b * t) + c, decArray/self.samplingFreqSec, adjustedDecayTau, p0=p0, 
                                                 bounds=opt.Bounds(lb=[0, -np.inf, self.fullTraceArray[int(self.trace90Widths[1][i])]], 
-                                                                ub=[self.fullTraceArray[int(self.trace10Widths[1][i])], 0, np.inf]),
-                                                                maxfev=1000)
+                                                                  ub=[heightDiff, 0, self.fullTraceArray[int(self.trace10Widths[1][i])]]),
+                                                maxfev=1000)
                         rSquared = self.rSquaredGet(adjustedDecayTau, decArray, popt[0], popt[1], popt[2])
                         y_dec = popt[0] * np.exp(popt[1] * (x_dec/self.samplingFreqSec)) + popt[2]
                         if rSquared < 0.8:
@@ -271,13 +276,14 @@ class TracePeaks(top.TotalPeaks):
                     elif self.decayNPeaks[u] > 0:
                         h = np.where(self.peaks == self.overlapDecay[u][-1])[0][0]
                         adjustedDecayTau = np.array(self.fullTraceArray[int(self.trace10Widths[1][h]):int(self.trace90Widths[1][i])])
-                        p0 = (self.fullTraceArray[int(self.trace10Widths[1][h])], -1, self.fullTraceArray[int(self.trace90Widths[1][i])])
+                        heightDiff = abs(self.fullTraceArray[int(self.trace10Widths[1][h])] - self.fullTraceArray[int(self.trace90Widths[1][i])])
+                        p0 = (heightDiff, -1, self.fullTraceArray[int(self.trace90Widths[1][i])])
                         decWidth = int(len(adjustedDecayTau))
                         decArray = np.array(list(range(0, decWidth)))
                         x_dec = np.linspace(np.min(decArray), np.max(decArray), 1000)
                         popt, _ = opt.curve_fit(lambda t, a, b, c: a * np.exp((b * t)) + c, decArray/self.samplingFreqSec, adjustedDecayTau, p0=p0, 
                                                 bounds=opt.Bounds(lb=[0, -np.inf, self.fullTraceArray[int(self.trace90Widths[1][i])]], 
-                                                                ub=[self.fullTraceArray[int(self.trace10Widths[1][h])], 0, np.inf]), 
+                                                                  ub=[heightDiff, 0, self.fullTraceArray[int(self.trace10Widths[1][h])]]), 
                                                                 maxfev=1000)
                         rSquared = self.rSquaredGet(adjustedDecayTau, decArray, popt[0], popt[1], popt[2])
                         y_dec = popt[0] * np.exp(popt[1] * (x_dec/self.samplingFreqSec)) + popt[2]
@@ -296,6 +302,8 @@ class TracePeaks(top.TotalPeaks):
                     else:
                         raise
                 except ValueError as e:
-                    if str(e) == "'x0' is infeasible.":
+                    if str(e) == "`x0` is infeasible.":
                         decayTauList[i] = np.NaN 
+                    else:
+                        raise
         self.decayRate = decayTauList
