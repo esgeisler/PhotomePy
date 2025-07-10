@@ -102,8 +102,8 @@ def peakDisplay(processedSignalArray, mainFile, ratSide, currentTrace):
                      xy = (int(peaks.trace90Widths[1][i]), peaks.fullTraceArray[int(peaks.trace90Widths[1][i])] - 0.01),
                      arrowprops=dict(facecolor= 'black', width= 1, headwidth= 5, headlength= 5))
         ax.annotate("p%i"%(i+1), xycoords= 'data', size= 8, horizontalalignment= 'center',
-                         xytext= (x, peaks.fullTraceArray[x] + 0.01),
-                         xy = (x, peaks.fullTraceArray[x]))
+                    xytext= (x, peaks.fullTraceArray[x] + 0.01),
+                    xy = (x, peaks.fullTraceArray[x]))
         ax.fill_between(x=np.arange(int(peaks.trace90Widths[0][i]), int(peaks.trace90Widths[1][i])), 
                         y1=peaks.fullTraceArray[int(peaks.trace90Widths[0][i]):int(peaks.trace90Widths[1][i])], 
                         y2=peaks.fullTraceArray[peaks.peaks][i] - peaks.amplitude[i],
