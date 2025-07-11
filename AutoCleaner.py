@@ -69,24 +69,17 @@ def wholeTraceGauss(signalToFilter):
 # Divides two channels (470nm/405nm) in one file and returns a complete channel dictionary.
 def ratio470405(signal470, signal405):
     ratioSignal = np.zeros((len(signal470), len(signal470[0])))
-    for i, x in enumerate(signal470):
-        ratioSignal[i] = x/signal405[i]
+    ratioSignal = signal470/signal405
     return ratioSignal
 
 # PRELIM: Linear Regression with no plot, across an entire trace
 def isoLinReg(signal405, signal470):
-    yArray = np.zeros((len(signal405), len(signal405[0])))
-    bumper470 = np.zeros((len(signal470), len(signal470[0])))
     motionCorrectedSignal = np.zeros((len(signal470), len(signal470[0])))
-    for i, x in enumerate(signal405):
-        yArray[i] = x
-    flatY = yArray.reshape(-1)
+    flatY = signal405.reshape(-1)
     xArray = np.arange(len(flatY))
     line = sciStat.linregress(x=xArray, y=flatY)
-    for i, x in enumerate(signal470):
-        bumper470[i] = x
     convert1d = 0
-    for i, x in np.ndenumerate(bumper470):
+    for i, x in np.ndenumerate(signal470):
         motionCorrectedSignal[i[0]][i[1]] = x - (line.intercept + line.slope*xArray[convert1d])
         convert1d +=1
     return motionCorrectedSignal
@@ -113,9 +106,8 @@ def isoLinRegPlot(fileName, isosbesticChannel, activeChannel, chosenTrace, ratSi
 
 # PRELIMINARY Takes the numbers from deltaF or zCalc and fits a bi-exponential decay function to them
 def doubleExpDecayFit(filteredSignal):
-    flatSignal = filteredSignal.reshape(-1)
-    xDecay = np.arange(0, len(flatSignal))
-    yDecay = [i for i in flatSignal]
+    yDecay = filteredSignal.reshape(-1)
+    xDecay = np.arange(0, len(yDecay))
     p0 = (max(yDecay), -1, max(yDecay)/2, -1, min(yDecay))
     popt, _ = opt.curve_fit(lambda t, a, b, c, d, e: (a * np.exp(b * t)) + (c * np.exp(d * t)) + e, xDecay, yDecay, p0=p0, 
                                                 bounds=opt.Bounds(lb=[0, -np.inf, 0, -np.inf, min(yDecay)], 
