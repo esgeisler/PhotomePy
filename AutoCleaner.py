@@ -23,8 +23,8 @@ with open("config.yaml") as c:
     end =  userConfig["EVENT_HANDLING"]["trace_end_offset"]
 
 # Gets baseline information from 1 min-long recording data taken after trial from the "left" side of the room - channels 1 and 2
-def BaselineGet(FileName):
-    abf = pyabf.ABF(FileName)
+def baselineGet(fileName):
+    abf = pyabf.ABF(fileName)
     Channel470Left, Channel405Left = leftChannels
     Channel470Right, Channel405Right = rightChannels
     channels = [Channel470Left, Channel405Left, Channel470Right, Channel405Right]
