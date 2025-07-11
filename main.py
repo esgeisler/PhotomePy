@@ -23,10 +23,6 @@ class Main(tk.Frame):
         self.exportStatus = userConfig["GENERAL"]["export_abf"]
         self.movement_corr = userConfig["GENERAL"]["movement_corr_calc"]
         self.peakMethod = userConfig["EVENT_HANDLING"]["peak_id_method"]
-        self.peakThreshold = userConfig["EVENT_HANDLING"]["peak_detection_threshold"]
-        self.peakWindow = userConfig["EVENT_HANDLING"]["peak_window"]
-        self.peakMax = userConfig["EVENT_HANDLING"]["peak_top"]
-        self.peakMin = userConfig["EVENT_HANDLING"]["peak_bottom"]
 
     # Initialize all of the necessary variables for the GUI
         self.experimentFileName = ""
