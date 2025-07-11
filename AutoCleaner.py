@@ -19,6 +19,8 @@ with open("config.yaml") as c:
     userConfig = yaml.safe_load(c)
     leftChannels = userConfig["GENERAL"]["left_rat_channels"]
     rightChannels = userConfig["GENERAL"]["right_rat_channels"]
+    start =  userConfig["EVENT_HANDLING"]["trace_start_offset"]
+    end =  userConfig["EVENT_HANDLING"]["trace_end_offset"]
 
 # Gets baseline information from 1 min-long recording data taken after trial from the "left" side of the room - channels 1 and 2
 def BaselineGet(FileName):
@@ -31,7 +33,7 @@ def BaselineGet(FileName):
 
     for c in channels:
         abf.setSweep(sweepNumber= 0, channel= c)
-        sweepArrays[c] = stat.mean(abf.sweepY[1000:-1250])
+        sweepArrays[c] = stat.mean(abf.sweepY[start:end])
 
     mean470Left, mean405Left, mean470Right, mean405Right = sweepArrays[Channel470Left], sweepArrays[Channel405Left], sweepArrays[Channel470Right], sweepArrays[Channel405Right]
     return mean470Left, mean405Left, mean470Right, mean405Right
@@ -44,9 +46,9 @@ def baselineSubtractor(fileName, baseline470, baseline405, channelsToSubtract):
     #470
     for i in abf.sweepList:
         abf.setSweep(i, channel= channelsToSubtract[0])
-        sweepArray470[i] = [x - baseline470 for x in abf.sweepY[1000:-1250]]
+        sweepArray470[i] = abf.sweepY[start:end] - baseline470 
         abf.setSweep(i, channel= channelsToSubtract[1])
-        sweepArray405[i] = [x - baseline405 for x in abf.sweepY[1000:-1250]]
+        sweepArray405[i] = abf.sweepY[start:end] - baseline405
     return sweepArray470, sweepArray405
 
 def wholeTraceMedFilt(signalToFilter):
@@ -93,10 +95,9 @@ def isoLinReg(signal405, signal470):
 def isoLinRegPlot(fileName, isosbesticChannel, activeChannel, chosenTrace, ratSide):
     abf = pyabf.ABF(fileName)
     abf.setSweep(chosenTrace, channel=isosbesticChannel)
-    isosbesticY = abf.sweepY[1000:-1250]
+    isosbesticY = abf.sweepY[start:end]
     abf.setSweep(chosenTrace, activeChannel)
-    activeY = abf.sweepY[1000:-1250]
-
+    activeY = abf.sweepY[start:end]
     line = sciStat.linregress(x=isosbesticY, y=activeY)
     fig = plt.figure()
     motionFig = fig.add_subplot()
