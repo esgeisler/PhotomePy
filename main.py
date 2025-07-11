@@ -1,9 +1,10 @@
-import AutoCleaner as acl
 import pyabf
 import os
 import sys
+import AutoCleaner as acl
 import peakAnalysis as pas
 import processedSignal as pro
+import TraceCleaner as trace
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import pandas as pd
@@ -214,7 +215,7 @@ class Main(tk.Frame):
         def baselineFinder():
             try:
                 pyabf.ABF(self.baselinefileName)
-                subtracted470Left, subtracted405Left, subtracted470Right, subtracted405Right = acl.BaselineGet(self.baselinefileName)
+                subtracted470Left, subtracted405Left, subtracted470Right, subtracted405Right = acl.baselineGet(self.baselinefileName)
                 messagebox.showinfo(title= "Baselines", message= "Left - 470: %.2f 405: %.2f\nRight - 470: %.2f 405: %.2f"%(subtracted470Left, subtracted405Left, subtracted470Right, subtracted405Right))
             except FileNotFoundError:
                 answer = messagebox.askretrycancel(title="Python Error", message="No baseline file found. Would you like to select a new file?", icon="error")
