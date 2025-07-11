@@ -138,6 +138,22 @@ class Main(tk.Frame):
                     sys.exit(0)
             dataProcessorReal()
             statusChecker()
+    
+        def singleTracePopSubmit():
+            self.ratNameLeft, self.ratNameRight = self.leftRatName.get(), self.rightRatName.get()
+            try:
+                self.leftRatInjectionInt, self.rightRatInjectionInt = (int(float(self.leftRatInjectionStr.get())) - 1), (int(float(self.rightRatInjectionStr.get())) - 1)
+            except ValueError:
+                answer = messagebox.askretrycancel(title="Python Error", message="Injection traces must be a number. Please re-enter your trace number", icon="error")
+                if answer:
+                    self.errorStatus = True
+                    self.leftRatInjectionStr, self.rightRatInjectionStr = tk.StringVar(), tk.StringVar()
+                    singleTracePop()
+                    return
+                elif not answer:
+                    self.destroy()
+                    sys.exit(0)
+            singleTracePeaks()
 
     # Checks the status of the analysis to determine whether to display a messagebox message.
         def statusChecker():
@@ -175,6 +191,25 @@ class Main(tk.Frame):
             curveFitCheckBox = ttk.Checkbutton(infoPop, text="Would you like to fit a curve for bleaching correction? \nWARNING: Only check if this is a vehicle control.", variable=self.controlStatus)
             curveFitCheckBox.grid(row=4, column=3)
 
+        def singleTracePop():
+            infoPop = tk.Toplevel()
+            infoPop.title("Rat Metadata Entry")
+            leftRatNameFill, rightRatNameFill = ttk.Entry(infoPop, textvariable= self.leftRatName, width= 10), ttk.Entry(infoPop, textvariable= self.rightRatName, width= 10)
+            leftRatNameLabel, rightRatNameLabel = ttk.Label(infoPop, text="Enter Left Rat #:"), ttk.Label(infoPop, text= "Enter Right Rat #:")
+            leftRatNameLabel.grid(row= 1, column= 1)
+            leftRatNameFill.grid(row= 1, column= 2)
+            rightRatNameLabel.grid(row= 1, column= 4)
+            rightRatNameFill.grid(row= 1, column= 5)
+            leftRatInjTimeFill, rightRatInjTimeFill = ttk.Entry(infoPop, textvariable= self.leftRatInjectionStr, width = 10), ttk.Entry(infoPop, textvariable= self.rightRatInjectionStr, width= 10)
+            leftRatInjTimeLabel, rightRatInjTimeLabel = ttk.Label(infoPop, text="Enter Left Rat Injection Trace #:"), ttk.Label(infoPop, text= "Enter Right Rat Injection Trace #:")
+            leftRatInjTimeLabel.grid(row= 2, column= 1)
+            leftRatInjTimeFill.grid(row= 2, column= 2)
+            rightRatInjTimeLabel.grid(row= 2, column= 4)
+            rightRatInjTimeFill.grid(row= 2, column= 5)
+
+            submitButton = ttk.Button(infoPop, text="Submit", command=lambda:[infoPop.destroy(), singleTracePopSubmit()])
+            submitButton.grid(row= 3, column= 3)
+
     # Retrieves the baseline autofluorescence for the 4 channels analyzed and prints to a message box.
         def baselineFinder():
             try:
@@ -201,11 +236,16 @@ class Main(tk.Frame):
         def dataProcessorReal():
             while True:
                 try:
+                    rawTrace = trace.TraceCleaner(self.experimentFileName, self.baselinefileName)
                     match self.bleach_correct:
                         case "isosbestic":
-                            finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
+                            finalSignalLeft, finalSignalRight = rawTrace.completeProcessor()
                         case "biexp": 
-                            finalSignalLeft, finalSignalRight, traceDecayFunction, decayRSquared = acl.newCompleteProcessor(self.experimentFileName, self.baselinefileName, self.controlStatus.get(), self.ratNameLeft, self.ratNameRight, self.abfDate)
+                            finalSignalLeft, finalSignalRight, traceDecayFunction, decayRSquared = rawTrace.newCompleteProcessor(self.controlStatus.get(), self.ratNameLeft, self.ratNameRight, self.abfDate)
+                        case "biexpActive":
+                            finalSignalLeft, finalSignalRight = rawTrace.activeSignalDecayProcessor()
+                        case "refReg":
+                            finalSignalLeft, finalSignalRight, _, _, = rawTrace.referenceSignalDecayProcessor()
                         case _:
                             raise ValueError("bleach_correct error")
                     leftSignal = pro.ProcessedTotalSignal(self.experimentFileName, finalSignalLeft, self.ratNameLeft, self.leftRatInjectionInt)
@@ -278,17 +318,29 @@ class Main(tk.Frame):
             self.peaksLeft, self.peaksRight = pas.wholeTracePeaks(leftSignal.processedSignalArray, self.experimentFileName), pas.wholeTracePeaks(rightSignal.processedSignalArray, self.experimentFileName)
             injectionLeft, overviewLeft = pas.traceProcessor(self.peaksLeft)
             injectionRight, overviewRight = pas.traceProcessor(self.peaksRight)
-
-            leftPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Peaks.xlsx"%(leftSignal.date, leftSignal.ratID))
-            rightPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Peaks.xlsx"%(rightSignal.date, rightSignal.ratID))
+            match self.bleach_correct:
+                case "isosbestic":
+                    leftPath = os.path.join(os.getcwd(), "Processed Data", "Default %s Rat %s Peaks.xlsx"%(leftSignal.date, leftSignal.ratID))
+                    rightPath = os.path.join(os.getcwd(), "Processed Data", "Default %s Rat %s Peaks.xlsx"%(rightSignal.date, rightSignal.ratID))
+                case "refReg":
+                    leftPath = os.path.join(os.getcwd(), "Processed Data", "refReg %s Rat %s Peaks.xlsx"%(leftSignal.date, leftSignal.ratID))
+                    rightPath = os.path.join(os.getcwd(), "Processed Data", "refReg %s Rat %s Peaks.xlsx"%(rightSignal.date, rightSignal.ratID))
+                case "biexpActive":
+                    leftPath = os.path.join(os.getcwd(), "Processed Data", "biexpActive %s Rat %s Peaks.xlsx"%(leftSignal.date, leftSignal.ratID))
+                    rightPath = os.path.join(os.getcwd(), "Processed Data", "biexpActive %s Rat %s Peaks.xlsx"%(rightSignal.date, rightSignal.ratID))
+                case _:
+                    raise ValueError("bleach error")
         # Saves the averaged data to an excel file with the rat's "name"
             match self.bleach_correct:
                 case "isosbestic":
                     filenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Overall Fluorescence.xlsx"%(leftSignal.date, leftSignal.ratID))
                     filenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Overall Fluorescence.xlsx"%(rightSignal.date, rightSignal.ratID))
-                case "biexp":
-                    filenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s WIP Overall Fluorescence.xlsx"%(leftSignal.date, leftSignal.ratID))
-                    filenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s WIP Overall Fluorescence.xlsx"%(rightSignal.date, rightSignal.ratID))
+                case "refReg":
+                    filenameLeft = os.path.join(os.getcwd(), "Processed Data", "refReg %s Rat %s Overall Fluorescence.xlsx"%(leftSignal.date, leftSignal.ratID))
+                    filenameRight = os.path.join(os.getcwd(), "Processed Data", "refReg %s Rat %s Overall Fluorescence.xlsx"%(rightSignal.date, rightSignal.ratID))
+                case "biexpActive":
+                    filenameLeft = os.path.join(os.getcwd(), "Processed Data", "biexpActive %s Rat %s Overall Fluorescence.xlsx"%(leftSignal.date, leftSignal.ratID))
+                    filenameRight = os.path.join(os.getcwd(), "Processed Data", "biexpActive %s Rat %s Overall Fluorescence.xlsx"%(rightSignal.date, rightSignal.ratID))
                 case _:
                     raise ValueError("bleach error")
             leftOverviewWriter, rightOverviewWriter = pd.ExcelWriter(filenameLeft), pd.ExcelWriter(filenameRight)
@@ -403,20 +455,22 @@ class Main(tk.Frame):
         
             self.traceStatus = True
             if self.exportStatus:
-                match self.bleach_correct:
-                    case "isosbestic":
-                        acl.tExport(leftSignal.processedSignalArray, leftSignal.ratID, leftSignal.date) #Left
-                        acl.tExport(rightSignal.processedSignalArray, rightSignal.ratID, rightSignal.date) #Right
-                    case "biexp":
-                        acl.tExport(leftSignal.processedSignalArray, leftSignal.ratID, leftSignal.date) #Left
-                        acl.tExport(rightSignal.processedSignalArray, rightSignal.ratID, rightSignal.date) #Right
+                acl.tExport(leftSignal.processedSignalArray, leftSignal.ratID, leftSignal.date) #Left
+                acl.tExport(rightSignal.processedSignalArray, rightSignal.ratID, rightSignal.date) #Right 
 
         # Analyzes the peak decay, amplitude, and frequency of a single trace chosen by the user.
         def singleTracePeaks():
             try:
-                finalSignalLeft, finalSignalRight = acl.completeProcessor(self.experimentFileName, self.baselinefileName)
-                leftSignal = pro.ProcessedTotalSignal(self.experimentFileName, finalSignalLeft, self.ratNameLeft, 9) #TEMP INJECTION VALUE FOR TESTING ONLY
-                rightSignal = pro.ProcessedTotalSignal(self.experimentFileName, finalSignalRight, self.ratNameRight, 19) #TEMP INJECTION VALUE FOR TESTING ONLY
+                rawTrace = trace.TraceCleaner(self.experimentFileName, self.baselinefileName)
+                match self.bleach_correct:
+                    case "isosbestic":
+                        finalSignalLeft, finalSignalRight = rawTrace.completeProcessor()
+                    case "biexpActive":
+                        finalSignalLeft, finalSignalRight = rawTrace.activeSignalDecayProcessor()
+                    case "refReg":
+                        finalSignalLeft, finalSignalRight, decayFitLeft, decayFitRight = rawTrace.referenceSignalDecayProcessor()
+                leftSignal = pro.ProcessedTotalSignal(self.experimentFileName, finalSignalLeft, self.ratNameLeft, self.leftRatInjectionInt) #TEMP INJECTION VALUE FOR TESTING ONLY
+                rightSignal = pro.ProcessedTotalSignal(self.experimentFileName, finalSignalRight, self.ratNameRight, self.rightRatInjectionInt) #TEMP INJECTION VALUE FOR TESTING ONLY
                 if self.norm_method == "zSBR":
                     leftSignal.processedSignalArray = (leftSignal.processedSignalArray - leftSignal.preInjAvg) / leftSignal.preInjStdev
                     rightSignal.processedSignalArray = (rightSignal.processedSignalArray - rightSignal.preInjAvg) / rightSignal.preInjStdev
@@ -625,7 +679,7 @@ class Main(tk.Frame):
         runFileButton.grid(row= 3, column= 1)
         baselineGetterButton = ttk.Button(self, text="Get Baseline Autofluorescence", command= baselineFinder)
         baselineGetterButton.grid(row= 3, column= 2)
-        testerButton = ttk.Button(self, text="Process a Single Trace", command= singleTracePeaks)
+        testerButton = ttk.Button(self, text="Process a Single Trace", command= singleTracePop)
         testerButton.grid(row=4, column=1)
         correctionTroubleshootButton = ttk.Button(self, text="Troubleshoot Corrections", command= stepPrinterSingleTrace)
         correctionTroubleshootButton.grid(row=5, column=1)

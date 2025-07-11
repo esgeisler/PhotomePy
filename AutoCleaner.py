@@ -133,6 +133,44 @@ def doubleExpDecayFit(filteredSignal):
     # plt.show()
     return yDecFinal, rSquared
 
+def doubleExpDecaySingleTrace(filteredSignalArray, samplingFreq):
+    yDecFinalArray = np.zeros((len(filteredSignalArray), len(filteredSignalArray[0])))
+    rSquaredArray = np.zeros((len(filteredSignalArray), len(filteredSignalArray[0])))
+    for i, _ in enumerate(filteredSignalArray):
+        yDecay = filteredSignalArray[i]
+        xDecay = np.arange(0, len(yDecay))
+        decayToY = np.median(yDecay[-500:])
+        startY = np.median(yDecay[:500])
+        heightDiff = abs(startY - decayToY)
+        p0 = (heightDiff/2, -1, heightDiff/2, -1, decayToY)
+        popt, _ = opt.curve_fit(lambda t, a, b, c, d, e: (a * np.exp(b * t)) + (c * np.exp(d * t)) + e, xDecay/samplingFreq, yDecay, p0=p0, 
+                                bounds=opt.Bounds(lb=[0         ,-np.inf, 0         , -np.inf, decayToY], 
+                                                  ub=[heightDiff, 0     , heightDiff,  0,      np.inf]),
+                                maxfev=2000)
+        a, b, c, d, e = popt[0], popt[1], popt[2], popt[3], popt[4]
+
+        squaredDiffs = np.square(yDecay - ((a * np.exp(b * (xDecay/samplingFreq))) + (c * np.exp(d * (xDecay/samplingFreq))) + e))
+        squaredDiffsFromMean = np.square(yDecay - np.mean(yDecay, dtype=np.float64))
+        rSquared = 1 - (np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean))
+        print(np.sum(squaredDiffs), np.sum(squaredDiffsFromMean))
+        print("Trace %i: %f"%(i+1, rSquared))
+        xDecFinal = np.linspace(np.min(xDecay), np.max(xDecay), len(filteredSignalArray[i]))
+        yDecFinal = (a * np.exp(b * (xDecFinal/samplingFreq))) + (c * np.exp(d * (xDecFinal/samplingFreq))) + e
+        yDecFinalArray[i] = yDecFinal
+        rSquaredArray[i] = rSquared
+    return yDecFinalArray, rSquaredArray
+
+def singleTraceDecayPlot(filteredSignal, fittedDecay, chosenTrace, ratSide):
+    isosbesticY = filteredSignal[chosenTrace]
+    isosbesticX = np.arange(0, len(filteredSignal[chosenTrace]))
+    decayFitFig, ax1 = plt.subplots()
+    # ax1.plot(isosbesticX, isosbesticY)
+    ax1.plot(isosbesticX, fittedDecay[chosenTrace])    
+    decayFitFig.suptitle(ratSide)
+    #plt.xticks(ticks=seconds, labels=range(len(seconds)))
+    plt.minorticks_on()
+    plt.show()
+
 def unbleachSignal(filteredSignal, decayFactor):
     unbleachedArray = np.zeros((len(filteredSignal), len(filteredSignal[0])))
     convert1d = 0
