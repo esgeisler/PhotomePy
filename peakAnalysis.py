@@ -15,6 +15,7 @@ with open("config.yaml") as c:
     peakWindow = userConfig["EVENT_HANDLING"]["peak_window"]
     peakTop = userConfig["EVENT_HANDLING"]["peak_top"]
     peakBase = userConfig["EVENT_HANDLING"]["peak_bottom"]
+    peakElev = userConfig["EVENT_HANDLING"]["peak_elevation"]
 
 def secondsCalculator(filename):
     abf = pyabf.ABF(filename)
@@ -27,7 +28,11 @@ def secondsCalculator(filename):
 def peakMax(processedSignalArray):
     peakLenArray = np.zeros(np.size(processedSignalArray, 0))
     for i, t in enumerate(processedSignalArray):
-        peaks, _ = sci.find_peaks(t, prominence= peakThreshold, wlen=peakWindow)
+        match peakMethod:
+            case "prom":
+                peaks, _ = sci.find_peaks(t, prominence= peakThreshold, wlen=peakWindow)
+            case "elev":
+                peaks, _ = sci.find_peaks(t, prominence= peakThreshold, wlen=peakWindow, height=peakElev)
         peakLenArray[i] = np.size(peaks)
     longestPeak = np.max(peakLenArray)
     return int(longestPeak), peakLenArray
@@ -97,31 +102,56 @@ def peakDisplay(processedSignalArray, mainFile, ratSide, currentTrace):
     ax.plot(peaks.peaks, peaks.fullTraceArray[peaks.peaks], "r.")
     for i, x in enumerate(peaks.peaks):
         ax.plot(int(peaks.trace90Widths[1][i]), peaks.fullTraceArray[int(peaks.trace90Widths[1][i])], 'g.')
-        ax.annotate("Trough (%i)"%(i+1), xycoords= 'data', size= 8, horizontalalignment= 'center',
-                     xytext = (int(peaks.trace90Widths[1][i]), peaks.fullTraceArray[int(peaks.trace90Widths[1][i])] - 0.3), 
-                     xy = (int(peaks.trace90Widths[1][i]), peaks.fullTraceArray[int(peaks.trace90Widths[1][i])] - 0.01),
-                     arrowprops=dict(facecolor= 'black', width= 1, headwidth= 5, headlength= 5))
         ax.annotate("p%i"%(i+1), xycoords= 'data', size= 8, horizontalalignment= 'center',
-                    xytext= (x, peaks.fullTraceArray[x] + 0.01),
-                    xy = (x, peaks.fullTraceArray[x]))
-        ax.fill_between(x=np.arange(int(peaks.trace90Widths[0][i]), int(peaks.trace90Widths[1][i])), 
-                        y1=peaks.fullTraceArray[int(peaks.trace90Widths[0][i]):int(peaks.trace90Widths[1][i])], 
-                        y2=peaks.fullTraceArray[peaks.peaks][i] - peaks.amplitude[i],
-                        color="C1", alpha=0.3)
-        if np.all(peaks.risePlot[i, 0]):
-            ax.plot(peaks.risePlot[i, 0, :], peaks.risePlot[i, 1, :], color="C8")
-        else:
-            continue
-        if np.all(peaks.risePlot[i, 0]):
-            ax.plot(peaks.decayPlot[i, 0, :], peaks.decayPlot[i, 1, :], color="C9")
-        else:
-            continue
-
-    ax.hlines(y=peaks.traceDict["width_heights"], xmin=peaks.traceDict["left_ips"], xmax=peaks.traceDict["right_ips"], color="C6")
-    ax.vlines(x=peaks.peaks, ymin=peaks.fullTraceArray[peaks.peaks] - peaks.amplitude, ymax=peaks.fullTraceArray[peaks.peaks], 
-              color="C5")
-    ax.vlines(x=peaks.peaks, ymin=peaks.fullTraceArray[peaks.peaks] - peaks.absoluteAmp, ymax=peaks.fullTraceArray[peaks.peaks], 
-              linestyles="dotted", color="C4")
+                            xytext= (x, peaks.fullTraceArray[x] + 0.01),
+                            xy = (x, peaks.fullTraceArray[x]))
+        match peakMethod:
+            case "prom":
+                ax.annotate("Trough (%i)"%(i+1), xycoords= 'data', size= 8, horizontalalignment= 'center',
+                            xytext = (int(peaks.trace90Widths[1][i]), peaks.fullTraceArray[int(peaks.trace90Widths[1][i])] - 0.3), 
+                            xy = (int(peaks.trace90Widths[1][i]), peaks.fullTraceArray[int(peaks.trace90Widths[1][i])] - 0.01),
+                            arrowprops=dict(facecolor= 'black', width= 1, headwidth= 5, headlength= 5))
+                ax.fill_between(x=np.arange(int(peaks.trace90Widths[0][i]), int(peaks.trace90Widths[1][i])), 
+                                y1=peaks.fullTraceArray[int(peaks.trace90Widths[0][i]):int(peaks.trace90Widths[1][i])], 
+                                y2=peaks.fullTraceArray[peaks.peaks][i] - peaks.amplitude[i],
+                                color="C1", alpha=0.3)
+                if np.all(peaks.risePlot[i, 0]):
+                    ax.plot(peaks.risePlot[i, 0, :], peaks.risePlot[i, 1, :], color="C8")
+                else:
+                    continue
+                if np.all(peaks.risePlot[i, 0]):
+                    ax.plot(peaks.decayPlot[i, 0, :], peaks.decayPlot[i, 1, :], color="C9")
+                else:
+                    continue
+            case "elev":
+                ax.annotate("Trough (%i)"%(i+1), xycoords= 'data', size= 8, horizontalalignment= 'center',
+                            xytext = (int(peaks.trace90Widths[1][i]), peakElev - 0.3), 
+                            xy = (int(peaks.trace90Widths[1][i]), peakElev - 0.01),
+                            arrowprops=dict(facecolor= 'black', width= 1, headwidth= 5, headlength= 5))
+                ax.fill_between(x=np.arange(int(peaks.trace90Widths[0][i]), int(peaks.trace90Widths[1][i])), 
+                                y1=peaks.fullTraceArray[int(peaks.trace90Widths[0][i]):int(peaks.trace90Widths[1][i])], 
+                                y2=peakElev,
+                                where= peaks.fullTraceArray[int(peaks.trace90Widths[0][i]):int(peaks.trace90Widths[1][i])] > peakElev,
+                                color="C1", alpha=0.3)
+                if np.all(peaks.risePlot[i, 0]):
+                    ax.plot(peaks.risePlot[i, 0, :], peaks.risePlot[i, 1, :], color="C8")
+                else:
+                    continue
+                if np.all(peaks.risePlot[i, 0]):
+                    ax.plot(peaks.decayPlot[i, 0, :], peaks.decayPlot[i, 1, :], color="C9")
+                else:
+                    continue
+    match peakMethod:
+        case "prom":
+            ax.hlines(y=peaks.traceDict["width_heights"], xmin=peaks.traceDict["left_ips"], xmax=peaks.traceDict["right_ips"], color="C6")
+            ax.vlines(x=peaks.peaks, ymin=peaks.fullTraceArray[peaks.peaks] - peaks.amplitude, ymax=peaks.fullTraceArray[peaks.peaks], 
+                    color="C5")
+            ax.vlines(x=peaks.peaks, ymin=peaks.fullTraceArray[peaks.peaks] - peaks.absoluteAmp, ymax=peaks.fullTraceArray[peaks.peaks], 
+                    linestyles="dotted", color="C4")
+        case "elev":
+            ax.axhline(y=peakElev, color="Black")
+            ax.vlines(x=peaks.peaks, ymin=peaks.peakElev, ymax=peaks.fullTraceArray[peaks.peaks], 
+                    color="C5")
     peakFig.suptitle("Individual Trace")
     peakFig.set_size_inches(9, 4.5)
     ax.axis([0, 47750, 0, 2])

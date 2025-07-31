@@ -50,6 +50,7 @@ class TracePeaks(top.TotalPeaks):
         self.peakWindow = userConfig["EVENT_HANDLING"]["peak_window"]
         self.peakTop = userConfig["EVENT_HANDLING"]["peak_top"]
         self.peakBase = userConfig["EVENT_HANDLING"]["peak_bottom"]
+        self.peakElev = userConfig["EVENT_HANDLING"]["peak_elevation"]
 
 # Provides the R­­² value to determine the fit of a curve. Currently used in the rise/decay τ calculation to exclude poorly fitted exponential curves.
     def rSquaredGet(self, adjustedTau, slopeArray, a, b, c):
@@ -65,7 +66,11 @@ class TracePeaks(top.TotalPeaks):
 # Input: A trace of any length containing continuous photometry signals.
 # Output: Updates the tracePeaks peakNum, peakIndex, peakLocSec, leftBounds, rightBounds, amplitude, width, right tail and left tail to match the values from imported dataset.
     def peakFinder(self, singleTrace):
-        self.peaks, traceDict = sci.find_peaks(singleTrace, prominence=self.peakThreshold, width=0, wlen=self.peakWindow, rel_height= 0.5)
+        match self.peakMethod:
+            case "prom":
+                self.peaks, traceDict = sci.find_peaks(singleTrace, prominence=self.peakThreshold, width=0, wlen=self.peakWindow, rel_height= 0.5)
+            case "elev":
+                self.peaks, traceDict = sci.find_peaks(singleTrace, prominence=self.peakThreshold, width=0, wlen=self.peakWindow, rel_height= 0.5, height=(self.peakElev, None))
         width10 = np.array(sci.peak_widths(singleTrace, self.peaks, rel_height=self.peakTop, wlen=self.peakWindow,
                                   prominence_data=(traceDict['prominences'], 
                                                    traceDict["left_bases"], traceDict["right_bases"])))
@@ -86,21 +91,21 @@ class TracePeaks(top.TotalPeaks):
         self.peakNum = np.arange(1, len(self.peaks) + 1)
         self.peakIndex = self.peaks
         self.peakLocSec = ((self.peaks/self.samplingFreqSec) + (self.traceIndex * 30)).round(2)
-        self.leftBounds = self.traceDict['left_ips'].round(2)
-        self.rightBounds = self.traceDict['right_ips'].round(2)
-        self.amplitude = (self.traceDict['prominences'] - (self.peakTop * self.traceDict["prominences"])).round(3)
-        self.width = (self.traceDict['widths']/(self.samplingFreqMSec)).round(2)
-        self.rightTail = ((self.traceDict['right_bases'] - self.peaks)/(self.samplingFreqMSec)).round(2)
-        self.leftTail = ((self.peaks - self.traceDict['left_bases'])/(self.samplingFreqMSec)).round(2)
-
-    def peaksFromZero(self, singleTrace):
-        peakCutoff = self.peakThreshold
-        for points in singleTrace:
-            aboveThresholdSignals = []
-            if points >  peakCutoff:
-                aboveThresholdSignals.append(points)
-        
-        return
+        match self.peakMethod:
+            case "prom":
+                self.leftBounds = self.traceDict['left_ips'].round(2)
+                self.rightBounds = self.traceDict['right_ips'].round(2)
+                self.amplitude = (self.traceDict['prominences'] - (self.peakTop * self.traceDict["prominences"])).round(3)
+                self.width = (self.traceDict['widths']/(self.samplingFreqMSec)).round(2)
+                self.rightTail = ((self.traceDict['right_bases'] - self.peaks)/(self.samplingFreqMSec)).round(2)
+                self.leftTail = ((self.peaks - self.traceDict['left_bases'])/(self.samplingFreqMSec)).round(2)
+            case "elev":
+                self.leftBounds = self.traceDict['left_ips'].round(2)
+                self.rightBounds = self.traceDict['right_ips'].round(2)
+                self.amplitude = (self.peaks - self.peakElev).round(3)
+                self.width = (self.traceDict['widths']/(self.samplingFreqMSec)).round(2)
+                self.rightTail = ((self.traceDict['right_bases'] - self.peaks)/(self.samplingFreqMSec)).round(2)
+                self.leftTail = ((self.peaks - self.traceDict['left_bases'])/(self.samplingFreqMSec)).round(2)         
 
 # Finds overlapping events by checking if the maxima of a peak is contained within the left and right slopes of another peak
 # Input: An array of traces containing fiber photometry daya
@@ -123,11 +128,11 @@ class TracePeaks(top.TotalPeaks):
         adjustedAmp = np.zeros(self.numTracePeaks)
         sortedOverlapPeaks = dict(sorted(self.overlapPeaks.items(), key=lambda item: item[1]))
         for i in sortedOverlapPeaks:
-            j = np.where(self.peaks == i)
+            j = np.where(self.peaks == i)[0][0]
             if not self.overlapPeaks[i]:
-                adjustedAmp[j[0][0]] = self.amplitude[j[0][0]].round(3)
+                adjustedAmp[j] = self.amplitude[j].round(3)
             else:
-                adjustedAmp[j[0][0]] = self.amplitude[j[0][0]].round(3)
+                adjustedAmp[j] = self.amplitude[j].round(3)
                 for x in self.overlapPeaks[i]:
                     h = np.where(self.peaks == x)
                     parentPeak, parentProminence  = self.fullTraceArray[self.peaks][j[0][0]], self.traceDict["prominences"][j[0][0]]
