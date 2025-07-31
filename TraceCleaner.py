@@ -171,9 +171,4 @@ class TraceCleaner():
             raise ValueError(":(")
         
         signalLeft, signalRight = acl.isoLinReg(unbleached405Left, unbleached470Left), acl.isoLinReg(unbleached405Right, unbleached470Right)
-        # finalLeft, finalRight = np.zeros((len(signalLeft), len(signalLeft[0]))), np.zeros((len(signalRight), len(signalRight[0])))
-        # for i, x in enumerate(signalLeft):
-        #     finalLeft[i] = x
-        # for i, x in enumerate(signalRight):
-        #     finalRight[i] = x
         return signalLeft, signalRight, unbleachedSignals, rSquaredDecay
