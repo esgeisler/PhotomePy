@@ -134,15 +134,15 @@ class TracePeaks(top.TotalPeaks):
             else:
                 adjustedAmp[j] = self.amplitude[j].round(3)
                 for x in self.overlapPeaks[i]:
-                    h = np.where(self.peaks == x)
-                    parentPeak, parentProminence  = self.fullTraceArray[self.peaks][j[0][0]], self.traceDict["prominences"][j[0][0]]
+                    h = np.where(self.peaks == x)[0][0]
+                    parentPeak, parentProminence  = self.fullTraceArray[self.peaks][j], self.traceDict["prominences"][j]
                     parentBase = parentPeak - parentProminence + (self.peakTop * parentProminence)
 
-                    childPeak, childProminence = self.fullTraceArray[self.peaks][h[0][0]], self.traceDict["prominences"][h[0][0]]
+                    childPeak, childProminence = self.fullTraceArray[self.peaks][h], self.traceDict["prominences"][h]
                     childBase = childPeak - childProminence + (self.peakTop * childProminence)
 
                     ampAdjustmentFactor = childBase - parentBase
-                    adjustedAmp[h[0][0]] = (childProminence + ampAdjustmentFactor - (self.peakTop * self.traceDict["prominences"][h[0][0]])).round(3)
+                    adjustedAmp[h] = (childProminence + ampAdjustmentFactor - (self.peakTop * self.traceDict["prominences"][h])).round(3)
         self.absoluteAmp = adjustedAmp
             
     def freqSet(self):
