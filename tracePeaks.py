@@ -246,10 +246,13 @@ class TracePeaks(top.TotalPeaks):
                     else:
                         raise
                 except ValueError as e:
-                    if str(e) == "`x0` is infeasible.":
-                        riseTauList[i] = np.NaN
-                    else:
-                        raise
+                    match str(e):
+                        case "`x0` is infeasible.":
+                            riseTauList[i] = np.NaN
+                        case "zero-size array to reduction operation minimum which has no identity":
+                            continue
+                        case _:
+                            raise
         self.riseRate = riseTauList
 
     def decaySet(self):
@@ -310,8 +313,11 @@ class TracePeaks(top.TotalPeaks):
                     else:
                         raise
                 except ValueError as e:
-                    if str(e) == "`x0` is infeasible.":
-                        decayTauList[i] = np.NaN 
-                    else:
-                        raise
+                    match str(e):
+                        case "`x0` is infeasible.":
+                            decayTauList[i] = np.NaN
+                        case "zero-size array to reduction operation minimum which has no identity":
+                            continue
+                        case _:
+                            raise
         self.decayRate = decayTauList
