@@ -161,4 +161,16 @@ def peakDisplay(processedSignalArray, mainFile, ratSide, currentTrace):
     ax.set_ylabel("Fluorescence (AU)", fontsize="x-large")
     peakFig.tight_layout()
     plt.minorticks_on()
+
+    
+    # elevFig, axi = plt.subplots()
+    # for i, z in enumerate(peaks.elevationY):
+    #     axi.plot([x for x in peaks.elevationX[i]], [y for y in peaks.elevationY[i]], color="C1")
+    # axi.axis([0, 47750, 0, 2])
+    # axi.tick_params(axis="both", labelsize="large")
+    # axi.set_xticks(ticks=peaks.seconds, labels=range(len(peaks.seconds)))
+    # axi.set_xlabel("Time (s)", fontsize="x-large")
+    # axi.set_ylabel("Fluorescence (AU)", fontsize="x-large")
+    # elevFig.tight_layout()
+
     plt.show()
