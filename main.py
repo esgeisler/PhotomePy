@@ -169,7 +169,7 @@ class Main(tk.Frame):
     # Creates a popup window for the user to input the rat's name/number and what trace they were injected during.
         def dataProcessorPop():
             infoPop = tk.Toplevel()
-            infoPop.title("Rat Metadata Entry")
+            infoPop.title("Subject Metadata Entry")
             leftRatNameFill, rightRatNameFill = ttk.Entry(infoPop, textvariable= self.leftRatName, width= 10), ttk.Entry(infoPop, textvariable= self.rightRatName, width= 10)
             leftRatNameLabel, rightRatNameLabel = ttk.Label(infoPop, text="Enter Left Rat #:"), ttk.Label(infoPop, text= "Enter Right Rat #:")
             leftRatNameLabel.grid(row= 1, column= 1)
@@ -185,8 +185,8 @@ class Main(tk.Frame):
 
             submitButton = ttk.Button(infoPop, text="Submit", command=lambda:[infoPop.destroy(), onPopSubmit()])
             submitButton.grid(row= 3, column= 3)
-            curveFitCheckBox = ttk.Checkbutton(infoPop, text="Would you like to fit a curve for bleaching correction? \nWARNING: Only check if this is a vehicle control.", variable=self.controlStatus)
-            curveFitCheckBox.grid(row=4, column=3)
+            # curveFitCheckBox = ttk.Checkbutton(infoPop, text="Would you like to fit a curve for bleaching correction? \nWARNING: Only check if this is a vehicle control.", variable=self.controlStatus)
+            # curveFitCheckBox.grid(row=4, column=3)
 
         def singleTracePop():
             infoPop = tk.Toplevel()
@@ -317,14 +317,14 @@ class Main(tk.Frame):
             injectionRight, overviewRight = pas.traceProcessor(self.peaksRight)
             match self.bleach_correct:
                 case "isosbestic":
-                    leftPath = os.path.join(os.getcwd(), "Processed Data", "Default %s Rat %s Peaks.xlsx"%(leftSignal.date, leftSignal.ratID))
-                    rightPath = os.path.join(os.getcwd(), "Processed Data", "Default %s Rat %s Peaks.xlsx"%(rightSignal.date, rightSignal.ratID))
+                    leftPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Default Peaks.xlsx"%(leftSignal.date, leftSignal.ratID))
+                    rightPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Default Peaks.xlsx"%(rightSignal.date, rightSignal.ratID))
                 case "refReg":
-                    leftPath = os.path.join(os.getcwd(), "Processed Data", "refReg %s Rat %s Peaks.xlsx"%(leftSignal.date, leftSignal.ratID))
-                    rightPath = os.path.join(os.getcwd(), "Processed Data", "refReg %s Rat %s Peaks.xlsx"%(rightSignal.date, rightSignal.ratID))
+                    leftPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s refReg Peaks.xlsx"%(leftSignal.date, leftSignal.ratID))
+                    rightPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s refReg Peaks.xlsx"%(rightSignal.date, rightSignal.ratID))
                 case "biexpActive":
-                    leftPath = os.path.join(os.getcwd(), "Processed Data", "biexpActive %s Rat %s Peaks.xlsx"%(leftSignal.date, leftSignal.ratID))
-                    rightPath = os.path.join(os.getcwd(), "Processed Data", "biexpActive %s Rat %s Peaks.xlsx"%(rightSignal.date, rightSignal.ratID))
+                    leftPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s biexpActive Peaks.xlsx"%(leftSignal.date, leftSignal.ratID))
+                    rightPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s biexpActive Peaks.xlsx"%(rightSignal.date, rightSignal.ratID))
                 case _:
                     raise ValueError("bleach error")
         # Saves the averaged data to an excel file with the rat's "name"
@@ -672,7 +672,7 @@ class Main(tk.Frame):
                         raise  
             
 
-        runFileButton = ttk.Button(self, text="Process all Traces", command= dataProcessorPop)
+        runFileButton = ttk.Button(self, text="Process All Traces", command= dataProcessorPop)
         runFileButton.grid(row= 3, column= 1)
         baselineGetterButton = ttk.Button(self, text="Get Baseline Autofluorescence", command= baselineFinder)
         baselineGetterButton.grid(row= 3, column= 2)
