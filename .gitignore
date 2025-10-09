@@ -1,1 +1,8 @@
 biexpBleachCorrect.py
+__pycache__/AutoCleaner.cpython-311.pyc
+__pycache__/AverageTraces.cpython-311.pyc
+__pycache__/peakAnalysis.cpython-311.pyc
+__pycache__/processedSignal.cpython-311.pyc
+__pycache__/totalPeaks.cpython-311.pyc
+__pycache__/TraceCleaner.cpython-311.pyc
+__pycache__/tracePeaks.cpython-311.pyc
