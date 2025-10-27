@@ -507,7 +507,8 @@ class Main(tk.Frame):
         #TODO: Adjust the xlim and ylim parameters to be dynamic in relation to the shape of the trace, rather than hard-coded.
         def stepPrinterSingleTrace():
             try:
-                leftNoBaseline, rightNoBaseline, leftFiltered, rightFiltered, combinedLeft, combinedRight, finalLeft, finalRight = acl.stepwiseProcessor(self.experimentFileName, self.baselinefileName)
+                stepwiseTraces = trace.TraceCleaner(self.experimentFileName, self.baselinefileName)
+                leftNoBaseline, rightNoBaseline, leftFiltered, rightFiltered, combinedLeft, combinedRight, finalLeft, finalRight = stepwiseTraces.stepwiseProcessor()
                 seconds, _, _ = pas.secondsCalculator(self.experimentFileName)
                 # Shows the left rat's raw traces, with no corrections and after subtracting baseline autofluorescence.
                 peakFig, ax1 = plt.subplots()
