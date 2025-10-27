@@ -6,7 +6,7 @@ import pyabf
 import sys
 import tracePeaks as trace
 import yaml
-np.set_printoptions(threshold=sys.maxsize)
+# np.set_printoptions(threshold=sys.maxsize)
 
 with open("config.yaml") as c:
     userConfig = yaml.safe_load(c)
