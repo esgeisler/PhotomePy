@@ -115,14 +115,10 @@ def peakDisplay(processedSignalArray, mainFile, ratSide, currentTrace):
                                 y1=peaks.fullTraceArray[int(peaks.trace90Widths[0][i]):int(peaks.trace90Widths[1][i])], 
                                 y2=peaks.fullTraceArray[peaks.peaks][i] - peaks.amplitude[i],
                                 color="C1", alpha=0.3)
-                if np.all(peaks.risePlot[i, 0]):
+                if np.any(peaks.risePlot[i, 0]):
                     ax.plot(peaks.risePlot[i, 0, :], peaks.risePlot[i, 1, :], color="C8")
-                else:
-                    continue
-                if np.all(peaks.risePlot[i, 0]):
+                if np.any(peaks.decayPlot[i, 0]):
                     ax.plot(peaks.decayPlot[i, 0, :], peaks.decayPlot[i, 1, :], color="C9")
-                else:
-                    continue
             case "elev":
                 ax.annotate("Trough (%i)"%(i+1), xycoords= 'data', size= 8, horizontalalignment= 'center',
                             xytext = (int(peaks.trace90Widths[1][i]), peakElev - 0.3), 
@@ -135,12 +131,12 @@ def peakDisplay(processedSignalArray, mainFile, ratSide, currentTrace):
                                 color="C1", alpha=0.3)
                 if np.all(peaks.risePlot[i, 0]):
                     ax.plot(peaks.risePlot[i, 0, :], peaks.risePlot[i, 1, :], color="C8")
-                else:
-                    continue
-                if np.all(peaks.risePlot[i, 0]):
+                # else:
+                #     continue
+                if np.all(peaks.decayPlot[i, 0]):
                     ax.plot(peaks.decayPlot[i, 0, :], peaks.decayPlot[i, 1, :], color="C9")
-                else:
-                    continue
+                # else:
+                #     continue
     match peakMethod:
         case "prom":
             ax.hlines(y=peaks.traceDict["width_heights"], xmin=peaks.traceDict["left_ips"], xmax=peaks.traceDict["right_ips"], color="C6")
