@@ -381,8 +381,8 @@ class Main(tk.Frame):
             peakWriters = [leftWriter, rightWriter]
             for rats in peakWriters:
                 with rats as writer:
-                    ampColumn, absAmpColumn, offTimeColumn, widthColumn, freqColumn, areaColumn, totAreaColumn, riseColumn, decayColumn = (pd.DataFrame() for _ in range(9))
-                    ampList, absAmpList, offTimeList, widthList, freqList, areaList, totAreaList, riseList, decayList = ([] for _ in range(9))
+                    ampColumn, absAmpColumn, onTimeColumn, offTimeColumn, widthColumn, freqColumn, areaColumn, totAreaColumn, riseColumn, decayColumn = (pd.DataFrame() for _ in range(10))
+                    ampList, absAmpList, onTimeList, offTimeList, widthList, freqList, areaList, totAreaList, riseList, decayList = ([] for _ in range(10))
                     z = 1
                     if rats == leftWriter:
                         # Overview Sheet
@@ -392,6 +392,7 @@ class Main(tk.Frame):
                             concat = pd.concat(groups, ignore_index=True)
                             ampList.append(pd.DataFrame(concat["Amplitude"].rename("Amplitude %i-%i"%(z, z+2))))
                             absAmpList.append(pd.DataFrame(concat["Abs_Amplitude"].rename("Absolute Amplitude %i-%i"%(z, z+2))))
+                            onTimeList.append(pd.DataFrame(concat["On_Time_ms"].rename("On Time %i-%i"%(z, z+2))))
                             offTimeList.append(pd.DataFrame(concat["Off_Time_ms"].rename("Off Time %i-%i"%(z, z+2))))
                             widthList.append(pd.DataFrame(concat["Width_at50_ms"].rename("Width %i-%i"%(z, z+2))))
                             droppedFreq = pd.DataFrame(concat["Frequency"].rename("Frequency %i-%i"%(z, z+2))).dropna()
@@ -411,6 +412,7 @@ class Main(tk.Frame):
                             concat = pd.concat(groups, ignore_index=True)
                             ampList.append(pd.DataFrame(concat["Amplitude"].rename("Amplitude %i-%i"%(z, z+2))))
                             absAmpList.append(pd.DataFrame(concat["Abs_Amplitude"].rename("Absolute Amplitude %i-%i"%(z, z+2))))
+                            onTimeList.append(pd.DataFrame(concat["On_Time_ms"].rename("On Time %i-%i"%(z, z+2))))
                             offTimeList.append(pd.DataFrame(concat["Off_Time_ms"].rename("Off Time %i-%i"%(z, z+2))))
                             widthList.append(pd.DataFrame(concat["Width_at50_ms"].rename("Width %i-%i"%(z, z+2))))
                             droppedFreq = pd.DataFrame(concat["Frequency"].rename("Frequency %i-%i"%(z, z+2))).dropna()
@@ -428,6 +430,9 @@ class Main(tk.Frame):
 
                     absAmpColumn = pd.concat(absAmpList, axis="columns")
                     absAmpColumn.to_excel(writer, sheet_name="Abs. Amplitude")
+
+                    onTimeColumn = pd.concat(onTimeList, axis="columns")
+                    onTimeColumn.to_excel(writer, sheet_name="On Time")
 
                     offTimeColumn = pd.concat(offTimeList, axis="columns")
                     offTimeColumn.to_excel(writer, sheet_name="Off Time")

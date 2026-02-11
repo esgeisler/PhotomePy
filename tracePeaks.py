@@ -97,15 +97,15 @@ class TracePeaks(top.TotalPeaks):
                 self.rightBounds = self.traceDict['right_ips'].round(2)
                 self.amplitude = (self.traceDict['prominences'] - (self.peakTop * self.traceDict["prominences"])).round(3)
                 self.width = (self.traceDict['widths']/(self.samplingFreqMSec)).round(2)
-                self.rightTail = ((self.traceDict['right_bases'] - self.peaks)/(self.samplingFreqMSec)).round(2)
-                self.leftTail = ((self.peaks - self.traceDict['left_bases'])/(self.samplingFreqMSec)).round(2)
+                self.leftTail = ((self.trace10Widths[0] - self.trace90Widths[0])/(self.samplingFreqMSec)).round(2)
+                self.rightTail = ((self.trace90Widths[1] - self.trace10Widths[1])/(self.samplingFreqMSec)).round(2)
             case "elev":
                 self.leftBounds = self.traceDict['left_ips'].round(2)
                 self.rightBounds = self.traceDict['right_ips'].round(2)
                 self.amplitude = (self.peaks - self.peakElev).round(3)
                 self.width = (self.traceDict['widths']/(self.samplingFreqMSec)).round(2)
-                self.rightTail = ((self.traceDict['right_bases'] - self.peaks)/(self.samplingFreqMSec)).round(2)
-                self.leftTail = ((self.peaks - self.traceDict['left_bases'])/(self.samplingFreqMSec)).round(2)         
+                self.leftTail = ((self.peaks - self.trace90Widths[0])/(self.samplingFreqMSec)).round(2)  
+                self.rightTail = ((self.trace90Widths[1] - self.peaks)/(self.samplingFreqMSec)).round(2)     
 
 # Finds overlapping events by checking if the maxima of a peak is contained within the left and right slopes of another peak
 # Input: An array of traces containing fiber photometry daya

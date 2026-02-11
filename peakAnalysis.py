@@ -52,7 +52,7 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         peakTable = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 'Peak_Time_Sec', 
                                            'Event_Window_Start', 'Event_Window_End', 
                                            'Amplitude', 'Abs_Amplitude',
-                                           'Off_Time_ms', 'Width_at50_ms',
+                                           'On_Time_ms', 'Off_Time_ms', 'Width_at50_ms',
                                            'Frequency', 
                                            'Avg_Area', 'Total_Area',
                                            'Rise_Tau', 'Decay_Tau'])
@@ -63,6 +63,7 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         peakTable.Event_Window_End = peaks.rightBounds
         peakTable.Amplitude = peaks.amplitude
         peakTable.Abs_Amplitude = peaks.absoluteAmp
+        peakTable.On_Time_ms = peaks.leftTail
         peakTable.Off_Time_ms = peaks.rightTail
         peakTable.Width_at50_ms = peaks.width
         peakTable.Avg_Area = peaks.meanArea
