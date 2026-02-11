@@ -93,15 +93,15 @@ class TracePeaks(top.TotalPeaks):
         self.peakLocSec = ((self.peaks/self.samplingFreqSec) + (self.traceIndex * 30)).round(2)
         match self.peakMethod:
             case "prom":
-                self.leftBounds = self.traceDict['left_ips'].round(2)
-                self.rightBounds = self.traceDict['right_ips'].round(2)
+                self.leftBounds = self.trace90Widths[0].round(2)
+                self.rightBounds = self.trace90Widths[1].round(2)
                 self.amplitude = (self.traceDict['prominences'] - (self.peakTop * self.traceDict["prominences"])).round(3)
                 self.width = (self.traceDict['widths']/(self.samplingFreqMSec)).round(2)
                 self.leftTail = ((self.trace10Widths[0] - self.trace90Widths[0])/(self.samplingFreqMSec)).round(2)
                 self.rightTail = ((self.trace90Widths[1] - self.trace10Widths[1])/(self.samplingFreqMSec)).round(2)
             case "elev":
-                self.leftBounds = self.traceDict['left_ips'].round(2)
-                self.rightBounds = self.traceDict['right_ips'].round(2)
+                self.leftBounds = self.trace90Widths[0].round(2)
+                self.rightBounds = self.trace90Widths[1].round(2)
                 self.amplitude = (self.peaks - self.peakElev).round(3)
                 self.width = (self.traceDict['widths']/(self.samplingFreqMSec)).round(2)
                 self.leftTail = ((self.peaks - self.trace90Widths[0])/(self.samplingFreqMSec)).round(2)  
@@ -203,6 +203,7 @@ class TracePeaks(top.TotalPeaks):
             else:
                 try:
                     if self.riseNPeaks[u] == 0: # Handles peaks with no overlap
+                        # t is used as "x" here, and is equivalent to time. a = the initial value of the curve, b is 1/tau, and c is the offset from 0.
                         popt, _ = opt.curve_fit(lambda t, a, b, c: a * np.exp(b * t) + c, riseArray/self.samplingFreqSec, adjustedRiseTau, p0=p0, 
                                                 bounds=opt.Bounds(lb=[0, 0, self.fullTraceArray[int(self.trace90Widths[0][i])]], 
                                                                 ub=[heightDiff, np.inf, self.fullTraceArray[int(self.trace10Widths[0][i])]]),
