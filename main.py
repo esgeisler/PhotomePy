@@ -381,8 +381,8 @@ class Main(tk.Frame):
             peakWriters = [leftWriter, rightWriter]
             for rats in peakWriters:
                 with rats as writer:
-                    ampColumn, absAmpColumn, onTimeColumn, offTimeColumn, widthColumn, freqColumn, areaColumn, totAreaColumn, riseColumn, decayColumn = (pd.DataFrame() for _ in range(10))
-                    ampList, absAmpList, onTimeList, offTimeList, widthList, freqList, areaList, totAreaList, riseList, decayList = ([] for _ in range(10))
+                    ampColumn, absAmpColumn, onTimeColumn, offTimeColumn, widthColumn, freqColumn, areaColumn, totAreaColumn, riseColumn, riseCorrColumn, altRiseColumn, altRiseCorrColumn, decayColumn = (pd.DataFrame() for _ in range(13))
+                    ampList, absAmpList, onTimeList, offTimeList, widthList, freqList, areaList, totAreaList, riseList, riseCorrList, altRiseList, altRiseCorrList, decayList = ([] for _ in range(13))
                     z = 1
                     if rats == leftWriter:
                         # Overview Sheet
@@ -401,6 +401,9 @@ class Main(tk.Frame):
                             droppedArea = pd.DataFrame(concat["Total_Area"].rename("Total Area %i-%i"%(z, z+2))).dropna()
                             totAreaList.append(droppedArea.reset_index(drop=True))
                             riseList.append(pd.DataFrame(concat["Rise_Tau"].rename("Rise Tau %i-%i"%(z, z+2))))
+                            # riseCorrList.append(pd.DataFrame(concat["Rise_R2"].rename("Rise R2 %i-%i"%(z, z+2))))
+                            # altRiseList.append(pd.DataFrame(concat["Alt_Rise_Tau"].rename("Rise Tau %i-%i"%(z, z+2))))
+                            # altRiseCorrList.append(pd.DataFrame(concat["Alt_Rise_R2"].rename("Rise R2 %i-%i"%(z, z+2))))
                             decayList.append(pd.DataFrame(concat["Decay_Tau"].rename("Decay Tau %i-%i"%(z, z+2))))
                             concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
                             z += 3
@@ -421,6 +424,9 @@ class Main(tk.Frame):
                             droppedArea = pd.DataFrame(concat["Total_Area"].rename("Total Area %i-%i"%(z, z+2))).dropna()
                             totAreaList.append(droppedArea.reset_index(drop=True))
                             riseList.append(pd.DataFrame(concat["Rise_Tau"].rename("Rise Tau %i-%i"%(z, z+2))))
+                            # riseCorrList.append(pd.DataFrame(concat["Rise_R2"].rename("Rise R2 %i-%i"%(z, z+2))))
+                            # altRiseList.append(pd.DataFrame(concat["Alt_Rise_Tau"].rename("Rise Tau %i-%i"%(z, z+2))))
+                            # altRiseCorrList.append(pd.DataFrame(concat["Alt_Rise_R2"].rename("Rise R2 %i-%i"%(z, z+2))))
                             decayList.append(pd.DataFrame(concat["Decay_Tau"].rename("Decay Tau %i-%i"%(z, z+2))))
                             concat.to_excel(writer, sheet_name= "Traces %i-%i"%(z, z+2), index=False)
                             z += 3
@@ -451,6 +457,15 @@ class Main(tk.Frame):
 
                     riseColumn = pd.concat(riseList, axis="columns")
                     riseColumn.to_excel(writer, sheet_name="Rise Tau")
+
+                    # riseCorrColumn = pd.concat(riseCorrList, axis="columns")
+                    # riseCorrColumn.to_excel(writer, sheet_name="Rise R2")
+
+                    # altRiseColumn = pd.concat(altRiseList, axis="columns")
+                    # altRiseColumn.to_excel(writer, sheet_name="Alt Rise Tau")
+
+                    # altRiseCorrColumn = pd.concat(altRiseCorrList, axis="columns")
+                    # altRiseCorrColumn.to_excel(writer, sheet_name="Alt Rise R2")
 
                     decayColumn = pd.concat(decayList, axis="columns")
                     decayColumn.to_excel(writer, sheet_name="Decay Tau")

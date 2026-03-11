@@ -37,8 +37,13 @@ class TracePeaks(top.TotalPeaks):
         self.frequency = 0
         self.meanArea = np.zeros(self.numTracePeaks)
         self.totArea = 0
+
         self.risePlot = np.zeros((self.numTracePeaks, 2, 1000), dtype=np.float64)
         self.riseRate = np.zeros(self.numTracePeaks, dtype=np.float64)
+        self.altRiseRate = np.zeros(self.numTracePeaks, dtype=np.float64)
+        self.altRisePlot = np.zeros((self.numTracePeaks, 2, 1000), dtype=np.float64)
+        self.riseCorr = np.zeros(self.numTracePeaks, dtype=np.float64)
+        self.altRiseCorr = np.zeros(self.numTracePeaks, dtype=np.float64)
         self.decayPlot = np.zeros((self.numTracePeaks, 2, 1000), dtype=np.float64)
         self.decayRate = np.zeros(self.numTracePeaks, dtype=np.float64)
 
@@ -55,6 +60,15 @@ class TracePeaks(top.TotalPeaks):
 # Provides the R­­² value to determine the fit of a curve. Currently used in the rise/decay τ calculation to exclude poorly fitted exponential curves.
     def rSquaredGet(self, adjustedTau, slopeArray, a, b, c):
         squaredDiffs = np.square(adjustedTau - (a * np.exp(b * ((slopeArray/self.samplingFreqSec))) + c))
+        squaredDiffsFromMean = np.square(adjustedTau - np.mean(adjustedTau))
+        if np.sum(squaredDiffsFromMean) == 0:
+            rSquared = 0
+        else:
+            rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
+        return rSquared
+
+    def altRSquaredGet(self, adjustedTau, slopeArray, a, b, c):
+        squaredDiffs = np.square(adjustedTau - (a * (1 - np.exp(b * ((slopeArray/self.samplingFreqSec)))) + c))
         squaredDiffsFromMean = np.square(adjustedTau - np.mean(adjustedTau))
         if np.sum(squaredDiffsFromMean) == 0:
             rSquared = 0
@@ -186,6 +200,7 @@ class TracePeaks(top.TotalPeaks):
 
     def riseSet(self):
         riseTauList = np.zeros(self.numTracePeaks)
+        riseCorr = np.zeros(self.numTracePeaks)
         for _, u in enumerate(self.degreeRise): 
             i = np.where(self.peaks == u)[0][0]
             if len(self.fullTraceArray[int(self.trace90Widths[0][i]):int(self.trace90Widths[1][i])]) == 0:
@@ -210,7 +225,7 @@ class TracePeaks(top.TotalPeaks):
                                                                 maxfev=1000)
                         rSquared = self.rSquaredGet(adjustedRiseTau, riseArray, popt[0], popt[1], popt[2])   
                         y_rise = popt[0] * np.exp(popt[1] * (x_rise/self.samplingFreqSec)) + popt[2]
-                        
+                        riseCorr[i] = rSquared
                         if rSquared < 0.8:
                             riseTauList[i] = np.NaN
                         else:
@@ -229,9 +244,10 @@ class TracePeaks(top.TotalPeaks):
                                                 bounds=opt.Bounds(lb=[0, 0, self.fullTraceArray[int(self.trace90Widths[0][i])]], 
                                                                 ub=[heightDiff, np.inf, self.fullTraceArray[int(self.trace10Widths[0][h])]]),
                                                                 maxfev=1000)
-                        rSquared = self.rSquaredGet(adjustedRiseTau, riseArray, popt[0], popt[1], popt[2])   
+                        rSquared = self.rSquaredGet(adjustedRiseTau, riseArray, popt[0], popt[1], popt[2])
                         y_rise = popt[0] * np.exp(popt[1] * (x_rise/self.samplingFreqSec)) + popt[2]
                         riseTauList[i] = np.NaN
+                        riseCorr[h] = rSquared
                         if rSquared < 0.8:
                             riseTauList[h] = np.NaN
                         else:
@@ -243,18 +259,98 @@ class TracePeaks(top.TotalPeaks):
                         riseTauList[i] = np.NaN
                 except RuntimeError as e:
                     if str(e) == "Optimal parameters not found: The maximum number of function evaluations is exceeded.":
-                        riseTauList[i] = np.NaN 
+                        riseTauList[i] = np.NaN
+                        riseCorr[i] = np.NaN
                     else:
                         raise
                 except ValueError as e:
                     match str(e):
                         case "`x0` is infeasible.":
                             riseTauList[i] = np.NaN
+                            riseCorr[i] = np.NaN
                         case "zero-size array to reduction operation minimum which has no identity":
                             continue
                         case _:
                             raise
         self.riseRate = riseTauList
+        self.riseCorr = riseCorr
+
+    def altRiseSet(self): # Testing for the new rise fitting method using the (1-e^t/tau method) to determine its usefulness relative to the current exponential growth equation.
+        riseTauList = np.zeros(self.numTracePeaks)
+        riseCorr = np.zeros(self.numTracePeaks)
+        for _, u in enumerate(self.degreeRise): 
+            i = np.where(self.peaks == u)[0][0]
+            if len(self.fullTraceArray[int(self.trace90Widths[0][i]):int(self.trace90Widths[1][i])]) == 0:
+                continue
+            adjustedRiseTau = np.array(self.fullTraceArray[int(self.trace90Widths[0][i]):int(self.trace10Widths[0][i])])
+            if len(adjustedRiseTau) == 0:
+                continue
+            riseWidth = int(len(adjustedRiseTau))
+            riseArray = np.arange(0, riseWidth)
+            x_rise = np.linspace(np.min(riseArray), np.max(riseArray), 1000)
+            heightDiff = abs(self.fullTraceArray[int(self.trace10Widths[0][i])] - self.fullTraceArray[int(self.trace90Widths[0][i])])
+            p0 = (heightDiff, -1, self.fullTraceArray[int(self.trace90Widths[0][i])])
+            if len(adjustedRiseTau) == 0:
+                continue
+            else:
+                try:
+                    if self.riseNPeaks[u] == 0: # Handles peaks with no overlap
+                        # t is used as "x" here, and is equivalent to time. a = the initial value of the curve, b is 1/tau, and c is the offset from 0.
+                        popt, _ = opt.curve_fit(lambda t, a, b, c: a * (1 - np.exp(b * t)) + c, riseArray/self.samplingFreqSec, adjustedRiseTau, p0=p0, 
+                                                bounds=opt.Bounds(lb=[0, -np.inf, self.fullTraceArray[int(self.trace90Widths[0][i])]], 
+                                                                ub=[heightDiff, 0, np.inf]),
+                                                                maxfev=1000)
+                        rSquared = self.altRSquaredGet(adjustedRiseTau, riseArray, popt[0], popt[1], popt[2])   
+                        y_rise = popt[0] * (1 - np.exp(popt[1] * (x_rise/self.samplingFreqSec))) + popt[2]
+                        riseCorr[i] = rSquared
+                        if rSquared < 0.8:
+                            riseTauList[i] = np.NaN
+                        else:
+                            riseTauList[i] = abs(1/popt[1])
+                            self.altRisePlot[i, 0] = x_rise+int(self.trace90Widths[0][i])
+                            self.altRisePlot[i, 1] = y_rise
+                    elif self.riseNPeaks[u] > 0: # Handles peaks with overlap, which are the first overlapping peaks
+                        h = np.where(self.peaks == self.overlapRise[u][0])[0][0]
+                        adjustedRiseTau = np.array(self.fullTraceArray[int(self.trace90Widths[0][i]):int(self.trace10Widths[0][h])])
+                        heightDiff = abs(self.fullTraceArray[int(self.trace10Widths[0][h])] - self.fullTraceArray[int(self.trace90Widths[0][i])])
+                        p0 = (heightDiff, -1, self.fullTraceArray[int(self.trace90Widths[0][i])])
+                        riseWidth = int(len(adjustedRiseTau))
+                        riseArray = np.array(list(range(0, riseWidth)))
+                        x_rise = np.linspace(np.min(riseArray), np.max(riseArray), 1000)
+                        popt, _ = opt.curve_fit(lambda t, a, b, c: a * (1 - np.exp((b * t))) + c, riseArray/self.samplingFreqSec, adjustedRiseTau, p0=p0, 
+                                                bounds=opt.Bounds(lb=[0, -np.inf, self.fullTraceArray[int(self.trace90Widths[0][i])]], 
+                                                                ub=[heightDiff, 0, np.inf]),
+                                                                maxfev=1000)
+                        rSquared = self.altRSquaredGet(adjustedRiseTau, riseArray, popt[0], popt[1], popt[2])   
+                        y_rise = popt[0] * (1 - np.exp(popt[1] * (x_rise/self.samplingFreqSec))) + popt[2]
+                        riseTauList[i] = np.NaN
+                        riseCorr[h] = rSquared
+                        if rSquared < 0.8:
+                            riseTauList[h] = np.NaN
+                        else:
+                            riseTauList[h] = abs(1/popt[1])
+                            self.altRisePlot[h, 0] = x_rise+int(self.trace90Widths[0][i])
+                            self.altRisePlot[h, 1] = y_rise
+                        
+                    else:
+                        riseTauList[i] = np.NaN
+                except RuntimeError as e:
+                    if str(e) == "Optimal parameters not found: The maximum number of function evaluations is exceeded.":
+                        riseTauList[i] = np.NaN 
+                        riseCorr[i] = np.NaN
+                    else:
+                        raise
+                except ValueError as e:
+                    match str(e):
+                        case "`x0` is infeasible.":
+                            riseTauList[i] = np.NaN
+                            riseCorr[i] = np.NaN
+                        case "zero-size array to reduction operation minimum which has no identity":
+                            continue
+                        case _:
+                            raise
+        self.altRiseRate = riseTauList
+        self.altRiseCorr = riseCorr
 
     def decaySet(self):
         decayTauList = np.zeros(self.numTracePeaks)

@@ -48,6 +48,7 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         peaks.freqSet()
         peaks.areaSet()
         peaks.riseSet()
+        peaks.altRiseSet()
         peaks.decaySet()
         peakTable = pd.DataFrame(columns= ['Event_Num', 'Peak_Index', 'Peak_Time_Sec', 
                                            'Event_Window_Start', 'Event_Window_End', 
@@ -55,7 +56,8 @@ def wholeTracePeaks(processedSignalArray, mainFile):
                                            'On_Time_ms', 'Off_Time_ms', 'Width_at50_ms',
                                            'Frequency', 
                                            'Avg_Area', 'Total_Area',
-                                           'Rise_Tau', 'Decay_Tau'])
+                                           'Rise_Tau', 'Rise_R2', 'Alt_Rise_Tau', "Alt_Rise_R2",
+                                           'Decay_Tau'])
         peakTable.Event_Num = peaks.peakNum
         peakTable.Peak_Index = peaks.peakIndex
         peakTable.Peak_Time_Sec = peaks.peakLocSec
@@ -68,6 +70,9 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         peakTable.Width_at50_ms = peaks.width
         peakTable.Avg_Area = peaks.meanArea
         peakTable.Rise_Tau = pd.Series(peaks.riseRate)
+        # peakTable.Rise_R2 = peaks.riseCorr
+        # peakTable.Alt_Rise_Tau = pd.Series(peaks.altRiseRate)
+        # peakTable.Alt_Rise_R2 = pd.Series(peaks.altRiseCorr)
         peakTable.Decay_Tau = pd.Series(peaks.decayRate)
         if np.size(peaks.peaks) == 0:
             peakTable.Frequency = 0
