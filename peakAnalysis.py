@@ -70,9 +70,9 @@ def wholeTracePeaks(processedSignalArray, mainFile):
         peakTable.Width_at50_ms = peaks.width
         peakTable.Avg_Area = peaks.meanArea
         peakTable.Rise_Tau = pd.Series(peaks.riseRate)
-        # peakTable.Rise_R2 = peaks.riseCorr
-        # peakTable.Alt_Rise_Tau = pd.Series(peaks.altRiseRate)
-        # peakTable.Alt_Rise_R2 = pd.Series(peaks.altRiseCorr)
+        peakTable.Rise_R2 = peaks.riseCorr
+        peakTable.Alt_Rise_Tau = pd.Series(peaks.altRiseRate)
+        peakTable.Alt_Rise_R2 = pd.Series(peaks.altRiseCorr)
         peakTable.Decay_Tau = pd.Series(peaks.decayRate)
         if np.size(peaks.peaks) == 0:
             peakTable.Frequency = 0
@@ -101,6 +101,7 @@ def peakDisplay(processedSignalArray, mainFile, ratSide, currentTrace):
     peaks.peakFinder(peaks.fullTraceArray)
     peaks.overlapCheck(peaks.peaks)
     peaks.overlapAmplitude()
+    peaks.altRiseSet()
     peaks.riseSet()
     peaks.decaySet()
     peakFig, ax = plt.subplots()
@@ -123,6 +124,8 @@ def peakDisplay(processedSignalArray, mainFile, ratSide, currentTrace):
                                 color="C1", alpha=0.3)
                 if np.any(peaks.risePlot[i, 0]):
                     ax.plot(peaks.risePlot[i, 0, :], peaks.risePlot[i, 1, :], color="C8")
+                # if np.any(peaks.altRisePlot[i, 0]):
+                #     ax.plot(peaks.altRisePlot[i, 0, :], peaks.altRisePlot[i, 1, :], color="C7")
                 if np.any(peaks.decayPlot[i, 0]):
                     ax.plot(peaks.decayPlot[i, 0, :], peaks.decayPlot[i, 1, :], color="C9")
             case "elev":
