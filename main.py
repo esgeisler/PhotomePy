@@ -381,8 +381,10 @@ class Main(tk.Frame):
             peakWriters = [leftWriter, rightWriter]
             for rats in peakWriters:
                 with rats as writer:
-                    ampColumn, absAmpColumn, onTimeColumn, offTimeColumn, widthColumn, freqColumn, areaColumn, totAreaColumn, riseColumn, riseCorrColumn, altRiseColumn, altRiseCorrColumn, decayColumn = (pd.DataFrame() for _ in range(13))
-                    ampList, absAmpList, onTimeList, offTimeList, widthList, freqList, areaList, totAreaList, riseList, riseCorrList, altRiseList, altRiseCorrList, decayList = ([] for _ in range(13))
+                    # riseCorrColumn, altRiseColumn, altRiseCorrColumn,
+                    # riseCorrList, altRiseList, altRiseCorrList,
+                    ampColumn, absAmpColumn, onTimeColumn, offTimeColumn, widthColumn, freqColumn, areaColumn, totAreaColumn, riseColumn,  decayColumn = (pd.DataFrame() for _ in range(10))
+                    ampList, absAmpList, onTimeList, offTimeList, widthList, freqList, areaList, totAreaList, riseList,  decayList = ([] for _ in range(10))
                     z = 1
                     if rats == leftWriter:
                         # Overview Sheet
