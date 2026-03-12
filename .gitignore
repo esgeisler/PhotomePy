@@ -6,3 +6,6 @@ __pycache__/processedSignal.cpython-311.pyc
 __pycache__/totalPeaks.cpython-311.pyc
 __pycache__/TraceCleaner.cpython-311.pyc
 __pycache__/tracePeaks.cpython-311.pyc
+build/main
+dist
+main.spec
