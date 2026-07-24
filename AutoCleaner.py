@@ -19,6 +19,7 @@ with open("config.yaml") as c:
     userConfig = yaml.safe_load(c)
     leftChannels = userConfig["GENERAL"]["left_rat_channels"]
     rightChannels = userConfig["GENERAL"]["right_rat_channels"]
+    gauss_sigma = userConfig["GENERAL"]["gaussian_filter_sigma"]
     start =  userConfig["EVENT_HANDLING"]["trace_start_offset"]
     end =  userConfig["EVENT_HANDLING"]["trace_end_offset"]
 
@@ -61,7 +62,7 @@ def wholeTraceMedFilt(signalToFilter):
 def wholeTraceGauss(signalToFilter):
     sweepArray = np.zeros((len(signalToFilter), len(signalToFilter[0])))
     for i, x in enumerate(signalToFilter):
-        filteredSweep = scipy.ndimage.gaussian_filter1d(x, sigma = 16)
+        filteredSweep = scipy.ndimage.gaussian_filter1d(x, sigma = gauss_sigma)
         sweepArray[i] = filteredSweep
     return sweepArray
 
