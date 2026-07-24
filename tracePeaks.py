@@ -19,6 +19,7 @@ class TracePeaks(top.TotalPeaks):
         self.traceDict = {}
         self.traceBottomWidths = np.zeros((2, self.numTracePeaks))
         self.trace90Widths = np.zeros((2, self.numTracePeaks)) # Height at 90% of the relative height (bottom of the peak)
+        self.trace90WidthsMisc = np.zeros((2, self.numTracePeaks))
         self.traceHalfWidths = np.zeros((2, self.numTracePeaks))
         self.trace10Widths = np.zeros((2, self.numTracePeaks)) # Height at 10% of the relative height (top of the peak)
         self.degreeNPeaks, self.decayNPeaks, self.riseNPeaks = {}, {}, {} # Key-value pairs of peaks and the number of peaks contained within them, their decay slope, or their rise slope.
@@ -100,6 +101,8 @@ class TracePeaks(top.TotalPeaks):
             self.traceHalfWidths[i] = param
         for i, param in enumerate(width90[2:]):
             self.trace90Widths[i] = param
+        for i, param in enumerate(width90[:2]):
+            self.trace90WidthsMisc[i] = param
         self.traceDict = traceDict
 
         self.peakNum = np.arange(1, len(self.peaks) + 1)
@@ -180,10 +183,17 @@ class TracePeaks(top.TotalPeaks):
                     L = self.fullTraceArray[self.peaks][i[0][0]] + 100 - self.amplitude[i[0][0]]
                     peakArea -= L * w
                 case "SBR":
-                    peakArea = inte.simpson(y=self.fullTraceArray[int(self.trace90Widths[0][i[0][0]]):int(self.trace90Widths[1][i[0][0]])], 
-                                            x=np.arange(int(self.trace90Widths[0][i[0][0]]), int(self.trace90Widths[1][i[0][0]]))/self.samplingFreqMSec)
-                    w = (self.trace90Widths[1][i[0][0]] - self.trace90Widths[0][i[0][0]]) /self.samplingFreqMSec
-                    L = self.fullTraceArray[self.peaks][i[0][0]] - self.amplitude[i[0][0]]
+                    peakArray = self.fullTraceArray[int(self.trace90Widths[0][i[0][0]]) + 1:int(self.trace90Widths[1][i[0][0]])-1]
+                    peakArray1 = np.insert(peakArray, 0, self.trace90WidthsMisc[1][i[0][0]])
+                    peakArray2 = np.append(peakArray1, self.trace90WidthsMisc[1][i[0][0]])
+
+                    peakXArray = np.arange(int(self.trace90Widths[0][i[0][0]]) + 1, int(self.trace90Widths[1][i[0][0]])-1)
+                    peakXArray1 = np.insert(peakXArray, 0, self.trace90Widths[0][i[0][0]])
+                    peakXArray2 = np.append(peakXArray1, self.trace90Widths[1][i[0][0]])/self.samplingFreqMSec
+                    peakArea = inte.simpson(y=peakArray2,
+                                            x=peakXArray2)
+                    w = self.trace90WidthsMisc[0][i[0][0]] / self.samplingFreqMSec
+                    L = self.trace90WidthsMisc[1][i[0][0]]
                     peakArea -= L * w
             if self.degreeNPeaks[u] == 0:
                 adjustedArea[i[0][0]] = peakArea.round(2)
