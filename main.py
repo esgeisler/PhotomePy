@@ -488,8 +488,8 @@ class Main(tk.Frame):
                         finalSignalLeft, finalSignalRight = rawTrace.activeSignalDecayProcessor()
                     case "refReg":
                         finalSignalLeft, finalSignalRight, decayFitLeft, decayFitRight = rawTrace.referenceSignalDecayProcessor()
-                leftSignal = pro.ProcessedTotalSignal(self.experimentFileName, finalSignalLeft, self.ratNameLeft, self.leftRatInjectionInt) #TEMP INJECTION VALUE FOR TESTING ONLY
-                rightSignal = pro.ProcessedTotalSignal(self.experimentFileName, finalSignalRight, self.ratNameRight, self.rightRatInjectionInt) #TEMP INJECTION VALUE FOR TESTING ONLY
+                leftSignal = pro.ProcessedTotalSignal(self.experimentFileName, finalSignalLeft, self.ratNameLeft, self.leftRatInjectionInt)
+                rightSignal = pro.ProcessedTotalSignal(self.experimentFileName, finalSignalRight, self.ratNameRight, self.rightRatInjectionInt)
                 if self.norm_method == "zSBR":
                     leftSignal.processedSignalArray = (leftSignal.processedSignalArray - leftSignal.preInjAvg) / leftSignal.preInjStdev
                     rightSignal.processedSignalArray = (rightSignal.processedSignalArray - rightSignal.preInjAvg) / rightSignal.preInjStdev
