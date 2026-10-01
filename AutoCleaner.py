@@ -51,6 +51,7 @@ def baselineSubtractor(fileName, baseline470, baseline405, channelsToSubtract):
         sweepArray405[i] = abf.sweepY[start:end] - baseline405
     return sweepArray470, sweepArray405
 
+#Applies a median filter (replacing signals with the median of the signals +-2 data points (600 us) away)
 def wholeTraceMedFilt(signalToFilter):
     sweepArray = np.zeros((len(signalToFilter), len(signalToFilter[0])))
     for i, x in enumerate(signalToFilter):
