@@ -22,8 +22,9 @@ with open("config.yaml") as c:
     gauss_sigma = userConfig["GENERAL"]["gaussian_filter_sigma"]
     start =  userConfig["EVENT_HANDLING"]["trace_start_offset"]
     end =  userConfig["EVENT_HANDLING"]["trace_end_offset"]
+    peakThreshold = userConfig["EVENT_HANDLING"]["peak_detection_threshold"]
 
-# Gets baseline information from 1 min-long recording data taken after trial from the "left" side of the room - channels 1 and 2
+# Gets baseline information from 1 min-long recording data taken after trial
 def baselineGet(fileName):
     abf = pyabf.ABF(fileName)
     Channel470Left, Channel405Left = leftChannels
@@ -38,6 +39,13 @@ def baselineGet(fileName):
 
     mean470Left, mean405Left, mean470Right, mean405Right = sweepArrays[Channel470Left], sweepArrays[Channel405Left], sweepArrays[Channel470Right], sweepArrays[Channel405Right]
     return mean470Left, mean405Left, mean470Right, mean405Right
+
+# Calculates standard deviation from a single channel of a baseline file
+def baselineStDev(fileName, channelToCalc):
+    abf = pyabf.ABF(fileName)
+    abf.setSweep(sweepNumber= 0, channel= channelToCalc)
+    sweepArraysStdDev = stat.stdev(abf.sweepY[start:end])
+    return sweepArraysStdDev
 
 #Function that subtracts baseline from baseline getters from a chosen channel, returns those as full channel trace dictionaries
 def baselineSubtractor(fileName, baseline470, baseline405, channelsToSubtract):

@@ -23,6 +23,9 @@ class Main(tk.Frame):
         self.exportStatus = userConfig["GENERAL"]["export_abf"]
         self.movement_corr = userConfig["GENERAL"]["movement_corr_calc"]
         self.peakMethod = userConfig["EVENT_HANDLING"]["peak_id_method"]
+        leftChannels = userConfig["GENERAL"]["left_rat_channels"]
+        rightChannels = userConfig["GENERAL"]["right_rat_channels"]
+        peakThreshold = userConfig["EVENT_HANDLING"]["peak_detection_threshold"]
 
     # Initialize all of the necessary variables for the GUI
         self.experimentFileName = ""
@@ -212,9 +215,12 @@ class Main(tk.Frame):
             try:
                 pyabf.ABF(self.baselinefileName)
                 subtracted470Left, subtracted405Left, subtracted470Right, subtracted405Right = acl.baselineGet(self.baselinefileName)
-                messagebox.showinfo(title= "Baselines", message= "Left - 470: %.2f 405: %.2f\nRight - 470: %.2f 405: %.2f"%(subtracted470Left, subtracted405Left, subtracted470Right, subtracted405Right))
+                leftStDev, rightStDev = acl.baselineStDev(self.baselinefileName, leftChannels[0]), acl.baselineStDev(self.baselinefileName, rightChannels[0])
+                messagebox.showinfo(title= "Baselines", message= "Left    - 470: %.2f 405: %.2f\nRight - 470: %.2f 405: %.2f\nLeft Std Dev: %.3f Right Std Dev: %.3f"%(subtracted470Left, subtracted405Left, subtracted470Right, subtracted405Right, leftStDev, rightStDev))
+                if (leftStDev > peakThreshold) or (rightStDev > peakThreshold):
+                    raise ValueError
             except FileNotFoundError:
-                answer = messagebox.askretrycancel(title="Python Error", message="No baseline file found. Would you like to select a new file?", icon="error")
+                answer = messagebox.askretrycancel(title="File Error", message="No baseline file found. Would you like to select a new file?", icon="error")
                 if answer:
                     self.baselinefileName = ""
                     baselineFileTextUpdate()
@@ -223,6 +229,16 @@ class Main(tk.Frame):
                 elif not answer:
                     self.destroy()
                     sys.exit(0)
+            except ValueError:
+                answer = messagebox.askretrycancel(title="Warning!", message="Note: Standard deviation of baseline file %s is larger than the peak detection threshold. \nThis can cause unforseen issues. Would you like to select a new file?"%(self.baselinefileName), icon="warning")
+                if answer:
+                    self.baselinefileName = ""
+                    baselineFileTextUpdate()
+                    self.errorStatus = True
+                    return
+                elif not answer:
+                    self.errorStatus = True
+                    return
             except PermissionError as e:
                 if e.errno == 13:
                     pass
