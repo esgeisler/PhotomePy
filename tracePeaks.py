@@ -57,6 +57,9 @@ class TracePeaks(top.TotalPeaks):
         self.peakTop = userConfig["EVENT_HANDLING"]["peak_top"]
         self.peakBase = userConfig["EVENT_HANDLING"]["peak_bottom"]
         self.peakElev = userConfig["EVENT_HANDLING"]["peak_elevation"]
+        self.start = userConfig["EVENT_HANDLING"]["trace_start_offset"]
+        self.end = userConfig["EVENT_HANDLING"]["trace_end_offset"]
+        self.removedPointCount = abs(self.start) + abs(self.end)
 
 # Provides the R­­² value to determine the fit of a curve. Currently used in the rise/decay τ calculation to exclude poorly fitted exponential curves.
     def rSquaredGet(self, adjustedTau, slopeArray, a, b, c):
@@ -166,7 +169,7 @@ class TracePeaks(top.TotalPeaks):
         if np.size(self.peaks) == 0:
             self.frequency = 0
         else:
-            self.frequency = round(np.count_nonzero(self.peaks)/((len(self.fullTraceArray) + 2250)/self.samplingFreqSec), 2) #Peaks/second (15 second trace)
+            self.frequency = round(np.count_nonzero(self.peaks)/((len(self.fullTraceArray) + self.removedPointCount)/self.samplingFreqSec), 2) #Peaks/second (15 second trace)
 
     def areaSet(self): 
         adjustedArea = np.zeros(self.numTracePeaks)

@@ -20,8 +20,9 @@ with open("config.yaml") as c:
     leftChannels = userConfig["GENERAL"]["left_rat_channels"]
     rightChannels = userConfig["GENERAL"]["right_rat_channels"]
     gauss_sigma = userConfig["GENERAL"]["gaussian_filter_sigma"]
-    start =  userConfig["EVENT_HANDLING"]["trace_start_offset"]
-    end =  userConfig["EVENT_HANDLING"]["trace_end_offset"]
+    start = userConfig["EVENT_HANDLING"]["trace_start_offset"]
+    end = userConfig["EVENT_HANDLING"]["trace_end_offset"]
+    removedPointCount = abs(start) + abs(end)
     peakThreshold = userConfig["EVENT_HANDLING"]["peak_detection_threshold"]
 
 # Gets baseline information from 1 min-long recording data taken after trial
@@ -51,7 +52,7 @@ def baselineStDev(fileName, channelToCalc):
 def baselineSubtractor(fileName, baseline470, baseline405, channelsToSubtract):
     abf = pyabf.ABF(fileName)
     abf.setSweep(0)
-    sweepArray470, sweepArray405 = np.zeros((len(abf.sweepList), len(abf.sweepX) - 2250)), np.zeros((len(abf.sweepList), len(abf.sweepX) - 2250))
+    sweepArray470, sweepArray405 = np.zeros((len(abf.sweepList), len(abf.sweepX) - removedPointCount)), np.zeros((len(abf.sweepList), len(abf.sweepX) - removedPointCount))
     for i in abf.sweepList:
         abf.setSweep(i, channel= channelsToSubtract[0])
         sweepArray470[i] = abf.sweepY[start:end] - baseline470 

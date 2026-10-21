@@ -20,6 +20,9 @@ class TraceCleaner():
             userConfig = yaml.safe_load(c)
         self.leftChannels = userConfig["GENERAL"]["left_rat_channels"]
         self.rightChannels = userConfig["GENERAL"]["right_rat_channels"]
+        self.start = userConfig["EVENT_HANDLING"]["trace_start_offset"]
+        self.end = userConfig["EVENT_HANDLING"]["trace_end_offset"]
+        self.removedPointCount = abs(self.start) + abs(self.end)
         
         self.abf = pyabf.ABF(self.mainFile)
         self.samplingFreqMSec = self.abf.dataPointsPerMs + (1/3)
@@ -43,8 +46,8 @@ class TraceCleaner():
         
 # Processor for refReg. 
     def referenceSignalDecayProcessor(self):
-        leftFittedArray = np.zeros((len(self.abf.sweepList), len(self.abf.sweepX) - 2250))
-        rightFittedArray = np.zeros((len(self.abf.sweepList), len(self.abf.sweepX) - 2250))
+        leftFittedArray = np.zeros((len(self.abf.sweepList), len(self.abf.sweepX) - self.removedPointCount))
+        rightFittedArray = np.zeros((len(self.abf.sweepList), len(self.abf.sweepX) - self.removedPointCount))
         for i in self.abf.sweepList:
             stackedSignalsLeft = np.vstack((self.filtered470Left[i], np.ones(len(self.filtered470Left[i])))).T
             stackedSignalsRight = np.vstack((self.filtered470Right[i], np.ones(len(self.filtered470Right[i])))).T
@@ -72,8 +75,8 @@ class TraceCleaner():
     def activeSignalDecayProcessor(self):
         
 
-        leftFittedArray = np.zeros((len(self.abf.sweepList), len(self.abf.sweepX) - 2250))
-        rightFittedArray = np.zeros((len(self.abf.sweepList), len(self.abf.sweepX) - 2250))
+        leftFittedArray = np.zeros((len(self.abf.sweepList), len(self.abf.sweepX) - self.removedPointCount))
+        rightFittedArray = np.zeros((len(self.abf.sweepList), len(self.abf.sweepX) - self.removedPointCount))
         for i in self.abf.sweepList:
             stackedSignalsLeft = np.vstack((self.filtered470Left[i], np.ones(len(self.filtered470Left[i])))).T
             stackedSignalsRight = np.vstack((self.filtered470Right[i], np.ones(len(self.filtered470Right[i])))).T
