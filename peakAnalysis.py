@@ -78,8 +78,8 @@ def wholeTracePeaks(processedSignalArray, mainFile):
             peakTable.Frequency = 0
             peakTable.Total_Area = 0
         else:
-            peakTable.Frequency.iat[0] = peaks.frequency
-            peakTable.Total_Area.iat[0] = peaks.totArea
+            peakTable.loc[peakTable.index[0], "Frequency"] = peaks.frequency
+            peakTable.loc[peakTable.index[0], "Total_Area"] = peaks.totArea
         # peakTable.drop(peakTable[peakTable.Peak_Index == 0].index, inplace= True)
         print("Trace #%i done!"%(z+1))
         finalDict[z] = peakTable
