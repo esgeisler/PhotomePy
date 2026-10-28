@@ -26,46 +26,38 @@ removedPointCount = abs(start) + abs(end)
 def baselineGet(fileName):
     sweepArrays = {}
     abf = pyabf.ABF(fileName)
-    # Left 470
-    abf.setSweep(sweepNumber= 0, channel= leftChannels[0])
-    sweepArrays[leftChannels[0]] = np.mean(abf.sweepY[start:end], dtype=np.float64)
-    # Left 405
-    abf.setSweep(sweepNumber= 0, channel= leftChannels[1])
-    sweepArrays[leftChannels[1]] = np.mean(abf.sweepY[start:end], dtype=np.float64)
-    # Right 470
-    abf.setSweep(sweepNumber= 0, channel= rightChannels[0])
-    sweepArrays[rightChannels[0]] = np.mean(abf.sweepY[start:end], dtype=np.float64)
-    # Right 405
-    abf.setSweep(sweepNumber= 0, channel= rightChannels[1])
-    sweepArrays[rightChannels[1]] = np.mean(abf.sweepY[start:end], dtype=np.float64)
+    # Left 470, 405
+    sweepArrays[leftChannels[0]], sweepArrays[leftChannels[1]] = np.mean(abf.getAllYs(leftChannels[0]), dtype=np.float64), np.mean(abf.getAllYs(leftChannels[1]), dtype=np.float64)
+    # Right 470, 405
+    sweepArrays[rightChannels[0]], sweepArrays[rightChannels[1]] = np.mean(abf.getAllYs(rightChannels[0]), dtype=np.float64), np.mean(abf.getAllYs(rightChannels[1]), dtype=np.float64)
 
     return sweepArrays[leftChannels[0]], sweepArrays[leftChannels[1]], sweepArrays[rightChannels[0]], sweepArrays[rightChannels[1]]
 
 # Calculates standard deviation from a single channel of a baseline file
 def baselineStDev(fileName, channelToCalc):
     abf = pyabf.ABF(fileName)
-    abf.setSweep(sweepNumber= 0, channel= channelToCalc)
-    sweepArraysStdDev = np.std(abf.sweepY[start:end], dtype=np.float64, ddof=1)
+    sweepArraysStdDev = np.std(abf.getAllYs(channelToCalc), dtype=np.float64, ddof=1)
     return sweepArraysStdDev
 
 #Function that subtracts baseline from baseline getters from a chosen channel, returns those as full channel trace dictionaries
 def baselineSubtractor(fileName, baseline470, baseline405, channelsToSubtract):
     abf = pyabf.ABF(fileName)
     abf.setSweep(0)
-    sweepArray470, sweepArray405 = np.zeros((len(abf.sweepList), len(abf.sweepX) - removedPointCount)), np.zeros((len(abf.sweepList), len(abf.sweepX) - removedPointCount))
+    sweepArray470, sweepArray405 = np.zeros((abf.sweepCount, abf.sweepPointCount - removedPointCount)), np.zeros((abf.sweepCount, abf.sweepPointCount - removedPointCount))
     for i in abf.sweepList:
         abf.setSweep(i, channel= channelsToSubtract[0])
-        sweepArray470[i] = abf.sweepY[start:end] - baseline470 
+        sweepArray470[i] = abf.sweepY[start:end]
         abf.setSweep(i, channel= channelsToSubtract[1])
-        sweepArray405[i] = abf.sweepY[start:end] - baseline405
+        sweepArray405[i] = abf.sweepY[start:end]
+    sweepArray470 -= baseline470
+    sweepArray405 -= baseline405
     return sweepArray470, sweepArray405
 
 #Applies a median filter (replacing signals with the median of the signals +-2 data points (600 us) away)
 def wholeTraceMedFilt(signalToFilter):
-    sweepArray = np.zeros((len(signalToFilter), len(signalToFilter[0])))
+    sweepArray = np.zeros_like(signalToFilter)
     for i, x in enumerate(signalToFilter):
-        medFilteredSweep = sig.medfilt(x, kernel_size=5)
-        sweepArray[i] = medFilteredSweep
+        sweepArray[i] = sig.medfilt(x, kernel_size=5)
     return sweepArray
 
 # Gaussian filters an entire channel with a 40 Hz cutoff freq., as above.
