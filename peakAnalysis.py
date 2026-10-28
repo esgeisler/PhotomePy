@@ -159,7 +159,7 @@ def peakDisplay(processedSignalArray, mainFile, ratSide, currentTrace):
                     color="C5")
     peakFig.suptitle("Individual Trace")
     peakFig.set_size_inches(9, 4.5)
-    ax.axis([0, 47750, 0, 2])
+    ax.axis([0, peaks.abf.sweepPointCount - removedPointCount, 0, 2])
     ax.tick_params(axis="both", labelsize="large")
     ax.set_xticks(ticks=peaks.seconds, labels=range(len(peaks.seconds)))
     ax.set_xlabel("Time (s)", fontsize="x-large")

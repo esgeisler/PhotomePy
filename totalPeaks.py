@@ -11,7 +11,7 @@ class TotalPeaks():
 
         self.samplingFreqMSec = self.abf.dataPointsPerMs + (1/3)
         self.samplingFreqSec = self.samplingFreqMSec * 1000
-        self.seconds = np.arange(0, 47750, self.samplingFreqSec)
+        self.seconds = np.arange(0, self.abf.sweepPointCount - removedPointCount, self.samplingFreqSec)
 
         self.mostPeaksInTrace, self.numPeaksArray = pas.peakMax(self.processedSignalArray)
         self.peaksArray, self.peaksDict = np.zeros((self.numTraces, self.mostPeaksInTrace)), {}
