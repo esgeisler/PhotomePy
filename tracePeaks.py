@@ -4,6 +4,8 @@ import scipy.integrate as inte
 import scipy.optimize as opt
 import scipy.signal as sci
 import yaml
+import sys
+np.set_printoptions(threshold=sys.maxsize)
 
 class TracePeaks(top.TotalPeaks):
     def __init__(self, processedSignalArray, mainFile, traceIndex, baselineStDev):
@@ -30,14 +32,11 @@ class TracePeaks(top.TotalPeaks):
         self.peakIndex = self.peaks
         self.peakLocSec = np.zeros(self.numTracePeaks)
         self.leftBounds, self.rightBounds = np.zeros(self.numTracePeaks), np.zeros(self.numTracePeaks)
-        self.amplitude = np.zeros(self.numTracePeaks)
-        self.absoluteAmp = np.zeros(self.numTracePeaks)
+        self.amplitude, self.absoluteAmp = np.zeros(self.numTracePeaks), np.zeros(self.numTracePeaks)
         self.width = np.zeros(self.numTracePeaks)
-        self.rightTail = np.zeros(self.numTracePeaks)
-        self.leftTail = np.zeros(self.numTracePeaks)
+        self.rightTail, self.leftTail = np.zeros(self.numTracePeaks), np.zeros(self.numTracePeaks)
         self.frequency = 0
-        self.meanArea = np.zeros(self.numTracePeaks)
-        self.totArea = 0
+        self.meanArea, self.totArea = np.zeros(self.numTracePeaks), 0
 
         self.risePlot = np.zeros((self.numTracePeaks, 2, 1000), dtype=np.float64)
         self.riseRate = np.zeros(self.numTracePeaks, dtype=np.float64)
@@ -50,7 +49,7 @@ class TracePeaks(top.TotalPeaks):
 
         with open("config.yaml") as c:
             userConfig = yaml.safe_load(c)
-        self.norm_method = userConfig["GENERAL"]["normalization"]
+        self.norm_method = userConfig["EVENT_HANDLING"]["normalization"]
         self.peakMethod = userConfig["EVENT_HANDLING"]["peak_id_method"]
         self.peakThreshold = userConfig["EVENT_HANDLING"]["peak_detection_threshold"]
         self.peakWindow = userConfig["EVENT_HANDLING"]["peak_window"]

@@ -3,10 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pyabf
-import sys
 import tracePeaks as trace
 import yaml
-# np.set_printoptions(threshold=sys.maxsize)
 
 with open("config.yaml") as c:
     userConfig = yaml.safe_load(c)
@@ -150,12 +148,8 @@ def peakDisplay(processedSignalArray, mainFile, ratSide, currentTrace, baselineS
                                 color="C1", alpha=0.3)
                 if np.all(peaks.risePlot[i, 0]):
                     ax.plot(peaks.risePlot[i, 0, :], peaks.risePlot[i, 1, :], color="C8")
-                # else:
-                #     continue
                 if np.all(peaks.decayPlot[i, 0]):
                     ax.plot(peaks.decayPlot[i, 0, :], peaks.decayPlot[i, 1, :], color="C9")
-                # else:
-                #     continue
     match peakMethod:
         case "prom":
             ax.hlines(y=peaks.traceDict["width_heights"], xmin=peaks.traceDict["left_ips"], xmax=peaks.traceDict["right_ips"], color="C6")

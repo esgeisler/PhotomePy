@@ -1,6 +1,7 @@
 import numpy as np
 import pyabf
 import peakAnalysis as pas
+import yaml
 
 class TotalPeaks():
     def __init__(self, processedSignalArray, mainFile, baselineStDev):
@@ -22,10 +23,3 @@ class TotalPeaks():
         self.mostPeaksInTrace, self.numPeaksArray = pas.peakMax(self.processedSignalArray, baselineStDev)
         self.peaksArray, self.peaksDict = np.zeros((self.numTraces, self.mostPeaksInTrace)), {}
         self.widthBottomArray, self.width10Array, self.width90Array = (np.zeros((self.numTraces, 2, self.mostPeaksInTrace)) for _ in range(3))
-
-    # def peakMax(self):
-    #     peakArray = np.zeros(np.size(self.processedSignalArray, 0))
-    #     for i, t in enumerate(self.processedSignalArray):
-    #         peaks, _ = sci.find_peaks(t, prominence= 0.05, wlen=20000)
-    #         peakArray[i] = np.size(peaks)
-    #     self.mostPeaksInTrace = int(np.max(peakArray))

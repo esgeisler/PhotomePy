@@ -138,8 +138,8 @@ def doubleExpDecaySingleTrace(filteredSignalArray, samplingFreq):
         squaredDiffs = np.square(yDecay - ((a * np.exp(b * (xDecay/samplingFreq))) + (c * np.exp(d * (xDecay/samplingFreq))) + e))
         squaredDiffsFromMean = np.square(yDecay - np.mean(yDecay, dtype=np.float64))
         rSquared = 1 - (np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean))
-        print(np.sum(squaredDiffs), np.sum(squaredDiffsFromMean))
-        print("Trace %i: %f"%(i+1, rSquared))
+        # print(np.sum(squaredDiffs), np.sum(squaredDiffsFromMean))
+        # print("Trace %i: %f"%(i+1, rSquared))
         xDecFinal = np.linspace(np.min(xDecay), np.max(xDecay), len(filteredSignalArray[i]))
         yDecFinal = (a * np.exp(b * (xDecFinal/samplingFreq))) + (c * np.exp(d * (xDecFinal/samplingFreq))) + e
         yDecFinalArray[i] = yDecFinal
