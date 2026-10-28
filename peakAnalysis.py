@@ -16,6 +16,12 @@ with open("config.yaml") as c:
     peakTop = userConfig["EVENT_HANDLING"]["peak_top"]
     peakBase = userConfig["EVENT_HANDLING"]["peak_bottom"]
     peakElev = userConfig["EVENT_HANDLING"]["peak_elevation"]
+    peakMinWidth = userConfig["EVENT_HANDLING"]["min_width"]
+    useStDev = userConfig["EVENT_HANDLING"]["use_baseline_stdev"]
+    start = userConfig["EVENT_HANDLING"]["trace_start_offset"]
+    end = userConfig["EVENT_HANDLING"]["trace_end_offset"]
+removedPointCount = abs(start) + abs(end)
+    
 
 def secondsCalculator(filename):
     abf = pyabf.ABF(filename)
@@ -25,23 +31,27 @@ def secondsCalculator(filename):
     return seconds, samplingFreqMSec, samplingFreqSec
 
 # Returns the number of peaks in the trace with the most peaks
-def peakMax(processedSignalArray):
+def peakMax(processedSignalArray, baselineStDev):
+    if useStDev:
+        peakThresholdAfterCheck = baselineStDev
+    else:
+        peakThresholdAfterCheck = peakThreshold
     peakLenArray = np.zeros(np.size(processedSignalArray, 0))
     for i, t in enumerate(processedSignalArray):
         match peakMethod:
             case "prom":
-                peaks, _ = sci.find_peaks(t, prominence= peakThreshold, wlen=peakWindow)
+                peaks, _ = sci.find_peaks(t, prominence= peakThresholdAfterCheck, width=peakMinWidth, wlen=peakWindow)
             case "elev":
-                peaks, _ = sci.find_peaks(t, prominence= peakThreshold, wlen=peakWindow, height=peakElev)
+                peaks, _ = sci.find_peaks(t, prominence= peakThresholdAfterCheck, width=peakMinWidth, wlen=peakWindow, height=peakElev)
         peakLenArray[i] = np.size(peaks)
     longestPeak = np.max(peakLenArray)
     return int(longestPeak), peakLenArray
 
 # Finds peaks in a signal and provides their widths, amplitudes, avg. frequencies, and areas across an entire .abf file
-def wholeTracePeaks(processedSignalArray, mainFile):
+def wholeTracePeaks(processedSignalArray, mainFile, baselineStDev):
     finalDict = {}
     for z, _ in enumerate(processedSignalArray):
-        peaks = trace.TracePeaks(processedSignalArray, mainFile, z)
+        peaks = trace.TracePeaks(processedSignalArray, mainFile, z, baselineStDev)
         peaks.peakFinder(peaks.fullTraceArray)
         peaks.overlapCheck(peaks.peaks)
         peaks.overlapAmplitude()
@@ -96,8 +106,8 @@ def traceProcessor(processedSignal):
     return injectionDF, overview
 
 #Retrieves the peaks of a signal and their properties, then plots them on a graph of the chosen trace
-def peakDisplay(processedSignalArray, mainFile, ratSide, currentTrace):
-    peaks = trace.TracePeaks(processedSignalArray, mainFile, currentTrace)
+def peakDisplay(processedSignalArray, mainFile, ratSide, currentTrace, baselineStDev):
+    peaks = trace.TracePeaks(processedSignalArray, mainFile, currentTrace, baselineStDev)
     peaks.peakFinder(peaks.fullTraceArray)
     peaks.overlapCheck(peaks.peaks)
     peaks.overlapAmplitude()

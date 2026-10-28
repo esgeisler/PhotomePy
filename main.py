@@ -533,8 +533,8 @@ class Main(tk.Frame):
                 if self.movement_corr: 
                     acl.isoLinRegPlot(self.experimentFileName, 1, 0, self.trace, "Left Rat Motion Correlation")
                     acl.isoLinRegPlot(self.experimentFileName, 5, 4, self.trace, "Right Rat Motion Correlation")
-                pas.peakDisplay(leftSignal.processedSignalArray, self.experimentFileName, "Left Rat", self.trace)
-                pas.peakDisplay(rightSignal.processedSignalArray, self.experimentFileName, "Right Rat", self.trace)
+                pas.peakDisplay(leftSignal.processedSignalArray, self.experimentFileName, "Left Rat", self.trace, baselineStDevLeft)
+                pas.peakDisplay(rightSignal.processedSignalArray, self.experimentFileName, "Right Rat", self.trace, baselineStDevRight)
             except FileNotFoundError as e:
                 match str(e):
                     case "main":

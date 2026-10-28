@@ -6,8 +6,8 @@ import scipy.signal as sci
 import yaml
 
 class TracePeaks(top.TotalPeaks):
-    def __init__(self, processedSignalArray, mainFile, traceIndex):
-        super().__init__(processedSignalArray, mainFile)
+    def __init__(self, processedSignalArray, mainFile, traceIndex, baselineStDev):
+        super().__init__(processedSignalArray, mainFile, baselineStDev)
 
         self.processedSignalArray = processedSignalArray
         self.filename = mainFile
@@ -57,9 +57,21 @@ class TracePeaks(top.TotalPeaks):
         self.peakTop = userConfig["EVENT_HANDLING"]["peak_top"]
         self.peakBase = userConfig["EVENT_HANDLING"]["peak_bottom"]
         self.peakElev = userConfig["EVENT_HANDLING"]["peak_elevation"]
+        self.peakMinWidth = userConfig["EVENT_HANDLING"]["min_width"]
         self.start = userConfig["EVENT_HANDLING"]["trace_start_offset"]
         self.end = userConfig["EVENT_HANDLING"]["trace_end_offset"]
         self.removedPointCount = abs(self.start) + abs(self.end)
+
+        useStDev = userConfig["EVENT_HANDLING"]["use_baseline_stdev"]
+        if useStDev:
+            self.peakThresholdAfterCheck = baselineStDev
+        else:
+            self.peakThresholdAfterCheck = self.peakThreshold
+
+        if self.peakThresholdAfterCheck > self.peakThreshold:
+            import warnings
+            warnings.warn("Standard deviation of this baseline file is unusually high! Results may be inaccurate.")
+                
 
 # Provides the R­­² value to determine the fit of a curve. Currently used in the rise/decay τ calculation to exclude poorly fitted exponential curves.
     def rSquaredGet(self, adjustedTau, slopeArray, a, b, c):

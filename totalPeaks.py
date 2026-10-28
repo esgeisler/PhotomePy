@@ -3,7 +3,7 @@ import pyabf
 import peakAnalysis as pas
 
 class TotalPeaks():
-    def __init__(self, processedSignalArray, mainFile):
+    def __init__(self, processedSignalArray, mainFile, baselineStDev):
         self.processedSignalArray = processedSignalArray
         self.filename = mainFile
         self.abf = pyabf.ABF(mainFile)
@@ -19,7 +19,7 @@ class TotalPeaks():
         self.samplingFreqSec = self.samplingFreqMSec * 1000
         self.seconds = np.arange(0, self.abf.sweepPointCount - removedPointCount, self.samplingFreqSec)
 
-        self.mostPeaksInTrace, self.numPeaksArray = pas.peakMax(self.processedSignalArray)
+        self.mostPeaksInTrace, self.numPeaksArray = pas.peakMax(self.processedSignalArray, baselineStDev)
         self.peaksArray, self.peaksDict = np.zeros((self.numTraces, self.mostPeaksInTrace)), {}
         self.widthBottomArray, self.width10Array, self.width90Array = (np.zeros((self.numTraces, 2, self.mostPeaksInTrace)) for _ in range(3))
 
