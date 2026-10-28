@@ -145,39 +145,54 @@ class TracePeaks(top.TotalPeaks):
 # Input: An array of traces containing fiber photometry daya
 # Output: Sets values for overlapPeaks, overlapRise, overlapDecay, degreeNPeaks, riseNPeaks, decayNPeaks, degreeRise, and degreeDecay
     def overlapCheck(self, peaksArray):
+        overlapPeaks, overlapRise, overlapDecay = {}, {}, {}
+        degreeNPeaks, decayNPeaks, riseNPeaks = {}, {}, {}
+        trace90Widths = self.trace90Widths
         for i, peak in enumerate(peaksArray):
-            if len(self.fullTraceArray[int(self.trace90Widths[0][i]):int(self.trace90Widths[1][i])]) == 0:
+            if len(self.fullTraceArray[int(trace90Widths[0][i]):int(trace90Widths[1][i])]) == 0:
                     continue
-            self.overlapPeaks[peak] = [y for y in peaksArray if ((self.trace90Widths[0][i] < y < self.trace90Widths[1][i]) and y != peak)]
-            self.overlapRise[peak] = [y for y in peaksArray if ((self.trace90Widths[0][i] < y < peak) and y != peak)]
-            self.overlapDecay[peak] = [y for y in peaksArray if ((peak < y < self.trace90Widths[1][i]) and y != peak)]
-            self.degreeNPeaks[peak] = len(self.overlapPeaks[peak])
-            self.riseNPeaks[peak] = len(self.overlapRise[peak])
-            self.decayNPeaks[peak] = len(self.overlapDecay[peak])
-        self.degreeNPeaks = dict(sorted(self.degreeNPeaks.items(), key=lambda item: item[1]))
-        self.degreeRise = dict(sorted(self.riseNPeaks.items(), key=lambda item: item[1]))
-        self.degreeDecay = dict(sorted(self.decayNPeaks.items(), key=lambda item: item[1]))
+            overlapPeakMask = (peaksArray != peak) & (peaksArray > trace90Widths[0][i]) & (peaksArray < trace90Widths[1][i])
+            overlapPeaks[peak] = peaksArray[overlapPeakMask]
+            overlapRiseMask = (peaksArray != peak) & (peaksArray > trace90Widths[0][i]) & (peaksArray < peak)
+            overlapRise[peak] = peaksArray[overlapRiseMask]
+            overlapDecayMask = (peaksArray != peak) & (peaksArray > peak) & (peaksArray < trace90Widths[1][i])
+            overlapDecay[peak] = peaksArray[overlapDecayMask]
+            degreeNPeaks[peak] = len(overlapPeaks[peak])
+            riseNPeaks[peak] = len(overlapRise[peak])
+            decayNPeaks[peak] = len(overlapDecay[peak])
+        self.degreeNPeaks = dict(sorted(degreeNPeaks.items(), key=lambda item: item[1]))
+        self.degreeRise = dict(sorted(riseNPeaks.items(), key=lambda item: item[1]))
+        self.degreeDecay = dict(sorted(decayNPeaks.items(), key=lambda item: item[1]))
+
+        self.overlapPeaks = overlapPeaks
+        self.overlapRise = overlapRise
+        self.overlapDecay = overlapDecay
+
+        self.riseNPeaks = riseNPeaks
+        self.decayNPeaks = decayNPeaks
 
     def overlapAmplitude(self):
         adjustedAmp = np.zeros(self.numTracePeaks)
-        sortedOverlapPeaks = dict(sorted(self.overlapPeaks.items(), key=lambda item: item[1]))
+        prominenceUncorrected = self.traceDict["prominences"]
+        sortedOverlapPeaks = dict(sorted(self.overlapPeaks.items(), key=lambda item: len(item[1])))
+        peaks = self.peaks
         for i in sortedOverlapPeaks:
-            j = np.where(self.peaks == i)[0][0]
-            if not self.overlapPeaks[i]:
+            j = np.where(peaks == i)[0][0]
+            if self.overlapPeaks[i].size == 0:
                 adjustedAmp[j] = self.amplitude[j].round(3)
             else:
                 adjustedAmp[j] = self.amplitude[j].round(3)
                 for x in self.overlapPeaks[i]:
-                    h = np.where(self.peaks == x)[0][0]
-                    parentPeak, parentProminence  = self.fullTraceArray[self.peaks][j], self.traceDict["prominences"][j]
+                    h = np.where(peaks == x)[0][0]
+                    parentPeak, parentProminence  = self.fullTraceArray[peaks][j], prominenceUncorrected[j]
                     parentBase = parentPeak - parentProminence + (self.peakTop * parentProminence)
 
-                    childPeak, childProminence = self.fullTraceArray[self.peaks][h], self.traceDict["prominences"][h]
+                    childPeak, childProminence = self.fullTraceArray[peaks][h], prominenceUncorrected[h]
                     childBase = childPeak - childProminence + (self.peakTop * childProminence)
 
                     ampAdjustmentFactor = childBase - parentBase
-                    adjustedAmp[h] = (childProminence + ampAdjustmentFactor - (self.peakTop * self.traceDict["prominences"][h])).round(3)
-        self.absoluteAmp = adjustedAmp
+                    adjustedAmp[h] = (childProminence + ampAdjustmentFactor - (self.peakTop * prominenceUncorrected[h])).round(3)
+        self.absoluteAmp = adjustedAmp[np.nonzero(adjustedAmp)]
             
     def freqSet(self):
         if np.size(self.peaks) == 0:
@@ -185,45 +200,52 @@ class TracePeaks(top.TotalPeaks):
         else:
             self.frequency = round(np.count_nonzero(self.peaks)/((len(self.fullTraceArray) + self.removedPointCount)/self.samplingFreqSec), 2) #Peaks/second (15 second trace)
 
-    def areaSet(self): 
+    def areaSet(self):
+        peaks = self.peaks
+        trace90Widths = self.trace90Widths
+        trace90WidthsMisc = self.trace90WidthsMisc
         adjustedArea = np.zeros(self.numTracePeaks)
         for _, u in enumerate(self.degreeNPeaks):
-            i = np.where(self.peaks == u)
-            if len(self.fullTraceArray[int(self.trace90Widths[0][i[0][0]]):int(self.trace90Widths[1][i[0][0]])]) == 0:
+            i = np.where(peaks == u)[0][0]
+            if len(self.fullTraceArray[int(trace90Widths[0][i]):int(trace90Widths[1][i])]) == 0:
                 continue
             peaksInArea = self.overlapPeaks[u] #TODO: Check if updated format of self.overlapPeaks alters the values here
+            peakArray = self.fullTraceArray[int(trace90Widths[0][i]) + 1:int(trace90Widths[1][i])-1]
+            peakArray1 = np.insert(peakArray, 0, trace90WidthsMisc[1][i])
+            peakArray2 = np.append(peakArray1, trace90WidthsMisc[1][i])
+
+            peakXArray = np.arange(int(trace90Widths[0][i]) + 1, int(trace90Widths[1][i])-1)
+            peakXArray1 = np.insert(peakXArray, 0, trace90Widths[0][i])
+            peakXArray2 = np.append(peakXArray1, trace90Widths[1][i])/self.samplingFreqMSec
+
+            w = trace90WidthsMisc[0][i] / self.samplingFreqMSec
             match self.norm_method:
-                case "zSBR":
-                    peakArea = inte.simpson(y=self.fullTraceArray[int(self.trace90Widths[0][i[0][0]]):int(self.trace90Widths[1][i[0][0]])]+100, 
-                                                x=np.arange(int(self.trace90Widths[0][i[0][0]]), int(self.trace90Widths[1][i[0][0]]))/self.samplingFreqMSec)
-                    w = len(np.arange(int(self.trace90Widths[0][i[0][0]]), int(self.trace90Widths[1][i[0][0]])))/self.samplingFreqMSec
-                    L = self.fullTraceArray[self.peaks][i[0][0]] + 100 - self.amplitude[i[0][0]]
+                case "None":
+                    peakArea = inte.simpson(y=peakArray2, x=peakXArray2)
+                    L = trace90WidthsMisc[1][i]
                     peakArea -= L * w
                 case "SBR":
-                    peakArray = self.fullTraceArray[int(self.trace90Widths[0][i[0][0]]) + 1:int(self.trace90Widths[1][i[0][0]])-1]
-                    peakArray1 = np.insert(peakArray, 0, self.trace90WidthsMisc[1][i[0][0]])
-                    peakArray2 = np.append(peakArray1, self.trace90WidthsMisc[1][i[0][0]])
-
-                    peakXArray = np.arange(int(self.trace90Widths[0][i[0][0]]) + 1, int(self.trace90Widths[1][i[0][0]])-1)
-                    peakXArray1 = np.insert(peakXArray, 0, self.trace90Widths[0][i[0][0]])
-                    peakXArray2 = np.append(peakXArray1, self.trace90Widths[1][i[0][0]])/self.samplingFreqMSec
-                    peakArea = inte.simpson(y=peakArray2,
-                                            x=peakXArray2)
-                    w = self.trace90WidthsMisc[0][i[0][0]] / self.samplingFreqMSec
-                    L = self.trace90WidthsMisc[1][i[0][0]]
+                    peakArea = inte.simpson(y=peakArray2+100, x=peakXArray2)
+                    # w = len(np.arange(int(self.trace90Widths[0][i[0][0]]), int(self.trace90Widths[1][i[0][0]])))/self.samplingFreqMSec
+                    L = self.fullTraceArray[peaks][i] + 100 - self.amplitude[i]
+                    peakArea -= L * w
+                case "ZScore":
+                    peakArea = inte.simpson(y=peakArray2+100, x=peakXArray2)
+                    # w = len(np.arange(int(self.trace90Widths[0][i[0][0]]), int(self.trace90Widths[1][i[0][0]])))/self.samplingFreqMSec
+                    L = self.fullTraceArray[peaks][i] + 100 - self.amplitude[i]
                     peakArea -= L * w
             if self.degreeNPeaks[u] == 0:
-                adjustedArea[i[0][0]] = peakArea.round(2)
+                adjustedArea[i] = peakArea.round(2)
             else:
                 for l in peaksInArea:
-                    j = np.where(self.peaks == l)
-                    peakArea -= adjustedArea[j[0][0]]
-                adjustedArea[i[0][0]] = peakArea.round(2)
-        self.meanArea = adjustedArea
-        if np.size(self.peaks) == 0:
+                    j = np.where(peaks == l)[0][0]
+                    peakArea -= adjustedArea[j]
+                adjustedArea[i] = peakArea.round(2)
+        self.meanArea = adjustedArea[np.nonzero(adjustedArea)]
+        if np.size(peaks) == 0:
             self.totArea = 0
         else:
-            self.totArea = sum(adjustedArea)    
+            self.totArea = adjustedArea[np.nonzero(adjustedArea)].sum()
 
     def riseSet(self):
         riseTauList = np.zeros(self.numTracePeaks)
