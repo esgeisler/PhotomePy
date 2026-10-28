@@ -34,7 +34,7 @@ class TraceCleaner():
         self.filtered405Left, self.filtered405Right = acl.wholeTraceGauss(acl.wholeTraceMedFilt(self.subtract405Left)), acl.wholeTraceGauss(acl.wholeTraceMedFilt(self.subtract405Right))
         self.filtered470Left, self.filtered470Right = acl.wholeTraceMedFilt(self.subtract470Left), acl.wholeTraceMedFilt(self.subtract470Right)
 
-        self.ratioSignalLeft, self.ratioSignalRight = acl.ratio470405(self.subtract470Left, self.filtered405Left), acl.ratio470405(self.subtract470Right, self.filtered405Right)
+        self.ratioSignalLeft, self.ratioSignalRight = self.filtered470Left/self.filtered405Left, self.filtered470Right/self.filtered405Right
         self.signalLeft, self.signalRight = acl.wholeTraceGauss(self.ratioSignalLeft), acl.wholeTraceGauss(self.ratioSignalRight)
 
     def completeProcessor(self):
