@@ -98,46 +98,48 @@ class TracePeaks(top.TotalPeaks):
     def peakFinder(self, singleTrace):
         match self.peakMethod:
             case "prom":
-                self.peaks, traceDict = sci.find_peaks(singleTrace, prominence=self.peakThreshold, width=0, wlen=self.peakWindow, rel_height= 0.5)
+                peaks, traceDict = sci.find_peaks(singleTrace, prominence=self.peakThresholdAfterCheck, width=self.peakMinWidth, wlen=self.peakWindow, rel_height= 0.5)
             case "elev":
-                self.peaks, traceDict = sci.find_peaks(singleTrace, prominence=self.peakThreshold, width=0, wlen=self.peakWindow, rel_height= 0.5, height=(self.peakElev, None))
-        width10 = np.array(sci.peak_widths(singleTrace, self.peaks, rel_height=self.peakTop, wlen=self.peakWindow,
+                peaks, traceDict = sci.find_peaks(singleTrace, prominence=self.peakThresholdAfterCheck, width=self.peakMinWidth, wlen=self.peakWindow, rel_height= 0.5, height=(self.peakElev, None))
+        width10 = np.array(sci.peak_widths(singleTrace, peaks, rel_height=self.peakTop, wlen=self.peakWindow,
                                   prominence_data=(traceDict['prominences'], 
                                                    traceDict["left_bases"], traceDict["right_bases"])))
-        widthHalf = np.array(sci.peak_widths(singleTrace, self.peaks, rel_height=0.5, wlen=self.peakWindow,
+        widthHalf = np.array(sci.peak_widths(singleTrace, peaks, rel_height=0.5, wlen=self.peakWindow,
                                   prominence_data=(traceDict['prominences'], 
                                                    traceDict["left_bases"], traceDict["right_bases"])))
-        width90 = np.array(sci.peak_widths(singleTrace, self.peaks, rel_height=self.peakBase, wlen=self.peakWindow,
+        width90 = np.array(sci.peak_widths(singleTrace, peaks, rel_height=self.peakBase, wlen=self.peakWindow,
                                   prominence_data=(traceDict['prominences'], 
                                                    traceDict["left_bases"], traceDict["right_bases"])))
-        for i, param in enumerate(width10[2:]):
-            self.trace10Widths[i] = param
-        for i, param in enumerate(widthHalf[2:]):
-            self.traceHalfWidths[i] = param
-        for i, param in enumerate(width90[2:]):
-            self.trace90Widths[i] = param
-        for i, param in enumerate(width90[:2]):
-            self.trace90WidthsMisc[i] = param
-        self.traceDict = traceDict
+        trace10Widths = width10[2:]
+        traceHalfWidths = widthHalf[2:]
+        trace90Widths = width90[2:]
+        trace90WidthsMisc = width90[:2]
 
-        self.peakNum = np.arange(1, len(self.peaks) + 1)
-        self.peakIndex = self.peaks
-        self.peakLocSec = ((self.peaks/self.samplingFreqSec) + (self.traceIndex * 30)).round(2)
+        self.peakNum = np.arange(1, len(peaks) + 1)
+        self.peakIndex = peaks
+        self.peakLocSec = ((peaks/self.samplingFreqSec) + (self.traceIndex * 30)).round(2)
         match self.peakMethod:
             case "prom":
-                self.leftBounds = self.trace90Widths[0].round(2)
-                self.rightBounds = self.trace90Widths[1].round(2)
-                self.amplitude = (self.traceDict['prominences'] - (self.peakTop * self.traceDict["prominences"])).round(3)
-                self.width = (self.traceDict['widths']/(self.samplingFreqMSec)).round(2)
-                self.leftTail = ((self.trace10Widths[0] - self.trace90Widths[0])/(self.samplingFreqMSec)).round(2)
-                self.rightTail = ((self.trace90Widths[1] - self.trace10Widths[1])/(self.samplingFreqMSec)).round(2)
+                self.leftBounds = trace90Widths[0].round(2)
+                self.rightBounds = trace90Widths[1].round(2)
+                self.amplitude = (traceDict['prominences'] - (self.peakTop * traceDict["prominences"])).round(3)
+                self.width = (traceDict['widths']/(self.samplingFreqMSec)).round(2)
+                self.leftTail = ((trace10Widths[0] - trace90Widths[0])/(self.samplingFreqMSec)).round(2)
+                self.rightTail = ((trace90Widths[1] - trace10Widths[1])/(self.samplingFreqMSec)).round(2)
             case "elev":
-                self.leftBounds = self.trace90Widths[0].round(2)
-                self.rightBounds = self.trace90Widths[1].round(2)
-                self.amplitude = (self.peaks - self.peakElev).round(3)
-                self.width = (self.traceDict['widths']/(self.samplingFreqMSec)).round(2)
-                self.leftTail = ((self.peaks - self.trace90Widths[0])/(self.samplingFreqMSec)).round(2)  
-                self.rightTail = ((self.trace90Widths[1] - self.peaks)/(self.samplingFreqMSec)).round(2)     
+                self.leftBounds = trace90Widths[0].round(2)
+                self.rightBounds = trace90Widths[1].round(2)
+                self.amplitude = (peaks - self.peakElev).round(3)
+                self.width = (traceDict['widths']/(self.samplingFreqMSec)).round(2)
+                self.leftTail = ((peaks - trace90Widths[0])/(self.samplingFreqMSec)).round(2)  
+                self.rightTail = ((trace90Widths[1] - peaks)/(self.samplingFreqMSec)).round(2)
+
+        self.peaks = peaks
+        self.trace10Widths = trace10Widths
+        self.traceHalfWidths = traceHalfWidths
+        self.trace90Widths = trace90Widths
+        self.trace90WidthsMisc = trace90WidthsMisc
+        self.traceDict = traceDict
 
 # Finds overlapping events by checking if the maxima of a peak is contained within the left and right slopes of another peak
 # Input: An array of traces containing fiber photometry daya
