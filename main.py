@@ -32,8 +32,7 @@ class Main(tk.Frame):
         removedPointCount = abs(start) + abs(end)
 
     # Initialize all of the necessary variables for the GUI
-        self.experimentFileName = ""
-        self.baselinefileName = ""
+        self.experimentFileName, self.baselinefileName = "", ""
         self.leftRatName, self.rightRatName = tk.StringVar(), tk.StringVar()
         self.leftRatInjectionStr, self.rightRatInjectionStr = tk.StringVar(), tk.StringVar()
         self.dropValue = tk.StringVar(self, 'Select Trace')
@@ -66,8 +65,9 @@ class Main(tk.Frame):
             t = False
             while not t:
                 try:
-                    self.experimentFileName = filedialog.askopenfilename(initialdir= os.path.join(os.getcwd(), "Raw Data"), title= "Select a Main File", 
-                                                                    filetypes=(("Axon Binary Fles", "*.abf*"), ("All Files," "*.*")))
+                    self.experimentFileName = filedialog.askopenfilename(initialdir= os.path.join(os.getcwd(), "Raw Data"), 
+                                                                         title= "Select a Main File", 
+                                                                         filetypes=(("Axon Binary Fles", "*.abf*"), ("All Files," "*.*")))
                     abf = pyabf.ABF(self.experimentFileName)
                     if abf.sweepCount <= 1:
                         raise ValueError("Main files must have multiple sweeps")
@@ -342,6 +342,8 @@ class Main(tk.Frame):
             self.peaksRight = pas.wholeTracePeaks(rightSignal.processedSignalArray, self.experimentFileName, baselineStDevRight)
             injectionLeft, overviewLeft = pas.traceProcessor(self.peaksLeft)
             injectionRight, overviewRight = pas.traceProcessor(self.peaksRight)
+            leftDate, rightDate = leftSignal.date, rightSignal.date
+            leftRatID, rightRatID = leftSignal.ratID, rightSignal.ratID
             match self.bleach_correct:
                 case "isosbestic":
                     leftPath = os.path.join(os.getcwd(), "Processed Data", f"{leftDate} Rat {leftRatID} Default Peaks.xlsx")
@@ -368,7 +370,7 @@ class Main(tk.Frame):
                 case _:
                     raise ValueError("bleach error")
             leftOverviewWriter, rightOverviewWriter = pd.ExcelWriter(filenameLeft), pd.ExcelWriter(filenameRight)
-            leftOrRight = [leftOverviewWriter, rightOverviewWriter]
+            leftOrRight = (leftOverviewWriter, rightOverviewWriter)
             for rats in leftOrRight:
                 with rats as writer:
                     if rats == leftOverviewWriter:
@@ -384,22 +386,22 @@ class Main(tk.Frame):
                                                 "Bleaching Correction": None, "Z-Score": rightSignal.overallZScore
                                                 })
                     ratData.to_excel(writer, index= False, sheet_name="Overview")
-                    if self.controlStatus.get() == 1:
-                        if rats == leftOverviewWriter:
-                            bleach405 = traceDecayFunction[0]
-                            bleach470 = traceDecayFunction[1]
-                            rsquared405 = decayRSquared[0]
-                            rsquared470 = decayRSquared[1]
-                        elif rats == rightOverviewWriter:
-                            bleach405 = traceDecayFunction[2]
-                            bleach470 = traceDecayFunction[3]
-                            rsquared405 = decayRSquared[2]
-                            rsquared470 = decayRSquared[3]
-                        bleachFit = pd.DataFrame({"Trace Number:": range(1, len(bleach405) + 1), 
-                                                    "Bleaching Correction (405):": bleach405, "Goodness of fit(R^2):": rsquared405, 
-                                                    "Bleaching Correction (470):": bleach470, "Goodness of fit(R^2):": rsquared470
-                                                    })
-                        bleachFit.to_excel(writer, index=False, sheet_name="Bleaching Correction")
+                    # if self.controlStatus.get() == 1:
+                    #     if rats == leftOverviewWriter:
+                    #         bleach405 = traceDecayFunction[0]
+                    #         bleach470 = traceDecayFunction[1]
+                    #         rsquared405 = decayRSquared[0]
+                    #         rsquared470 = decayRSquared[1]
+                    #     elif rats == rightOverviewWriter:
+                    #         bleach405 = traceDecayFunction[2]
+                    #         bleach470 = traceDecayFunction[3]
+                    #         rsquared405 = decayRSquared[2]
+                    #         rsquared470 = decayRSquared[3]
+                    #     bleachFit = pd.DataFrame({"Trace Number:": range(1, len(bleach405) + 1), 
+                    #                                 "Bleaching Correction (405):": bleach405, "Goodness of fit(R^2):": rsquared405, 
+                    #                                 "Bleaching Correction (470):": bleach470, "Goodness of fit(R^2):": rsquared470
+                    #                                 })
+                    #     bleachFit.to_excel(writer, index=False, sheet_name="Bleaching Correction")
             self.mainStatus = True
         #TODO fix FutureWarning caused by concat being empty by default.
         # Writes trace data to 2 excel files: left and right
@@ -501,8 +503,8 @@ class Main(tk.Frame):
         
             self.traceStatus = True
             if self.exportStatus:
-                acl.tExport(leftSignal.processedSignalArray, leftSignal.ratID, leftSignal.date) #Left
-                acl.tExport(rightSignal.processedSignalArray, rightSignal.ratID, rightSignal.date) #Right 
+                acl.tExport(leftSignal.processedSignalArray, leftRatID, leftDate) #Left
+                acl.tExport(rightSignal.processedSignalArray, rightRatID, leftDate) #Right 
 
         # Analyzes the peak decay, amplitude, and frequency of a single trace chosen by the user.
         def singleTracePeaks():

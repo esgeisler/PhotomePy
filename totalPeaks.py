@@ -1,6 +1,7 @@
 import numpy as np
 import pyabf
 import peakAnalysis as pas
+import yaml
 
 class TotalPeaks():
     def __init__(self, processedSignalArray, mainFile, baselineStDev):
