@@ -21,7 +21,7 @@ def secondsCalculator(filename):
     abf = pyabf.ABF(filename)
     samplingFreqMSec = abf.dataPointsPerMs + (1/3)
     samplingFreqSec = samplingFreqMSec * 1000
-    seconds = np.arange(0, 47750, samplingFreqSec)
+    seconds = np.arange(0, abf.sweepPointCount - removedPointCount, samplingFreqSec)
     return seconds, samplingFreqMSec, samplingFreqSec
 
 # Returns the number of peaks in the trace with the most peaks

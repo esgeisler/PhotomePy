@@ -14,8 +14,8 @@ class ProcessedTotalSignal():
             raise IndexError("Injection traces are larger than total sweeps in signals")
 
         self.abf = pyabf.ABF(filename)
-        self.numTraces = len(self.abf.sweepList)
-        self.traceLength = len(self.processedSignalArray[0])
+        self.numTraces = self.abf.sweepCount
+        self.traceLength = self.abf.sweepPointCount
         self.date = self.abf.abfDateTime.strftime("%Y-%m-%d")
 
         

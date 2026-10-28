@@ -7,7 +7,13 @@ class TotalPeaks():
         self.processedSignalArray = processedSignalArray
         self.filename = mainFile
         self.abf = pyabf.ABF(mainFile)
-        self.numTraces = len(self.abf.sweepList)
+        self.numTraces = self.abf.sweepCount
+        
+        with open("config.yaml") as c:
+            userConfig = yaml.safe_load(c)
+            start = userConfig["EVENT_HANDLING"]["trace_start_offset"]
+            end = userConfig["EVENT_HANDLING"]["trace_end_offset"]
+        removedPointCount = abs(start) + abs(end)
 
         self.samplingFreqMSec = self.abf.dataPointsPerMs + (1/3)
         self.samplingFreqSec = self.samplingFreqMSec * 1000

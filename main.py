@@ -65,7 +65,7 @@ class Main(tk.Frame):
                     self.experimentFileName = filedialog.askopenfilename(initialdir= os.path.join(os.getcwd(), "Raw Data"), title= "Select a Main File", 
                                                                     filetypes=(("Axon Binary Fles", "*.abf*"), ("All Files," "*.*")))
                     abf = pyabf.ABF(self.experimentFileName)
-                    if len(abf.sweepList) <= 1:
+                    if abf.sweepCount <= 1:
                         raise ValueError("Main files must have multiple sweeps")
                     self.options = [str(x + 1) for x in abf.sweepList]
                     self.abfDate = abf.abfDateTime
@@ -89,7 +89,7 @@ class Main(tk.Frame):
                     self.baselinefileName = filedialog.askopenfilename(initialdir= os.path.join(os.getcwd(), "Raw Data"), title= "Select a Baseline File", 
                                                                        filetypes=(("Axon Binary Fles", "*.abf*"), ("All Files," "*.*")))
                     abf = pyabf.ABF(self.baselinefileName)
-                    if len(abf.sweepList) > 1:
+                    if abf.sweepCount > 1:
                         raise ValueError("Baseline files must be single-trace files")
                 except ValueError:
                     messagebox.showerror(title= "Python Error", message= "Please select a baseline file with a single sweep")

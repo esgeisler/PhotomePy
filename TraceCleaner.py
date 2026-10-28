@@ -46,8 +46,11 @@ class TraceCleaner():
         
 # Processor for refReg. 
     def referenceSignalDecayProcessor(self):
-        leftFittedArray = np.zeros((len(self.abf.sweepList), len(self.abf.sweepX) - self.removedPointCount))
-        rightFittedArray = np.zeros((len(self.abf.sweepList), len(self.abf.sweepX) - self.removedPointCount))
+        leftFittedArray = np.zeros((self.abf.sweepCount, self.abf.sweepPointCount - self.removedPointCount))
+        rightFittedArray = np.zeros((self.abf.sweepCount, self.abf.sweepPointCount - self.removedPointCount))
+
+        # ratioLeft = self.ratioSignalLeft.mean(axis=0)
+        # ratioRight = self.ratioSignalRight.mean(axis=0)
         for i in self.abf.sweepList:
             stackedSignalsLeft = np.vstack((self.filtered470Left[i], np.ones(len(self.filtered470Left[i])))).T
             stackedSignalsRight = np.vstack((self.filtered470Right[i], np.ones(len(self.filtered470Right[i])))).T
