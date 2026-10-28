@@ -1,6 +1,5 @@
 import pyabf
 from pyabf import abfWriter
-import statistics as stat
 import scipy.stats as sciStat
 import scipy.ndimage
 import scipy.signal as sig
@@ -8,9 +7,7 @@ import scipy.optimize as opt
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-import csv
 import pandas as pd
-from pathlib import Path
 import yaml
 
 pd.options.display.float_format = "{:,.10f}".format
@@ -22,30 +19,33 @@ with open("config.yaml") as c:
     gauss_sigma = userConfig["GENERAL"]["gaussian_filter_sigma"]
     start = userConfig["EVENT_HANDLING"]["trace_start_offset"]
     end = userConfig["EVENT_HANDLING"]["trace_end_offset"]
-    removedPointCount = abs(start) + abs(end)
     peakThreshold = userConfig["EVENT_HANDLING"]["peak_detection_threshold"]
+removedPointCount = abs(start) + abs(end)
 
 # Gets baseline information from 1 min-long recording data taken after trial
 def baselineGet(fileName):
+    sweepArrays = {}
     abf = pyabf.ABF(fileName)
-    Channel470Left, Channel405Left = leftChannels
-    Channel470Right, Channel405Right = rightChannels
-    channels = [Channel470Left, Channel405Left, Channel470Right, Channel405Right]
-    sweepArrays = {Channel470Left:0.0, Channel405Left:0.0, 
-                   Channel470Right:0.0, Channel405Right:0.0}
+    # Left 470
+    abf.setSweep(sweepNumber= 0, channel= leftChannels[0])
+    sweepArrays[leftChannels[0]] = np.mean(abf.sweepY[start:end], dtype=np.float64)
+    # Left 405
+    abf.setSweep(sweepNumber= 0, channel= leftChannels[1])
+    sweepArrays[leftChannels[1]] = np.mean(abf.sweepY[start:end], dtype=np.float64)
+    # Right 470
+    abf.setSweep(sweepNumber= 0, channel= rightChannels[0])
+    sweepArrays[rightChannels[0]] = np.mean(abf.sweepY[start:end], dtype=np.float64)
+    # Right 405
+    abf.setSweep(sweepNumber= 0, channel= rightChannels[1])
+    sweepArrays[rightChannels[1]] = np.mean(abf.sweepY[start:end], dtype=np.float64)
 
-    for c in channels:
-        abf.setSweep(sweepNumber= 0, channel= c)
-        sweepArrays[c] = stat.mean(abf.sweepY[start:end])
-
-    mean470Left, mean405Left, mean470Right, mean405Right = sweepArrays[Channel470Left], sweepArrays[Channel405Left], sweepArrays[Channel470Right], sweepArrays[Channel405Right]
-    return mean470Left, mean405Left, mean470Right, mean405Right
+    return sweepArrays[leftChannels[0]], sweepArrays[leftChannels[1]], sweepArrays[rightChannels[0]], sweepArrays[rightChannels[1]]
 
 # Calculates standard deviation from a single channel of a baseline file
 def baselineStDev(fileName, channelToCalc):
     abf = pyabf.ABF(fileName)
     abf.setSweep(sweepNumber= 0, channel= channelToCalc)
-    sweepArraysStdDev = stat.stdev(abf.sweepY[start:end])
+    sweepArraysStdDev = np.std(abf.sweepY[start:end], dtype=np.float64, ddof=1)
     return sweepArraysStdDev
 
 #Function that subtracts baseline from baseline getters from a chosen channel, returns those as full channel trace dictionaries
@@ -70,17 +70,8 @@ def wholeTraceMedFilt(signalToFilter):
 
 # Gaussian filters an entire channel with a 40 Hz cutoff freq., as above.
 def wholeTraceGauss(signalToFilter):
-    sweepArray = np.zeros((len(signalToFilter), len(signalToFilter[0])))
-    for i, x in enumerate(signalToFilter):
-        filteredSweep = scipy.ndimage.gaussian_filter1d(x, sigma = gauss_sigma)
-        sweepArray[i] = filteredSweep
+    sweepArray = scipy.ndimage.gaussian_filter1d(signalToFilter, sigma = gauss_sigma, axis=1)
     return sweepArray
-
-# Divides two channels (470nm/405nm) in one file and returns a complete channel dictionary.
-def ratio470405(signal470, signal405):
-    ratioSignal = np.zeros((len(signal470), len(signal470[0])))
-    ratioSignal = signal470/signal405
-    return ratioSignal
 
 # PRELIM: Linear Regression with no plot, across an entire trace
 def isoLinReg(signal405, signal470):
