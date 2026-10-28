@@ -333,27 +333,27 @@ class Main(tk.Frame):
             injectionRight, overviewRight = pas.traceProcessor(self.peaksRight)
             match self.bleach_correct:
                 case "isosbestic":
-                    leftPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Default Peaks.xlsx"%(leftSignal.date, leftSignal.ratID))
-                    rightPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Default Peaks.xlsx"%(rightSignal.date, rightSignal.ratID))
+                    leftPath = os.path.join(os.getcwd(), "Processed Data", f"{leftDate} Rat {leftRatID} Default Peaks.xlsx")
+                    rightPath = os.path.join(os.getcwd(), "Processed Data", f"{rightDate} Rat {rightRatID} Default Peaks.xlsx")
                 case "refReg":
-                    leftPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s refReg Peaks.xlsx"%(leftSignal.date, leftSignal.ratID))
-                    rightPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s refReg Peaks.xlsx"%(rightSignal.date, rightSignal.ratID))
-                case "biexpActive":
-                    leftPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s biexpActive Peaks.xlsx"%(leftSignal.date, leftSignal.ratID))
-                    rightPath = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s biexpActive Peaks.xlsx"%(rightSignal.date, rightSignal.ratID))
+                    leftPath = os.path.join(os.getcwd(), "Processed Data", f"{leftDate} Rat {leftRatID} refReg Peaks.xlsx")
+                    rightPath = os.path.join(os.getcwd(), "Processed Data", f"{rightDate} Rat {rightRatID} refReg Peaks.xlsx")
+                case "biexp":
+                    leftPath = os.path.join(os.getcwd(), "Processed Data", f"{leftDate} Rat {leftRatID} biexp Peaks.xlsx")
+                    rightPath = os.path.join(os.getcwd(), "Processed Data", f"{rightDate} Rat {rightRatID} biexp Peaks.xlsx")
                 case _:
                     raise ValueError("bleach error")
         # Saves the averaged data to an excel file with the rat's "name"
             match self.bleach_correct:
                 case "isosbestic":
-                    filenameLeft = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Overall Fluorescence.xlsx"%(leftSignal.date, leftSignal.ratID))
-                    filenameRight = os.path.join(os.getcwd(), "Processed Data", "%s Rat %s Overall Fluorescence.xlsx"%(rightSignal.date, rightSignal.ratID))
+                    filenameLeft = os.path.join(os.getcwd(), "Processed Data", f"{leftDate} Rat {leftRatID} Overall Fluorescence.xlsx")
+                    filenameRight = os.path.join(os.getcwd(), "Processed Data", f"{rightDate} Rat {rightRatID} Overall Fluorescence.xlsx")
                 case "refReg":
-                    filenameLeft = os.path.join(os.getcwd(), "Processed Data", "refReg %s Rat %s Overall Fluorescence.xlsx"%(leftSignal.date, leftSignal.ratID))
-                    filenameRight = os.path.join(os.getcwd(), "Processed Data", "refReg %s Rat %s Overall Fluorescence.xlsx"%(rightSignal.date, rightSignal.ratID))
-                case "biexpActive":
-                    filenameLeft = os.path.join(os.getcwd(), "Processed Data", "biexpActive %s Rat %s Overall Fluorescence.xlsx"%(leftSignal.date, leftSignal.ratID))
-                    filenameRight = os.path.join(os.getcwd(), "Processed Data", "biexpActive %s Rat %s Overall Fluorescence.xlsx"%(rightSignal.date, rightSignal.ratID))
+                    filenameLeft = os.path.join(os.getcwd(), "Processed Data", f"{leftDate} Rat {leftRatID} refReg Overall Fluorescence.xlsx")
+                    filenameRight = os.path.join(os.getcwd(), "Processed Data", f"{rightDate} Rat {rightRatID} refReg Overall Fluorescence.xlsx")
+                case "biexp":
+                    filenameLeft = os.path.join(os.getcwd(), "Processed Data", f"{leftDate} Rat {leftRatID} biexp Overall Fluorescence.xlsx")
+                    filenameRight = os.path.join(os.getcwd(), "Processed Data", f"{rightDate} Rat {rightRatID} biexp Overall Fluorescence.xlsx")
                 case _:
                     raise ValueError("bleach error")
             leftOverviewWriter, rightOverviewWriter = pd.ExcelWriter(filenameLeft), pd.ExcelWriter(filenameRight)
