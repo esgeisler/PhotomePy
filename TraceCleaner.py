@@ -155,7 +155,7 @@ class TraceCleaner():
                 if not containsCheck:
                     if len(concatFrame.columns) < len(inDecayCheck.columns):
                         commaNum = len(inDecayCheck.columns) - len(concatFrame.columns)
-                        paddedComma = pd.DataFrame([[np.NaN * commaNum]])
+                        paddedComma = pd.DataFrame([[np.nan * commaNum]])
                         headers.extend(["Trace %i"%(y+1) for y in range(len(concatFrame.columns), len(concatFrame.columns)+commaNum)])
                         appendedFrame = pd.concat([concatFrame, paddedComma], ignore_index=True, axis=1)
                     appendedFrame = pd.concat([inDecayCheck, concatFrame], ignore_index=True)

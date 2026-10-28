@@ -183,7 +183,7 @@ def averageCSV(ratNameLeft, ratNameRight):
                 decayArray = pd.concat([decayArray, meanReader.loc[row]], axis=1)
             else:
                 pass
-        # deleteHere = np.argwhere(decayArray==np.NaN)
+        # deleteHere = np.argwhere(decayArray==np.nan)
         # decayArray = np.delete(decayArray, deleteHere)
         # decayArray[np.all(np.isnan(decayArray), axis=0)] = 0
         decayArray = decayArray.transpose()

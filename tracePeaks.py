@@ -240,7 +240,7 @@ class TracePeaks(top.TotalPeaks):
                         y_rise = popt[0] * np.exp(popt[1] * (x_rise/self.samplingFreqSec)) + popt[2]
                         riseCorr[i] = rSquared
                         if rSquared < 0.8:
-                            riseTauList[i] = np.NaN
+                            riseTauList[i] = np.nan
                         else:
                             riseTauList[i] = abs(1/popt[1])
                             self.risePlot[i, 0] = x_rise+int(self.trace90Widths[0][i])
@@ -259,28 +259,28 @@ class TracePeaks(top.TotalPeaks):
                                                                 maxfev=1000)
                         rSquared = self.rSquaredGet(adjustedRiseTau, riseArray, popt[0], popt[1], popt[2])
                         y_rise = popt[0] * np.exp(popt[1] * (x_rise/self.samplingFreqSec)) + popt[2]
-                        riseTauList[i] = np.NaN
+                        riseTauList[i] = np.nan
                         riseCorr[h] = rSquared
                         if rSquared < 0.8:
-                            riseTauList[h] = np.NaN
+                            riseTauList[h] = np.nan
                         else:
                             riseTauList[h] = abs(1/popt[1])
                             self.risePlot[h, 0] = x_rise+int(self.trace90Widths[0][i])
                             self.risePlot[h, 1] = y_rise
                         
                     else:
-                        riseTauList[i] = np.NaN
+                        riseTauList[i] = np.nan
                 except RuntimeError as e:
                     if str(e) == "Optimal parameters not found: The maximum number of function evaluations is exceeded.":
-                        riseTauList[i] = np.NaN
-                        riseCorr[i] = np.NaN
+                        riseTauList[i] = np.nan
+                        riseCorr[i] = np.nan
                     else:
                         raise
                 except ValueError as e:
                     match str(e):
                         case "`x0` is infeasible.":
-                            riseTauList[i] = np.NaN
-                            riseCorr[i] = np.NaN
+                            riseTauList[i] = np.nan
+                            riseCorr[i] = np.nan
                         case "zero-size array to reduction operation minimum which has no identity":
                             continue
                         case _:
@@ -317,7 +317,7 @@ class TracePeaks(top.TotalPeaks):
                         y_rise = popt[0] * (1 - np.exp(popt[1] * (x_rise/self.samplingFreqSec))) + popt[2]
                         riseCorr[i] = rSquared
                         if rSquared < 0.8:
-                            riseTauList[i] = np.NaN
+                            riseTauList[i] = np.nan
                         else:
                             riseTauList[i] = abs(1/popt[1])
                             self.altRisePlot[i, 0] = x_rise+int(self.trace90Widths[0][i])
@@ -336,28 +336,28 @@ class TracePeaks(top.TotalPeaks):
                                                                 maxfev=1000)
                         rSquared = self.altRSquaredGet(adjustedRiseTau, riseArray, popt[0], popt[1], popt[2])   
                         y_rise = popt[0] * (1 - np.exp(popt[1] * (x_rise/self.samplingFreqSec))) + popt[2]
-                        riseTauList[i] = np.NaN
+                        riseTauList[i] = np.nan
                         riseCorr[h] = rSquared
                         if rSquared < 0.8:
-                            riseTauList[h] = np.NaN
+                            riseTauList[h] = np.nan
                         else:
                             riseTauList[h] = abs(1/popt[1])
                             self.altRisePlot[h, 0] = x_rise+int(self.trace90Widths[0][i])
                             self.altRisePlot[h, 1] = y_rise
                         
                     else:
-                        riseTauList[i] = np.NaN
+                        riseTauList[i] = np.nan
                 except RuntimeError as e:
                     if str(e) == "Optimal parameters not found: The maximum number of function evaluations is exceeded.":
-                        riseTauList[i] = np.NaN 
-                        riseCorr[i] = np.NaN
+                        riseTauList[i] = np.nan 
+                        riseCorr[i] = np.nan
                     else:
                         raise
                 except ValueError as e:
                     match str(e):
                         case "`x0` is infeasible.":
-                            riseTauList[i] = np.NaN
-                            riseCorr[i] = np.NaN
+                            riseTauList[i] = np.nan
+                            riseCorr[i] = np.nan
                         case "zero-size array to reduction operation minimum which has no identity":
                             continue
                         case _:
@@ -389,7 +389,7 @@ class TracePeaks(top.TotalPeaks):
                         rSquared = self.rSquaredGet(adjustedDecayTau, decArray, popt[0], popt[1], popt[2])
                         y_dec = popt[0] * np.exp(popt[1] * (x_dec/self.samplingFreqSec)) + popt[2]
                         if rSquared < 0.8:
-                            decayTauList[i] = np.NaN
+                            decayTauList[i] = np.nan
                         else:
                             decayTauList[i] = abs(1/popt[1])
                             self.decayPlot[i, 0] = x_dec+int(self.trace10Widths[1][i])
@@ -408,24 +408,24 @@ class TracePeaks(top.TotalPeaks):
                                                                 maxfev=1000)
                         rSquared = self.rSquaredGet(adjustedDecayTau, decArray, popt[0], popt[1], popt[2])
                         y_dec = popt[0] * np.exp(popt[1] * (x_dec/self.samplingFreqSec)) + popt[2]
-                        decayTauList[i] = np.NaN
+                        decayTauList[i] = np.nan
                         if rSquared < 0.8:
-                            decayTauList[h] = np.NaN
+                            decayTauList[h] = np.nan
                         else:
                             decayTauList[h] = abs(1/popt[1])
                             self.decayPlot[h, 0] = x_dec+int(self.trace10Widths[1][h])
                             self.decayPlot[h, 1] = y_dec
                     else:
-                        decayTauList[i] = np.NaN
+                        decayTauList[i] = np.nan
                 except RuntimeError as e:
                     if str(e) == "Optimal parameters not found: The maximum number of function evaluations is exceeded.":
-                        decayTauList[i] = np.NaN
+                        decayTauList[i] = np.nan
                     else:
                         raise
                 except ValueError as e:
                     match str(e):
                         case "`x0` is infeasible.":
-                            decayTauList[i] = np.NaN
+                            decayTauList[i] = np.nan
                         case "zero-size array to reduction operation minimum which has no identity":
                             continue
                         case _:
