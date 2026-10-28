@@ -1,5 +1,5 @@
 import pyabf
-import AverageTraces as avg
+import numpy as np
 
 class ProcessedTotalSignal():
     def __init__(self, filename, processedSignalArray, ratID, injTrace):
@@ -8,12 +8,20 @@ class ProcessedTotalSignal():
         self.ratID = ratID
         self.injTrace = injTrace
 
+        if self.injTrace <= 1:
+            raise ValueError("Injection traces must be larger than 1")
+        elif self.injTrace > len(processedSignalArray):
+            raise IndexError("Injection traces are larger than total sweeps in signals")
+
         self.abf = pyabf.ABF(filename)
         self.numTraces = len(self.abf.sweepList)
         self.traceLength = len(self.processedSignalArray[0])
         self.date = self.abf.abfDateTime.strftime("%Y-%m-%d")
 
-        self.wholeTraceAverages, self.wholeTraceMedians = avg.traceAverage(self.processedSignalArray)
-        self.preInjAvg, self.preInjStdev = avg.preInjectionAverage(self.processedSignalArray, self.injTrace)
-        self.normFluorescence = avg.deltaF(self.wholeTraceAverages, self.preInjAvg)
-        self.overallZScore = avg.zCalc(self.wholeTraceAverages, self.processedSignalArray, self.injTrace)
+        
+
+        self.wholeTraceAverages, self.wholeTraceMedians = np.mean(self.processedSignalArray, axis=1, dtype=np.float64), np.median(self.processedSignalArray, axis=1)
+        self.preInjAvg = np.mean(processedSignalArray[:self.injTrace + 1], dtype=np.float64)
+        self.preInjStdev = np.std(processedSignalArray[:self.injTrace + 1], dtype=np.float64, mean=self.preInjAvg, ddof=1)
+        self.normFluorescence = (self.wholeTraceAverages - self.preInjAvg)/self.preInjAvg
+        self.overallZScore = (self.wholeTraceAverages - self.preInjAvg)/self.preInjStdev
