@@ -18,14 +18,18 @@ class Main(tk.Frame):
     # Initializes the user configuration from config.yaml
         with open("config.yaml") as c:
             userConfig = yaml.safe_load(c)
-        self.norm_method = userConfig["GENERAL"]["normalization"]
-        self.bleach_correct = userConfig["GENERAL"]["bleach_correction"]
-        self.exportStatus = userConfig["GENERAL"]["export_abf"]
-        self.movement_corr = userConfig["GENERAL"]["movement_corr_calc"]
-        self.peakMethod = userConfig["EVENT_HANDLING"]["peak_id_method"]
-        leftChannels = userConfig["GENERAL"]["left_rat_channels"]
-        rightChannels = userConfig["GENERAL"]["right_rat_channels"]
-        peakThreshold = userConfig["EVENT_HANDLING"]["peak_detection_threshold"]
+            self.bleach_correct = userConfig["GENERAL"]["bleach_correction"]
+            self.exportStatus = userConfig["GENERAL"]["export_abf"]
+            self.movement_corr = userConfig["GENERAL"]["movement_corr_calc"]
+            leftChannels = userConfig["GENERAL"]["left_rat_channels"]
+            rightChannels = userConfig["GENERAL"]["right_rat_channels"]
+            self.norm_method = userConfig["EVENT_HANDLING"]["normalization"]
+            self.peakMethod = userConfig["EVENT_HANDLING"]["peak_id_method"]
+            peakThreshold = userConfig["EVENT_HANDLING"]["peak_detection_threshold"]
+            useStDev = userConfig["EVENT_HANDLING"]["use_baseline_stdev"]
+            start = userConfig["EVENT_HANDLING"]["trace_start_offset"]
+            end = userConfig["EVENT_HANDLING"]["trace_end_offset"]
+        removedPointCount = abs(start) + abs(end)
 
     # Initialize all of the necessary variables for the GUI
         self.experimentFileName = ""
@@ -253,10 +257,8 @@ class Main(tk.Frame):
                     match self.bleach_correct:
                         case "isosbestic":
                             finalSignalLeft, finalSignalRight = rawTrace.completeProcessor()
-                        case "biexp": 
-                            finalSignalLeft, finalSignalRight, traceDecayFunction, decayRSquared = rawTrace.newCompleteProcessor(self.controlStatus.get(), self.ratNameLeft, self.ratNameRight, self.abfDate)
-                        case "biexpActive":
-                            finalSignalLeft, finalSignalRight = rawTrace.activeSignalDecayProcessor()
+                        case "biexp":
+                            finalSignalLeft, finalSignalRight, _, _ = rawTrace.activeSignalDecayProcessor()
                         case "refReg":
                             finalSignalLeft, finalSignalRight, _, _, = rawTrace.referenceSignalDecayProcessor()
                         case _:
@@ -264,9 +266,13 @@ class Main(tk.Frame):
                     leftSignal = pro.ProcessedTotalSignal(self.experimentFileName, finalSignalLeft, self.ratNameLeft, self.leftRatInjectionInt)
                     rightSignal = pro.ProcessedTotalSignal(self.experimentFileName, finalSignalRight, self.ratNameRight, self.rightRatInjectionInt)
                     match self.norm_method:
-                        case "SBR":
+                        case "None":
                             break
-                        case "zSBR":
+                        case "SBR":
+                            leftSignal.processedSignalArray = (leftSignal.processedSignalArray - leftSignal.preInjAvg) / leftSignal.preInjAvg
+                            rightSignal.processedSignalArray = (rightSignal.processedSignalArray - rightSignal.preInjAvg) / rightSignal.preInjAvg
+                            break
+                        case "ZScore":
                             leftSignal.processedSignalArray = (leftSignal.processedSignalArray - leftSignal.preInjAvg) / leftSignal.preInjStdev
                             rightSignal.processedSignalArray = (rightSignal.processedSignalArray - rightSignal.preInjAvg) / rightSignal.preInjStdev
                             break
@@ -302,8 +308,8 @@ class Main(tk.Frame):
                             print("Values for bleach_correct must be either 'isosbestic' or 'biexp'.\nUsing default value (isosbestic).")
                             self.bleach_correct = "isosbestic"
                         case "norm error":
-                            print("Values for normalization must be either 'SBR' or 'zSBR'.\nUsing default value (SBR).")
-                            self.norm_method = "SBR"
+                            print("Values for normalization must be either 'None', 'SBR', or 'ZScore'.\nUsing default value (None).")
+                            self.norm_method = "None"
                         case "Injection traces must be larger than 1":
                             answer = messagebox.askretrycancel(title="Python Error", message="Injection trace values must be greater than 1. Please re-enter your trace number", icon="error")
                             if answer:
@@ -328,7 +334,12 @@ class Main(tk.Frame):
                     else:
                         raise
         # Analyzes peak decay, amplitude, and frequency across an entire signal containing X traces           
-            self.peaksLeft, self.peaksRight = pas.wholeTracePeaks(leftSignal.processedSignalArray, self.experimentFileName), pas.wholeTracePeaks(rightSignal.processedSignalArray, self.experimentFileName)
+            if useStDev:
+                baselineStDevLeft, baselineStDevRight = 3 * acl.baselineStDev(self.baselinefileName, leftChannels[0]), 3 * acl.baselineStDev(self.baselinefileName, rightChannels[0])
+            else:
+                baselineStDevLeft, baselineStDevRight = 0.0, 0.0
+            self.peaksLeft = pas.wholeTracePeaks(leftSignal.processedSignalArray, self.experimentFileName, baselineStDevLeft) 
+            self.peaksRight = pas.wholeTracePeaks(rightSignal.processedSignalArray, self.experimentFileName, baselineStDevRight)
             injectionLeft, overviewLeft = pas.traceProcessor(self.peaksLeft)
             injectionRight, overviewRight = pas.traceProcessor(self.peaksRight)
             match self.bleach_correct:
@@ -496,17 +507,24 @@ class Main(tk.Frame):
         # Analyzes the peak decay, amplitude, and frequency of a single trace chosen by the user.
         def singleTracePeaks():
             try:
+                if useStDev:
+                    baselineStDevLeft, baselineStDevRight = 3 * acl.baselineStDev(self.baselinefileName, leftChannels[0]), 3 * acl.baselineStDev(self.baselinefileName, rightChannels[0])
+                else:
+                    baselineStDevLeft, baselineStDevRight = 0.0, 0.0
                 rawTrace = trace.TraceCleaner(self.experimentFileName, self.baselinefileName)
                 match self.bleach_correct:
                     case "isosbestic":
                         finalSignalLeft, finalSignalRight = rawTrace.completeProcessor()
-                    case "biexpActive":
-                        finalSignalLeft, finalSignalRight = rawTrace.activeSignalDecayProcessor()
+                    case "biexp":
+                        finalSignalLeft, finalSignalRight, _, _ = rawTrace.activeSignalDecayProcessor()
                     case "refReg":
                         finalSignalLeft, finalSignalRight, decayFitLeft, decayFitRight = rawTrace.referenceSignalDecayProcessor()
                 leftSignal = pro.ProcessedTotalSignal(self.experimentFileName, finalSignalLeft, self.ratNameLeft, self.leftRatInjectionInt)
                 rightSignal = pro.ProcessedTotalSignal(self.experimentFileName, finalSignalRight, self.ratNameRight, self.rightRatInjectionInt)
-                if self.norm_method == "zSBR":
+                if self.norm_method == "SBR":
+                    leftSignal.processedSignalArray = (leftSignal.processedSignalArray - leftSignal.preInjAvg) / leftSignal.preInjAvg
+                    rightSignal.processedSignalArray = (rightSignal.processedSignalArray - rightSignal.preInjAvg) / leftSignal.preInjAvg
+                elif self.norm_method == "ZScore":
                     leftSignal.processedSignalArray = (leftSignal.processedSignalArray - leftSignal.preInjAvg) / leftSignal.preInjStdev
                     rightSignal.processedSignalArray = (rightSignal.processedSignalArray - rightSignal.preInjAvg) / rightSignal.preInjStdev
                 else:
@@ -546,7 +564,17 @@ class Main(tk.Frame):
         def stepPrinterSingleTrace():
             try:
                 stepwiseTraces = trace.TraceCleaner(self.experimentFileName, self.baselinefileName)
-                leftNoBaseline, rightNoBaseline, leftFiltered, rightFiltered, combinedLeft, combinedRight, finalLeft, finalRight = stepwiseTraces.stepwiseProcessor()
+                match self.bleach_correct:
+                                    case "isosbestic":
+                                        finalLeft, finalRight = stepwiseTraces.completeProcessor()
+                                        leftNoBaseline, rightNoBaseline, leftFiltered, rightFiltered, combinedLeft, combinedRight, finalLeft, finalRight = stepwiseTraces.stepwiseProcessor()
+                                    case "biexp":
+                                        finalLeft, finalRight, leftFitted, RightFitted = stepwiseTraces.activeSignalDecayProcessor()
+                                        leftNoBaseline, rightNoBaseline, leftFiltered, rightFiltered, combinedLeft, combinedRight, finalLeft, finalRight = stepwiseTraces.stepwiseProcessor()
+                                    case "refReg":
+                                        finalLeft, finalRight, leftFitted, RightFitted = stepwiseTraces.referenceSignalDecayProcessor()
+                                        leftNoBaseline, rightNoBaseline, leftFiltered, rightFiltered, combinedLeft, combinedRight, finalLeft, finalRight = stepwiseTraces.stepwiseProcessor()
+
                 seconds, _, _ = pas.secondsCalculator(self.experimentFileName)
                 # Shows the left rat's raw traces, with no corrections and after subtracting baseline autofluorescence.
                 peakFig, ax1 = plt.subplots()

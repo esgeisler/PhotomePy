@@ -40,7 +40,7 @@ class TraceCleaner():
     def completeProcessor(self):
         return self.signalLeft, self.signalRight
 
-# Exact same function as completeProcessor, except that it returns all of the 
+# Exact same function as completeProcessor, except that it returns signals at each step of the process.
     def stepwiseProcessor(self):
         return (self.subtract470Left, self.subtract405Left), (self.subtract470Right, self.subtract405Right), (self.filtered470Left, self.filtered405Left), (self.filtered470Right, self.filtered405Right), self.ratioSignalLeft, self.ratioSignalRight, self.signalLeft, self.signalRight
         
@@ -52,64 +52,68 @@ class TraceCleaner():
         # ratioLeft = self.ratioSignalLeft.mean(axis=0)
         # ratioRight = self.ratioSignalRight.mean(axis=0)
         for i in self.abf.sweepList:
-            stackedSignalsLeft = np.vstack((self.filtered470Left[i], np.ones(len(self.filtered470Left[i])))).T
-            stackedSignalsRight = np.vstack((self.filtered470Right[i], np.ones(len(self.filtered470Right[i])))).T
+            stackedSignalsLeft = np.vstack((self.filtered405Left[i], np.ones(len(self.filtered405Left[i])))).T
+            stackedSignalsRight = np.vstack((self.filtered405Right[i], np.ones(len(self.filtered405Left[i])))).T
 
-            gainL, offsetL = np.linalg.lstsq(stackedSignalsLeft, self.filtered405Left[i], rcond=None)[0]
-            gainR, offsetR = np.linalg.lstsq(stackedSignalsRight, self.filtered405Right[i], rcond=None)[0]
+            gainL, offsetL = np.linalg.lstsq(stackedSignalsLeft, self.filtered470Left[i], rcond=None)[0] 
+            gainR, offsetR = np.linalg.lstsq(stackedSignalsRight, self.filtered470Right[i], rcond=None)[0] 
 
-            leftFittedSignal = np.array(list(map(lambda x: x*gainL+offsetL, self.filtered470Left[i])))
-            rightFittedSignal = np.array(list(map(lambda x: x*gainR+offsetR, self.filtered470Right[i])))
+            leftFittedSignal = np.array(list(map(lambda x: x*gainL+offsetL, self.filtered405Left[i])))
+            rightFittedSignal = np.array(list(map(lambda x: x*gainR+offsetR, self.filtered405Right[i])))
 
-            leftFittedArray[i] = leftFittedSignal
-            rightFittedArray[i] = rightFittedSignal
+            self.filtered405Left[i] = leftFittedSignal
+            self.filtered405Right[i] = rightFittedSignal
 
-        leftFittedArray = acl.wholeTraceGauss(leftFittedArray)
-        rightFittedArray = acl.wholeTraceGauss(rightFittedArray)
+        # self.filtered405Left = acl.wholeTraceGauss(leftFittedArray)
+        # self.filtered405Right = acl.wholeTraceGauss(rightFittedArray)
 
-        self.signalLeft = (self.filtered470Left - leftFittedArray)/leftFittedArray
-        self.signalRight = (self.filtered470Right - rightFittedArray)/rightFittedArray
+        # self.ratioSignalLeft, self.ratioSignalRight = acl.ratio470405(self.filtered470Left, self.filtered405Left), acl.ratio470405(self.filtered470Right, self.filtered405Right)
 
-        self.signalLeft, self.signalRight = acl.wholeTraceGauss(self.signalLeft), acl.wholeTraceGauss(self.signalRight)
+        self.ratioSignalLeft = (self.filtered470Left/self.filtered405Left)
+        self.ratioSignalRight = (self.filtered470Right/self.filtered405Right)
+
+        self.signalLeft, self.signalRight = acl.wholeTraceGauss(self.ratioSignalLeft), acl.wholeTraceGauss(self.ratioSignalRight)
         
-        return self.signalLeft, self.signalRight, leftFittedArray, rightFittedArray
+        return self.signalLeft, self.signalRight, self.filtered405Left, self.filtered405Right
 
 # Processor for biexpActive
     def activeSignalDecayProcessor(self):
+        decayFitLeft,  rSquaredLeft = acl.doubleExpDecaySingleTrace(self.filtered405Left, self.samplingFreqSec)
+        decayFitRight, rSquaredRight = acl.doubleExpDecaySingleTrace(self.filtered405Right, self.samplingFreqSec)
+
+        decayFitLeftScaled = np.zeros_like(decayFitLeft)
+        decayFitRightScaled = np.zeros_like(decayFitRight)
         
-
-        leftFittedArray = np.zeros((len(self.abf.sweepList), len(self.abf.sweepX) - self.removedPointCount))
-        rightFittedArray = np.zeros((len(self.abf.sweepList), len(self.abf.sweepX) - self.removedPointCount))
         for i in self.abf.sweepList:
-            stackedSignalsLeft = np.vstack((self.filtered470Left[i], np.ones(len(self.filtered470Left[i])))).T
-            stackedSignalsRight = np.vstack((self.filtered470Right[i], np.ones(len(self.filtered470Right[i])))).T
+            stackedSignalsLeft = np.vstack((decayFitLeft[i], np.ones(len(decayFitLeft[i])))).T
+            stackedSignalsRight = np.vstack((decayFitRight[i], np.ones(len(decayFitRight[i])))).T
 
-            gainL, offsetL = np.linalg.lstsq(stackedSignalsLeft, self.filtered405Left[i], rcond=None)[0]
-            gainR, offsetR = np.linalg.lstsq(stackedSignalsRight, self.filtered405Right[i], rcond=None)[0]
+            gainL, offsetL = np.linalg.lstsq(stackedSignalsLeft, self.filtered470Left[i], rcond=None)[0] 
+            gainR, offsetR = np.linalg.lstsq(stackedSignalsRight, self.filtered470Right[i], rcond=None)[0] 
 
-            leftFittedSignal = np.array(list(map(lambda x: x*gainL+offsetL, self.filtered470Left[i])))
-            rightFittedSignal = np.array(list(map(lambda x: x*gainR+offsetR, self.filtered470Right[i])))
+            leftFittedSignal = np.array(list(map(lambda x: x*gainL+offsetL, decayFitLeft[i])))
+            rightFittedSignal = np.array(list(map(lambda x: x*gainR+offsetR, decayFitRight[i])))
 
-            leftFittedArray[i] = leftFittedSignal
-            rightFittedArray[i] = rightFittedSignal
+            decayFitLeftScaled[i] = leftFittedSignal - leftFittedSignal[-1]
+            decayFitRightScaled[i] = rightFittedSignal - rightFittedSignal[-1]
 
-        leftFittedArray = acl.wholeTraceGauss(leftFittedArray)
-        rightFittedArray = acl.wholeTraceGauss(rightFittedArray)
+            decayFitLeft[i] -= decayFitLeft[i][-1]
+            decayFitRight[i] -= decayFitRight[i][-1]
 
-        self.signalLeft = self.filtered470Left - leftFittedArray
-        self.signalRight = self.filtered470Right - rightFittedArray
+        self.filtered470Left -= decayFitLeftScaled
+        self.filtered405Left -= decayFitLeft
+                
+        self.filtered470Right -= decayFitRightScaled
+        self.filtered405Right -= decayFitRight
 
-        decayFitLeft,  rSquaredLeft = acl.doubleExpDecaySingleTrace(self.filtered470Left, self.samplingFreqSec)
-        decayFitRight, rSquaredRight = acl.doubleExpDecaySingleTrace(self.filtered470Right, self.samplingFreqSec)
+        self.ratioSignalLeft = (self.filtered470Left/self.filtered405Left)
+        self.ratioSignalRight = (self.filtered470Right/self.filtered405Right)
 
-        self.signalLeft = (self.signalLeft - decayFitLeft)/decayFitLeft
-        self.signalRight = (self.signalRight - decayFitRight)/decayFitRight
+        self.signalLeft, self.signalRight = acl.wholeTraceGauss(self.ratioSignalLeft), acl.wholeTraceGauss(self.ratioSignalRight)
 
-        self.signalLeft, self.signalRight = acl.wholeTraceGauss(self.signalLeft), acl.wholeTraceGauss(self.signalRight)
+        return self.signalLeft, self.signalRight, decayFitLeft, decayFitRight
 
-        return self.signalLeft, self.signalRight
-
-# Original biexp function
+# Original (Outdated) biexp function
     def newCompleteProcessor(self, salineStatus, ratNameLeft, ratNameRight, experimentDate):
         if salineStatus == 1:
             decayFit405Left, r405Left = acl.doubleExpDecayFit(self.filtered405Left)
