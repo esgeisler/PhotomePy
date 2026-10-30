@@ -101,11 +101,12 @@ def isoLinRegPlot(fileName, isosbesticChannel, activeChannel, chosenTrace, ratSi
 def doubleExpDecayFit(filteredSignal):
     yDecay = filteredSignal.reshape(-1)
     xDecay = np.arange(0, len(yDecay))
+    heightDiff = abs(max(yDecay) - min(yDecay))
     p0 = (max(yDecay), -1, max(yDecay)/2, -1, min(yDecay))
     popt, _ = opt.curve_fit(lambda t, a, b, c, d, e: (a * np.exp(b * t)) + (c * np.exp(d * t)) + e, xDecay, yDecay, p0=p0, 
                                                 bounds=opt.Bounds(lb=[0, -np.inf, 0, -np.inf, min(yDecay)], 
-                                                                ub=[np.inf, 0, np.inf, 0, np.inf]),
-                                                                maxfev=1000)
+                                                                  ub=[heightDiff, 0, heightDiff, 0, max(yDecay)]),
+                                                                  maxfev=1000)
     a, b, c, d, e = popt[0], popt[1], popt[2], popt[3], popt[4]
     squaredDiffs = np.square(yDecay - (a * np.exp(b * xDecay)) + (c * np.exp(d * xDecay)) + e)
     squaredDiffsFromMean = np.square(yDecay - np.mean(yDecay))
