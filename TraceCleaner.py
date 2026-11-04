@@ -27,6 +27,8 @@ class TraceCleaner():
         self.abf = pyabf.ABF(self.mainFile)
         self.samplingFreqMSec = self.abf.dataPointsPerMs + (1/3)
         self.samplingFreqSec = self.samplingFreqMSec * 1000
+        
+        self.modifiedSweepPointCount = self.abf.sweepPointCount - self.removedPointCount
 
         self.baseline470Left, self.baseline405Left, self.baseline470Right, self.baseline405Right= acl.baselineGet(self.baselineFile)
         self.subtract470Left, self.subtract405Left = acl.baselineSubtractor(self.mainFile, self.baseline470Left, self.baseline405Left, self.leftChannels)
@@ -46,8 +48,8 @@ class TraceCleaner():
         
 # Processor for refReg. 
     def referenceSignalDecayProcessor(self):
-        leftFittedArray = np.zeros((self.abf.sweepCount, self.abf.sweepPointCount - self.removedPointCount))
-        rightFittedArray = np.zeros((self.abf.sweepCount, self.abf.sweepPointCount - self.removedPointCount))
+        leftFittedArray = np.zeros((self.abf.sweepCount, self.modifiedSweepPointCount))
+        rightFittedArray = np.zeros((self.abf.sweepCount, self.modifiedSweepPointCount))
 
         # ratioLeft = self.ratioSignalLeft.mean(axis=0)
         # ratioRight = self.ratioSignalRight.mean(axis=0)
