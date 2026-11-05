@@ -247,81 +247,59 @@ class TracePeaks(top.TotalPeaks):
             self.totArea = adjustedArea[np.nonzero(adjustedArea)].sum()
 
     def riseSet(self):
-        trace90Widths = self.trace90Widths
-        trace10Widths = self.trace10Widths
-        riseTauList = np.zeros(self.numTracePeaks)
-        riseCorr = np.zeros(self.numTracePeaks)
+        trace90Widths, trace10Widths = self.trace90Widths, self.trace10Widths
+        riseTauList, riseCorr = np.zeros(self.numTracePeaks), np.zeros(self.numTracePeaks)
         for _, u in enumerate(self.degreeRise): 
             i = np.where(self.peaks == u)[0][0] # Current peak
-            if len(self.fullTraceArray[int(trace90Widths[0][i]):int(trace90Widths[1][i])]) == 0:
-                continue
-            adjustedRiseTau = np.array(self.fullTraceArray[int(trace90Widths[0][i]):int(trace10Widths[0][i])])
+            if self.riseNPeaks[u] == 0:
+                adjustedRiseTau = np.array(self.fullTraceArray[int(trace90Widths[0][i]):int(trace10Widths[0][i])])
+                heightDiff = abs(self.fullTraceArray[int(trace10Widths[0][i])] - self.fullTraceArray[int(trace90Widths[0][i])])
+                peakTopBound = self.fullTraceArray[int(trace10Widths[0][i])]
+            elif self.riseNPeaks[u] > 0:
+                h = np.where(self.peaks == self.overlapRise[u][0])[0][0]
+                adjustedRiseTau = np.array(self.fullTraceArray[int(trace90Widths[0][i]):int(trace10Widths[0][h])])
+                heightDiff = abs(self.fullTraceArray[int(trace10Widths[0][h])] - self.fullTraceArray[int(trace90Widths[0][i])])
+                peakTopBound = self.fullTraceArray[int(trace10Widths[0][h])]
             if len(adjustedRiseTau) == 0:
                 continue
+            p0 = (heightDiff, 1, self.fullTraceArray[int(trace90Widths[0][i])])
             riseWidth = int(len(adjustedRiseTau))
             riseArray = np.arange(0, riseWidth)
             x_rise = np.linspace(np.min(riseArray), np.max(riseArray), 1000)
-            heightDiff = abs(self.fullTraceArray[int(trace10Widths[0][i])] - self.fullTraceArray[int(trace90Widths[0][i])])
-            p0 = (heightDiff, 1, self.fullTraceArray[int(trace90Widths[0][i])])
-            if len(adjustedRiseTau) == 0:
-                continue
-            else:
-                try:
-                    if self.riseNPeaks[u] == 0: # Handles peaks with no overlap
-                        # t is used as "x" here, and is equivalent to time. a = the initial value of the curve, b is 1/tau, and c is the offset from 0.
-                        popt, _ = opt.curve_fit(lambda t, a, b, c: a * np.exp(b * t) + c, riseArray/self.samplingFreqSec, adjustedRiseTau, p0=p0, 
-                                                bounds=opt.Bounds(lb=[0, 0, self.fullTraceArray[int(trace90Widths[0][i])]], 
-                                                                ub=[heightDiff, np.inf, self.fullTraceArray[int(trace10Widths[0][i])]]),
-                                                                maxfev=1000)
-                        rSquared = self.rSquaredGet(adjustedRiseTau, riseArray, popt[0], popt[1], popt[2])   
-                        y_rise = popt[0] * np.exp(popt[1] * (x_rise/self.samplingFreqSec)) + popt[2]
-                        riseCorr[i] = rSquared
-                        if rSquared < 0.8:
-                            riseTauList[i] = np.nan
-                        else:
-                            riseTauList[i] = abs(1/popt[1])
-                            self.risePlot[i, 0] = x_rise+int(trace90Widths[0][i])
-                            self.risePlot[i, 1] = y_rise
-                    elif self.riseNPeaks[u] > 0: # Handles peaks with overlap, which are the first overlapping peaks
-                        h = np.where(self.peaks == self.overlapRise[u][0])[0][0]
-                        adjustedRiseTau = np.array(self.fullTraceArray[int(trace90Widths[0][i]):int(trace10Widths[0][h])])
-                        heightDiff = abs(self.fullTraceArray[int(trace10Widths[0][h])] - self.fullTraceArray[int(trace90Widths[0][i])])
-                        p0 = (heightDiff, 1, self.fullTraceArray[int(trace90Widths[0][i])])
-                        riseWidth = int(len(adjustedRiseTau))
-                        riseArray = np.arange(0, riseWidth)
-                        x_rise = np.linspace(np.min(riseArray), np.max(riseArray), 1000)
-                        popt, _ = opt.curve_fit(lambda t, a, b, c: a * np.exp((b * t)) + c, riseArray/self.samplingFreqSec, adjustedRiseTau, p0=p0, 
-                                                bounds=opt.Bounds(lb=[0, 0, self.fullTraceArray[int(trace90Widths[0][i])]],
-                                                                ub=[heightDiff, np.inf, self.fullTraceArray[int(trace10Widths[0][h])]]), 
-                                                                maxfev=1000)
-                        rSquared = self.rSquaredGet(adjustedRiseTau, riseArray, popt[0], popt[1], popt[2])
-                        y_rise = popt[0] * np.exp(popt[1] * (x_rise/self.samplingFreqSec)) + popt[2]
-                        riseTauList[i] = np.nan
-                        riseCorr[h] = rSquared
-                        if rSquared < 0.8:
-                            riseTauList[h] = np.nan
-                        else:
-                            riseTauList[h] = abs(1/popt[1])
-                            self.risePlot[h, 0] = x_rise+int(trace90Widths[0][i])
-                            self.risePlot[h, 1] = y_rise
-                        
-                    else:
-                        riseTauList[i] = np.nan
-                except RuntimeError as e:
-                    if str(e) == "Optimal parameters not found: The maximum number of function evaluations is exceeded.":
+            try:
+                # t is used as "x" here, and is equivalent to time. a = the initial value of the curve, b is 1/tau, and c is the offset from 0.
+                popt, _ = opt.curve_fit(lambda t, a, b, c: a * np.exp(b * t) + c, riseArray/self.samplingFreqSec, adjustedRiseTau, p0=p0, 
+                                        bounds=opt.Bounds(lb=[0, 0, self.fullTraceArray[int(trace90Widths[0][i])]], 
+                                                          ub=[heightDiff, np.inf, peakTopBound]),
+                                        maxfev=1000)
+                rSquared = self.rSquaredGet(adjustedRiseTau, riseArray, popt[0], popt[1], popt[2])
+                y_rise = popt[0] * np.exp(popt[1] * (x_rise/self.samplingFreqSec)) + popt[2]
+                x_offset = int(trace90Widths[0][i])
+                peakIndexCurrent = i if self.riseNPeaks[u] == 0 else h
+                if self.riseNPeaks[u] != 0:
+                    riseTauList[i] = np.nan
+                riseCorr[peakIndexCurrent] = rSquared
+                if rSquared < 0.8:
+                    riseTauList[peakIndexCurrent] = np.nan
+                else:
+                    riseTauList[peakIndexCurrent] = abs(1/popt[1])
+                    self.risePlot[peakIndexCurrent, 0] = x_rise+x_offset
+                    self.risePlot[peakIndexCurrent, 1] = y_rise
+            except RuntimeError as e:
+                if str(e) == "Optimal parameters not found: The maximum number of function evaluations is exceeded.":
+                    riseTauList[i] = np.nan
+                    riseCorr[i] = np.nan
+                else:
+                    raise
+            except ValueError as e:
+                match str(e):
+                    case "`x0` is infeasible.":
                         riseTauList[i] = np.nan
                         riseCorr[i] = np.nan
-                    else:
-                        raise
-                except ValueError as e:
-                    match str(e):
-                        case "`x0` is infeasible.":
-                            riseTauList[i] = np.nan
-                            riseCorr[i] = np.nan
-                        case "zero-size array to reduction operation minimum which has no identity":
-                            continue
-                        case _:
-                            raise
+                    case "zero-size array to reduction operation minimum which has no identity":
+                        continue
+                    case _:
+                        raise         
         self.riseRate = riseTauList
         self.riseCorr = riseCorr
 
@@ -403,70 +381,52 @@ class TracePeaks(top.TotalPeaks):
         self.altRiseCorr = riseCorr
 
     def decaySet(self):
-        trace90Widths = self.trace90Widths
-        trace10Widths = self.trace10Widths
+        trace90Widths, trace10Widths = self.trace90Widths, self.trace10Widths
         decayTauList = np.zeros(self.numTracePeaks)
         for _, u in enumerate(self.degreeDecay):
             i = np.where(self.peaks == u)[0][0]
-            adjustedDecayTau = np.array(self.fullTraceArray[int(trace10Widths[1][i]):int(trace90Widths[1][i])])
+            if self.decayNPeaks[u] == 0:
+                adjustedDecayTau = np.array(self.fullTraceArray[int(trace10Widths[1][i]):int(trace90Widths[1][i])])
+                heightDiff = abs(self.fullTraceArray[int(trace10Widths[1][i])] - self.fullTraceArray[int(trace90Widths[1][i])])
+                peakTopBound = self.fullTraceArray[int(trace10Widths[1][i])]
+            else:
+                h = np.where(self.peaks == self.overlapDecay[u][-1])[0][0]
+                adjustedDecayTau = np.array(self.fullTraceArray[int(trace10Widths[1][h]):int(trace90Widths[1][i])])
+                heightDiff = abs(self.fullTraceArray[int(trace10Widths[1][h])] - self.fullTraceArray[int(trace90Widths[1][i])])
+                peakTopBound = self.fullTraceArray[int(trace10Widths[1][h])]
             if len(adjustedDecayTau) == 0:
                 continue
+            p0 = (heightDiff, -1, self.fullTraceArray[int(trace90Widths[1][i])])
             decWidth = int(len(adjustedDecayTau))
             decArray = np.arange(0, decWidth)
             x_dec = np.linspace(np.min(decArray), np.max(decArray), 1000)
-            heightDiff = abs(self.fullTraceArray[int(trace10Widths[1][i])] - self.fullTraceArray[int(trace90Widths[1][i])])
-            p0 = (heightDiff, -1, self.fullTraceArray[int(self.trace90Widths[1][i])])
-            if len(adjustedDecayTau) == 0:
-                continue
-            else:
-                try:
-                    if self.decayNPeaks[u] == 0:
-                        popt, _ = opt.curve_fit(lambda t, a, b, c: a * np.exp(b * t) + c, decArray/self.samplingFreqSec, adjustedDecayTau, p0=p0, 
-                                                bounds=opt.Bounds(lb=[0, -np.inf, self.fullTraceArray[int(trace90Widths[1][i])]], 
-                                                                  ub=[heightDiff, 0, self.fullTraceArray[int(trace10Widths[1][i])]]),
-                                                maxfev=1000)
-                        rSquared = self.rSquaredGet(adjustedDecayTau, decArray, popt[0], popt[1], popt[2])
-                        y_dec = popt[0] * np.exp(popt[1] * (x_dec/self.samplingFreqSec)) + popt[2]
-                        if rSquared < 0.8:
-                            decayTauList[i] = np.nan
-                        else:
-                            decayTauList[i] = abs(1/popt[1])
-                            self.decayPlot[i, 0] = x_dec+int(trace10Widths[1][i])
-                            self.decayPlot[i, 1] = y_dec
-                    elif self.decayNPeaks[u] > 0:
-                        h = np.where(self.peaks == self.overlapDecay[u][-1])[0][0]
-                        adjustedDecayTau = np.array(self.fullTraceArray[int(trace10Widths[1][h]):int(trace90Widths[1][i])])
-                        heightDiff = abs(self.fullTraceArray[int(trace10Widths[1][h])] - self.fullTraceArray[int(trace90Widths[1][i])])
-                        p0 = (heightDiff, -1, self.fullTraceArray[int(trace90Widths[1][i])])
-                        decWidth = int(len(adjustedDecayTau))
-                        decArray = np.array(list(range(0, decWidth)))
-                        x_dec = np.linspace(np.min(decArray), np.max(decArray), 1000)
-                        popt, _ = opt.curve_fit(lambda t, a, b, c: a * np.exp((b * t)) + c, decArray/self.samplingFreqSec, adjustedDecayTau, p0=p0, 
-                                                bounds=opt.Bounds(lb=[0, -np.inf, self.fullTraceArray[int(trace90Widths[1][i])]], 
-                                                                  ub=[heightDiff, 0, self.fullTraceArray[int(trace10Widths[1][h])]]), 
-                                                                maxfev=1000)
-                        rSquared = self.rSquaredGet(adjustedDecayTau, decArray, popt[0], popt[1], popt[2])
-                        y_dec = popt[0] * np.exp(popt[1] * (x_dec/self.samplingFreqSec)) + popt[2]
+            try:
+                popt, _ = opt.curve_fit(lambda t, a, b, c: a * np.exp(b * t) + c, decArray/self.samplingFreqSec, adjustedDecayTau, p0=p0, 
+                                        bounds=opt.Bounds(lb=[0, -np.inf, self.fullTraceArray[int(trace90Widths[1][i])]], 
+                                                          ub=[heightDiff, 0, peakTopBound]),
+                                        maxfev=1000)
+                rSquared = self.rSquaredGet(adjustedDecayTau, decArray, popt[0], popt[1], popt[2])
+                y_dec = popt[0] * np.exp(popt[1] * (x_dec/self.samplingFreqSec)) + popt[2]
+                if self.decayNPeaks[u] != 0:
+                    decayTauList[i] = np.nan
+                peakIndexCurrent = i if self.decayNPeaks[u] == 0 else h
+                if rSquared < 0.8:
+                    decayTauList[peakIndexCurrent] = np.nan
+                else:
+                    decayTauList[peakIndexCurrent] = abs(1/popt[1])
+                    self.decayPlot[peakIndexCurrent, 0] = x_dec+int(trace10Widths[1][peakIndexCurrent])
+                    self.decayPlot[peakIndexCurrent, 1] = y_dec
+            except RuntimeError as e:
+                if str(e) == "Optimal parameters not found: The maximum number of function evaluations is exceeded.":
+                    decayTauList[i] = np.nan
+                else:
+                    raise
+            except ValueError as e:
+                match str(e):
+                    case "`x0` is infeasible.":
                         decayTauList[i] = np.nan
-                        if rSquared < 0.8:
-                            decayTauList[h] = np.nan
-                        else:
-                            decayTauList[h] = abs(1/popt[1])
-                            self.decayPlot[h, 0] = x_dec+int(trace10Widths[1][h])
-                            self.decayPlot[h, 1] = y_dec
-                    else:
-                        decayTauList[i] = np.nan
-                except RuntimeError as e:
-                    if str(e) == "Optimal parameters not found: The maximum number of function evaluations is exceeded.":
-                        decayTauList[i] = np.nan
-                    else:
+                    case "zero-size array to reduction operation minimum which has no identity":
+                        continue
+                    case _:
                         raise
-                except ValueError as e:
-                    match str(e):
-                        case "`x0` is infeasible.":
-                            decayTauList[i] = np.nan
-                        case "zero-size array to reduction operation minimum which has no identity":
-                            continue
-                        case _:
-                            raise
         self.decayRate = decayTauList
