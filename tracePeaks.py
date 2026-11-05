@@ -249,6 +249,8 @@ class TracePeaks(top.TotalPeaks):
     def riseSet(self):
         trace90Widths, trace10Widths = self.trace90Widths, self.trace10Widths
         riseTauList, riseCorr = np.zeros(self.numTracePeaks), np.zeros(self.numTracePeaks)
+        trace90Widths, trace10Widths = self.trace90Widths, self.trace10Widths
+        riseTauList, riseCorr = np.zeros(self.numTracePeaks), np.zeros(self.numTracePeaks)
         for _, u in enumerate(self.degreeRise): 
             i = np.where(self.peaks == u)[0][0] # Current peak
             if self.riseNPeaks[u] > 0:
@@ -259,6 +261,7 @@ class TracePeaks(top.TotalPeaks):
             heightDiff = abs(self.fullTraceArray[int(trace10Widths[0][peakIndexCurrent])] - self.fullTraceArray[int(trace90Widths[0][i])])
             if len(adjustedRiseTau) == 0:
                 continue
+            p0 = (heightDiff, 1, self.fullTraceArray[int(trace90Widths[0][i])])
             p0 = (heightDiff, 1, self.fullTraceArray[int(trace90Widths[0][i])])
             riseWidth = int(len(adjustedRiseTau))
             riseArray = np.arange(0, riseWidth)
@@ -375,6 +378,7 @@ class TracePeaks(top.TotalPeaks):
 
     def decaySet(self):
         trace90Widths, trace10Widths = self.trace90Widths, self.trace10Widths
+        trace90Widths, trace10Widths = self.trace90Widths, self.trace10Widths
         decayTauList = np.zeros(self.numTracePeaks)
         for _, u in enumerate(self.degreeDecay):
             i = np.where(self.peaks == u)[0][0]
@@ -386,6 +390,7 @@ class TracePeaks(top.TotalPeaks):
             heightDiff = abs(self.fullTraceArray[int(trace10Widths[1][peakIndexCurrent])] - self.fullTraceArray[int(trace90Widths[1][i])])
             if len(adjustedDecayTau) == 0:
                 continue
+            p0 = (heightDiff, -1, self.fullTraceArray[int(trace90Widths[1][i])])
             p0 = (heightDiff, -1, self.fullTraceArray[int(trace90Widths[1][i])])
             decWidth = int(len(adjustedDecayTau))
             decArray = np.arange(0, decWidth)
