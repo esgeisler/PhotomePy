@@ -421,7 +421,6 @@ class Main(tk.Frame):
                     overview[ratSide].to_excel(writer, sheet_name= "All Traces")
                     # Bins of Three
                     for groups in leftOrRightGroupThree[ratSide]:
-                        print(leftOrRightGroupThree[ratSide])
                         concat = pd.concat(groups, ignore_index=True)
                         ampList.append(pd.DataFrame(concat["Amplitude"].rename("Amplitude %i-%i"%(z, z+2))))
                         absAmpList.append(pd.DataFrame(concat["Abs_Amplitude"].rename("Absolute Amplitude %i-%i"%(z, z+2))))
