@@ -222,17 +222,15 @@ class TracePeaks(top.TotalPeaks):
                 case "None":
                     peakArea = inte.simpson(y=peakArray2, x=peakXArray2)
                     L = trace90WidthsMisc[1][i]
-                    peakArea -= L * w
                 case "SBR":
                     peakArea = inte.simpson(y=peakArray2+100, x=peakXArray2)
                     # w = len(np.arange(int(self.trace90Widths[0][i[0][0]]), int(self.trace90Widths[1][i[0][0]])))/self.samplingFreqMSec
                     L = self.fullTraceArray[peaks][i] + 100 - self.amplitude[i]
-                    peakArea -= L * w
                 case "ZScore":
                     peakArea = inte.simpson(y=peakArray2+100, x=peakXArray2)
                     # w = len(np.arange(int(self.trace90Widths[0][i[0][0]]), int(self.trace90Widths[1][i[0][0]])))/self.samplingFreqMSec
                     L = self.fullTraceArray[peaks][i] + 100 - self.amplitude[i]
-                    peakArea -= L * w
+            peakArea -= L * w
             if self.degreeNPeaks[u] == 0:
                 adjustedArea[i] = peakArea.round(2)
             else:
@@ -378,7 +376,7 @@ class TracePeaks(top.TotalPeaks):
         decayTauList = np.zeros(self.numTracePeaks)
         for _, u in enumerate(self.degreeDecay):
             i = np.where(self.peaks == u)[0][0]
-            if self.decayNPeaks > 0:
+            if self.decayNPeaks[u] > 0:
                 h = np.where(self.peaks == self.overlapDecay[u][-1])[0][0]
                 decayTauList[i] = np.nan
             peakIndexCurrent = i if self.decayNPeaks[u] == 0 else h
